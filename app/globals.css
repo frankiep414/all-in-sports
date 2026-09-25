@@ -168,7 +168,7 @@ a {
     url('/all-in-hero.png');
 
   background-size: cover;
-  background-position: center;
+ background-position: 62% center;
   background-repeat: no-repeat;
 }
 
@@ -201,17 +201,18 @@ a {
 
 .heroCinematic .heroVisual {
   justify-content: flex-end;
+  transform: translateX(30px);
 }
 
 .heroCinematic .techCard {
-  width: min(390px, 100%);
-  min-height: 470px;
-  background:
-    linear-gradient(
-      145deg,
-      rgba(12, 29, 43, 0.92),
-      rgba(6, 11, 18, 0.94)
-    );
+width: min(350px, 100%);
+min-height: 440px;
+ background:
+  linear-gradient(
+    145deg,
+    rgba(12, 29, 43, 0.82),
+    rgba(6, 11, 18, 0.86)
+  );
   backdrop-filter: blur(15px);
   border-color: rgba(34, 230, 255, 0.35);
   box-shadow:
@@ -1018,7 +1019,7 @@ footer {
 }
 
 .heroCinematic .heroLogo {
-  width: min(330px, 90vw);
+  width: min(360px, 70vw);
 }
 
 .heroCinematic h1 {
