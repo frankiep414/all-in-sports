@@ -149,8 +149,10 @@ a {
 
 .heroCinematic {
   max-width: none;
-  min-height: 780px;
+  min-height: 720px;
   isolation: isolate;
+  padding-top: 55px;
+  padding-bottom: 55px;
   background:
     linear-gradient(
       90deg,
@@ -177,12 +179,12 @@ a {
 }
 
 .heroCinematic .heroContent {
-  max-width: 660px;
+  max-width: 570px;
 }
 
 .heroCinematic .heroLogo {
-  width: min(400px, 70vw);
-  margin: 10px 0 16px;
+  width: min(300px, 65vw);
+  margin: 4px 0 12px;
 }
 
 .heroCinematic .heroLogo img {
@@ -190,12 +192,17 @@ a {
 }
 
 .heroCinematic h1 {
-  font-size: clamp(62px, 6.8vw, 104px);
+  font-size: clamp(54px, 5.3vw, 82px);
+  line-height: 0.88;
+  letter-spacing: -0.055em;
+  margin: 8px 0 22px;
   text-shadow: 0 8px 30px rgba(0, 0, 0, 0.55);
 }
 
 .heroCinematic .heroText {
-  max-width: 560px;
+  max-width: 500px;
+  font-size: 18px;
+  line-height: 1.55;
   color: #c4ccd6;
 }
 
