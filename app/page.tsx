@@ -93,7 +93,7 @@ export default function Home() {
         </div>
       </nav>
 
-      <section className="hero">
+      <section className="hero heroCinematic">
         <div className="heroGlow heroGlowOne" />
         <div className="heroGlow heroGlowTwo" />
 
