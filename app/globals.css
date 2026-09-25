@@ -82,7 +82,7 @@ a {
   object-position: left center;
 }
 .heroLogo {
-  width: min(480px, 82vw);
+  width: min(420px, 82vw);
   margin: 18px 0 28px;
   position: relative;
 }
@@ -147,6 +147,78 @@ a {
   padding: 92px max(28px, calc((100vw - 1240px) / 2));
 }
 
+.heroCinematic {
+  max-width: none;
+  min-height: 780px;
+  isolation: isolate;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(3, 6, 10, 0.98) 0%,
+      rgba(3, 6, 10, 0.88) 26%,
+      rgba(3, 6, 10, 0.32) 52%,
+      rgba(3, 6, 10, 0.62) 72%,
+      rgba(3, 6, 10, 0.94) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 7, 10, 0.2) 55%,
+      #05070a 100%
+    ),
+    url('/all-in-hero.png');
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.heroCinematic .gridOverlay {
+  opacity: 0.07;
+}
+
+.heroCinematic .heroContent {
+  max-width: 660px;
+}
+
+.heroCinematic .heroLogo {
+  width: min(400px, 70vw);
+  margin: 10px 0 16px;
+}
+
+.heroCinematic .heroLogo img {
+  filter: drop-shadow(0 0 22px rgba(34, 230, 255, 0.18));
+}
+
+.heroCinematic h1 {
+  font-size: clamp(62px, 6.8vw, 104px);
+  text-shadow: 0 8px 30px rgba(0, 0, 0, 0.55);
+}
+
+.heroCinematic .heroText {
+  max-width: 560px;
+  color: #c4ccd6;
+}
+
+.heroCinematic .heroVisual {
+  justify-content: flex-end;
+}
+
+.heroCinematic .techCard {
+  width: min(390px, 100%);
+  min-height: 470px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(12, 29, 43, 0.92),
+      rgba(6, 11, 18, 0.94)
+    );
+  backdrop-filter: blur(15px);
+  border-color: rgba(34, 230, 255, 0.35);
+  box-shadow:
+    0 35px 100px rgba(0, 0, 0, 0.58),
+    0 0 40px rgba(34, 230, 255, 0.08),
+    inset 0 1px rgba(255, 255, 255, 0.07);
+}
 .gridOverlay {
   position: absolute;
   inset: 0;
@@ -925,6 +997,33 @@ footer {
 }
 
 @media (max-width: 640px) {
+
+  .heroCinematic {
+  background-position: 57% center;
+  min-height: auto;
+}
+
+.heroCinematic::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(3, 6, 10, 0.5) 0%,
+    rgba(3, 6, 10, 0.72) 42%,
+    rgba(3, 6, 10, 0.98) 78%
+  );
+  pointer-events: none;
+}
+
+.heroCinematic .heroLogo {
+  width: min(330px, 90vw);
+}
+
+.heroCinematic h1 {
+  font-size: 60px;
+}
   .nav {
     height: 66px;
   }
