@@ -76,7 +76,7 @@ export default function Home() {
       <nav className="nav">
         <div className="navInner">
           <a className="brand" href="#">
-            <img src="/all-in-logo.svg" alt="All In Sports" />
+            <img src="/all-in-sports-future.png" alt="All In Sports" />
           </a>
 
           <div className="navLinks">
@@ -106,7 +106,10 @@ export default function Home() {
           </div>
 
           <p className="heroKicker">ALL IN // AI SPORTS</p>
-
+          
+<div className="heroLogo">
+  <img src="/all-in-sports-future.png" alt="All In Sports" />
+</div>
           <h1>
             MORE THAN
             <br />
