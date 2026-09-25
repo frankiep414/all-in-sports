@@ -76,11 +76,32 @@ a {
 }
 
 .brand img {
-  width: 72px;
-  height: 54px;
+  width: 230px;
+  height: 66px;
   object-fit: contain;
+  object-position: left center;
+}
+.heroLogo {
+  width: min(480px, 82vw);
+  margin: 18px 0 28px;
+  position: relative;
 }
 
+.heroLogo::after {
+  content: '';
+  position: absolute;
+  inset: 15% 5%;
+  z-index: -1;
+  background: rgba(34, 230, 255, 0.16);
+  filter: blur(45px);
+}
+
+.heroLogo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
 .navLinks {
   display: flex;
   gap: 34px;
@@ -912,9 +933,10 @@ footer {
     padding: 0 16px;
   }
 
-  .brand img {
-    width: 58px;
-  }
+ .brand img {
+  width: 165px;
+  height: 52px;
+}
 
   .profileButton {
     padding: 9px 11px;
