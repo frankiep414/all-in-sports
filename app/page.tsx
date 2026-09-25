@@ -157,13 +157,15 @@ export default function Home() {
               <span className="beta">FUTURE</span>
             </div>
 
-            <div className="playerAvatar">AI</div>
+            <div className="playerAvatar">
+  <span>10</span>
+</div>
 
             <div className="playerIdentity">
-              <span>PLAYER PROFILE</span>
-              <strong>YOUR GAME.</strong>
-              <strong>YOUR DATA.</strong>
-            </div>
+  <span>PLAYER PROFILE</span>
+  <strong>MARCUS REYES</strong>
+  <small>MIDFIELDER • #10</small>
+</div>
 
             <div className="miniStats">
               <div>
@@ -180,7 +182,7 @@ export default function Home() {
               </div>
               <div>
                 <strong>8.4</strong>
-                <span>RTG</span>
+                <span>AI rating</span>
               </div>
             </div>
 
