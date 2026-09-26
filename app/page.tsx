@@ -98,6 +98,13 @@ export default function Home() {
         <div className="heroGlow heroGlowTwo" />
 
         <div className="gridOverlay" />
+        
+        <img
+  className="heroPlayer"
+  src="/all-in-player.png"
+  alt=""
+  aria-hidden="true"
+/>
 
         <div className="heroContent">
           <div className="heroBadge">
