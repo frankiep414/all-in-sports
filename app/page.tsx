@@ -116,10 +116,41 @@ export default function Home() {
 
           <form
             className="signupForm"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setSignupComplete(true);
-            }}
+           onSubmit={async (e) => {
+  e.preventDefault();
+
+  const form = e.currentTarget;
+  const formData = new FormData(form);
+
+  const data = {
+    fullName: formData.get('fullName'),
+    phone: formData.get('phone'),
+    email: formData.get('email'),
+    playedBefore: formData.get('playedBefore') === 'yes',
+    teamName: formData.get('teamName'),
+    divisions: formData.getAll('divisions'),
+    smsConsent: formData.get('smsConsent') === 'on',
+  };
+
+  try {
+    const response = await fetch('/api/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error('Signup failed');
+    }
+
+    setSignupComplete(true);
+  } catch (error) {
+    console.error(error);
+    alert('Something went wrong. Please try again.');
+  }
+}}
           >
             <label>
               Full Name
