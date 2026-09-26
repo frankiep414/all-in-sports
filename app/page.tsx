@@ -164,8 +164,8 @@ export default function Home() {
               <span className="beta">FUTURE</span>
             </div>
 
-            <div className="playerAvatar">
-  <span>10</span>
+  <div className="playerAvatar">
+  <img src="/all-in-player.png" alt="Marcus Reyes" />
 </div>
 
             <div className="playerIdentity">
