@@ -250,6 +250,18 @@ export default function Home() {
               </span>
             </label>
 
+            <p className="signupLegal">
+  By creating your Player ID, you agree to our{' '}
+  <a href="/terms" target="_blank" rel="noopener noreferrer">
+    Terms of Service
+  </a>{' '}
+  and acknowledge our{' '}
+  <a href="/privacy" target="_blank" rel="noopener noreferrer">
+    Privacy Policy
+  </a>
+  .
+</p>
+
             <button type="submit" className="signupSubmit">
               CREATE MY PLAYER ID
               <ArrowRight size={18} />
