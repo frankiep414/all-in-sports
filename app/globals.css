@@ -1502,3 +1502,18 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+.signupLegal {
+  margin: 4px 0 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #7f8b9b;
+}
+
+.signupLegal a {
+  color: #67e8f9;
+  text-decoration: none;
+}
+
+.signupLegal a:hover {
+  text-decoration: underline;
+}
