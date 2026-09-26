@@ -1,3 +1,7 @@
+'use client';
+
+import { useState } from 'react';
+
 import {
   ArrowRight,
   BarChart3,
@@ -71,8 +75,189 @@ const intelligence = [
 ];
 
 export default function Home() {
+    const [showPlayerSignup, setShowPlayerSignup] = useState(true);
+  const [playedBefore, setPlayedBefore] = useState(false);
+  const [signupComplete, setSignupComplete] = useState(false);
+  
   return (
     <main>
+      {showPlayerSignup && (
+  <div className="signupOverlay">
+    <div className="signupModal">
+
+      <button
+        className="signupClose"
+        onClick={() => setShowPlayerSignup(false)}
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+      {!signupComplete ? (
+        <>
+          <div className="signupEyebrow">
+            <Sparkles size={15} />
+            THE NEXT ERA OF ALL IN
+          </div>
+
+          <img
+            className="signupLogo"
+            src="/all-in-sports-future.png"
+            alt="All In Sports"
+          />
+
+          <h2>CLAIM YOUR<br /><span>PLAYER ID.</span></h2>
+
+          <p className="signupIntro">
+            We&apos;ve been working behind the scenes to build the next
+            generation of All In Sports — bringing together our players,
+            leagues, events and new AI-powered features.
+          </p>
+
+          <form
+            className="signupForm"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setSignupComplete(true);
+            }}
+          >
+            <label>
+              Full Name
+              <input
+                type="text"
+                name="fullName"
+                placeholder="Your full name"
+                required
+              />
+            </label>
+
+            <div className="signupTwoColumn">
+              <label>
+                Cell Phone
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="(201) 555-1234"
+                  required
+                />
+              </label>
+
+              <label>
+                Email
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="you@email.com"
+                  required
+                />
+              </label>
+            </div>
+
+            <div className="signupQuestion">
+              <span>Have you played with All In before?</span>
+
+              <div className="signupChoices">
+                <button
+                  type="button"
+                  className={playedBefore ? 'active' : ''}
+                  onClick={() => setPlayedBefore(true)}
+                >
+                  Yes
+                </button>
+
+                <button
+                  type="button"
+                  className={!playedBefore ? 'active' : ''}
+                  onClick={() => setPlayedBefore(false)}
+                >
+                  No
+                </button>
+              </div>
+            </div>
+
+            {playedBefore && (
+              <label>
+                Team Name
+                <input
+                  type="text"
+                  name="teamName"
+                  placeholder="What team did you play for?"
+                />
+              </label>
+            )}
+
+            <div className="signupQuestion">
+              <span>Which divisions are you interested in?</span>
+
+              <div className="divisionChoices">
+                <label>
+                  <input type="checkbox" name="division" value="mens" />
+                  Men&apos;s
+                </label>
+
+                <label>
+                  <input type="checkbox" name="division" value="womens" />
+                  Women&apos;s
+                </label>
+
+                <label>
+                  <input type="checkbox" name="division" value="coed" />
+                  Coed
+                </label>
+              </div>
+            </div>
+
+            <label className="smsConsent">
+              <input type="checkbox" name="smsConsent" />
+              <span>
+                Yes, keep me All In. I agree to receive recurring automated
+                texts from All In Sports about upcoming games, leagues,
+                tournaments, events, Player ID updates and other All In Sports
+                news. Message frequency varies. Message &amp; data rates may
+                apply. Reply STOP to opt out. Consent is not a condition of
+                participation.
+              </span>
+            </label>
+
+            <button type="submit" className="signupSubmit">
+              CREATE MY PLAYER ID
+              <ArrowRight size={18} />
+            </button>
+          </form>
+        </>
+      ) : (
+        <div className="signupSuccess">
+          <div className="successCheck">✓</div>
+
+          <p className="signupEyebrow">WELCOME TO ALL IN</p>
+
+          <h2>YOU&apos;RE<br /><span>ALL IN.</span></h2>
+
+          <p>
+            Your All In Player ID has been reserved.
+          </p>
+
+          <p>
+            We&apos;re building a new All In experience around our players —
+            with player profiles, stats, highlights, AI-powered features and
+            more.
+          </p>
+
+          <strong>Stay tuned. We&apos;re just getting started.</strong>
+
+          <button
+            className="signupSubmit"
+            onClick={() => setShowPlayerSignup(false)}
+          >
+            EXPLORE ALL IN
+            <ArrowRight size={18} />
+          </button>
+        </div>
+      )}
+
+    </div>
+  </div>
+)}
       <nav className="nav">
         <div className="navInner">
           <a className="brand" href="#">
