@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import twilio from 'twilio';
 
 export async function POST(request: Request) {
   try {
@@ -57,6 +58,29 @@ export async function POST(request: Request) {
       );
     }
 
+        if (smsConsent) {
+      try {
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const authToken = process.env.TWILIO_AUTH_TOKEN;
+        const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+
+        if (!accountSid || !authToken || !twilioPhoneNumber) {
+          console.error('Missing Twilio environment variables');
+        } else {
+          const twilioClient = twilio(accountSid, authToken);
+
+          await twilioClient.messages.create({
+            body: `Welcome to All In Sports ⚽ You're officially All In! We're building the future of local sports — Player IDs, stats, highlights and more. We'll keep you posted as new features roll out. Reply STOP to opt out.`,
+            from: twilioPhoneNumber,
+            to: phone,
+          });
+        }
+      } catch (smsError) {
+        console.error('Twilio welcome SMS error:', smsError);
+      }
+    }
+
+    return Response.json({ success: true });
     return Response.json({ success: true });
   } catch (error) {
     console.error('Signup API error:', error);
