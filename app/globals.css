@@ -462,7 +462,7 @@ min-height: 440px;
   object-fit: contain;
   object-position: center bottom;
   display: block;
-  transform: scale(1.15);
+  transform: scale(2.15) translateY(12%);
 }
 
 .playerIdentity {
