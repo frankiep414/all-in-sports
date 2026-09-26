@@ -451,6 +451,20 @@ min-height: 440px;
     0 0 55px rgba(34,230,255,.2);
 }
 
+.playerAvatar {
+  overflow: hidden;
+  position: relative;
+}
+
+.playerAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  display: block;
+  transform: scale(1.15);
+}
+
 .playerIdentity {
   position: relative;
   z-index: 2;
