@@ -1514,20 +1514,24 @@ footer {
 }
 
 .heroPlayer {
-  position: relative;
+  position: absolute;
   left: 50%;
-  bottom: auto;
+  bottom: 0;
   transform: translateX(-50%);
-  height: 390px;
-  max-width: 100%;
-  margin: 0 auto -35px;
+  height: 300px;
+  max-width: 90%;
   display: block;
+  z-index: 1;
+  opacity: 0.9;
+  pointer-events: none;
 }
 
 .heroCinematic .heroContent {
+  position: relative;
+  z-index: 3;
   width: 100%;
   max-width: 100%;
-  padding: 24px 24px 50px;
+  padding: 40px 24px 330px;
   box-sizing: border-box;
 }
 
