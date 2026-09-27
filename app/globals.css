@@ -1508,17 +1508,51 @@ footer {
 
 /* Mobile hero cleanup */
 .heroCinematic {
-  ...
+  min-height: auto;
+  overflow: hidden;
+  padding-top: 20px;
 }
 
-/* rest of the new block */
+.heroPlayer {
+  position: relative;
+  left: 50%;
+  bottom: auto;
+  transform: translateX(-50%);
+  height: 390px;
+  max-width: 100%;
+  margin: 0 auto -35px;
+  display: block;
+}
+
+.heroCinematic .heroContent {
+  width: 100%;
+  max-width: 100%;
+  padding: 24px 24px 50px;
+  box-sizing: border-box;
+}
+
+.heroCinematic .heroContent h1 {
+  font-size: clamp(52px, 15vw, 72px);
+  line-height: 0.9;
+  letter-spacing: -3px;
+  max-width: 100%;
+  overflow-wrap: normal;
+}
+
+.heroCinematic .heroContent img {
+  display: none;
+}
+
+.heroCinematic .heroVisual {
+  width: 100%;
+  max-width: 100%;
+}
 
 .heroCinematic .eyebrow {
   font-size: 12px;
   letter-spacing: 2px;
 }
 
-}  /* <-- existing line 1504 stays here */
 }
 .signupLegal {
   margin: 4px 0 16px;
