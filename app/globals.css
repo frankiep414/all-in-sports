@@ -1531,7 +1531,7 @@ footer {
   z-index: 3;
   width: 100%;
   max-width: 100%;
-  padding: 40px 24px 330px;
+padding: 40px 24px 50px;
   box-sizing: border-box;
 }
 
