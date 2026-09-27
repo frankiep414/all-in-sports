@@ -1501,6 +1501,24 @@ footer {
   .divisionChoices {
     grid-template-columns: 1fr;
   }
+
+  .divisionChoices {
+  grid-template-columns: 1fr;
+}
+
+/* Mobile hero cleanup */
+.heroCinematic {
+  ...
+}
+
+/* rest of the new block */
+
+.heroCinematic .eyebrow {
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
+}  /* <-- existing line 1504 stays here */
 }
 .signupLegal {
   margin: 4px 0 16px;
