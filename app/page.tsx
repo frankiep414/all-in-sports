@@ -209,7 +209,11 @@ export default function Home() {
       throw new Error('Signup failed');
     }
 
-    setSignupComplete(true);
+    const result = await response.json();
+
+localStorage.setItem('allInPlayerId', String(result.playerId));
+
+setSignupComplete(true);
   } catch (error) {
     console.error(error);
     alert('Something went wrong. Please try again.');
