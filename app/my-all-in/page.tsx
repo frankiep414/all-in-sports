@@ -13,7 +13,7 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
-
+export const dynamic = 'force-dynamic';
 export default async function MyAllInPage() {
     const supabase = createClient(
     process.env.SUPABASE_URL!,
