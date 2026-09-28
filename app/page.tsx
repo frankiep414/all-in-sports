@@ -454,10 +454,10 @@ setSignupComplete(true);
             <a href="#community">Community</a>
           </div>
 
-          <button className="profileButton">
-            <CircleUserRound size={18} />
-            My All In
-          </button>
+         <a href="/my-all-in" className="profileButton">
+  <CircleUserRound size={18} />
+  My All In
+</a>
         </div>
       </nav>
 
