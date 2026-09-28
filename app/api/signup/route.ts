@@ -80,7 +80,10 @@ export async function POST(request: Request) {
       }
     }
 
-    return Response.json({ success: true });
+    return Response.json({
+  success: true,
+  playerId: newPlayer.id,
+});
   } catch (error) {
     console.error('Signup API error:', error);
 
