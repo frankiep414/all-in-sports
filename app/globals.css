@@ -2327,3 +2327,535 @@ padding: 40px 24px 50px;
     text-align: right;
   }
 }
+
+/* ================================
+   MY ALL IN
+================================ */
+
+.myAllInPage {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 80% 15%, rgba(69, 194, 255, 0.1), transparent 30%),
+    radial-gradient(circle at 10% 55%, rgba(103, 232, 249, 0.06), transparent 25%),
+    #05070a;
+  color: #f7f9fc;
+}
+
+.myAllInNav {
+  height: 84px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.myAllInBrand img {
+  width: 115px;
+  height: auto;
+}
+
+.backHome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8e9bad;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-decoration: none;
+}
+
+.backHome:hover {
+  color: #67e8f9;
+}
+
+.playerDashboard {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 80px 32px 100px;
+}
+
+.dashboardIntro {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 60px;
+  margin-bottom: 45px;
+}
+
+.dashboardIntro h1 {
+  margin: 8px 0 0;
+  font-size: clamp(48px, 7vw, 88px);
+  line-height: 0.88;
+  letter-spacing: -5px;
+}
+
+.dashboardIntro h1 span {
+  color: #67e8f9;
+}
+
+.dashboardIntro > p {
+  max-width: 400px;
+  color: #8e9bad;
+  line-height: 1.7;
+}
+
+.playerIdCard {
+  position: relative;
+  overflow: hidden;
+  min-height: 370px;
+  padding: 42px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid rgba(103, 232, 249, 0.28);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(16, 25, 34, 0.98), rgba(5, 8, 12, 0.96));
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+}
+
+.playerIdCard::before {
+  content: "AI";
+  position: absolute;
+  right: -15px;
+  bottom: -75px;
+  font-size: 300px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -25px;
+  color: rgba(103, 232, 249, 0.035);
+}
+
+.playerIdGlow {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  top: -250px;
+  right: -80px;
+  border-radius: 50%;
+  background: rgba(103, 232, 249, 0.13);
+  filter: blur(70px);
+}
+
+.playerIdTop,
+.playerIdentity,
+.playerIdBottom {
+  position: relative;
+  z-index: 2;
+}
+
+.playerIdTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.playerIdTop img {
+  width: 95px;
+}
+
+.playerIdLabel,
+.playerNumber span,
+.aiRating span {
+  display: block;
+  color: #67e8f9;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.playerIdTop h2 {
+  margin: 12px 0 2px;
+  font-size: clamp(42px, 6vw, 72px);
+  line-height: 0.95;
+  letter-spacing: -3px;
+}
+
+.playerIdTop p {
+  margin: 8px 0 0;
+  color: #7f8b9b;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+}
+
+.playerIdentity {
+  display: flex;
+  gap: 70px;
+  align-items: flex-end;
+}
+
+.playerNumber strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 34px;
+}
+
+.aiRating strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: 34px;
+}
+
+.playerIdBottom {
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  color: #687586;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.dashboardCard,
+.dashboardWideCard {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background: rgba(12, 16, 22, 0.86);
+}
+
+.dashboardCard {
+  min-height: 310px;
+  padding: 32px;
+}
+
+.dashboardCardIcon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 28px;
+  border: 1px solid rgba(103, 232, 249, 0.2);
+  border-radius: 13px;
+  color: #67e8f9;
+  background: rgba(103, 232, 249, 0.06);
+}
+
+.cardEyebrow {
+  margin: 0 0 10px;
+  color: #67e8f9;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.dashboardCard h3,
+.dashboardWideCard h3 {
+  margin: 0;
+  font-size: 25px;
+  letter-spacing: -1px;
+}
+
+.dashboardCard > p:not(.cardEyebrow) {
+  max-width: 390px;
+  color: #7f8b9b;
+  line-height: 1.6;
+}
+
+.dashboardAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-decoration: none;
+}
+
+.dashboardAction:hover {
+  color: #67e8f9;
+}
+
+.seasonStats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 42px;
+}
+
+.seasonStats div {
+  padding: 16px 8px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.seasonStats strong {
+  display: block;
+  font-size: 25px;
+}
+
+.seasonStats span {
+  display: block;
+  margin-top: 5px;
+  color: #687586;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.dashboardWideCard {
+  padding: 32px;
+  margin-bottom: 24px;
+}
+
+.wideCardHeading {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.wideCardHeading .dashboardCardIcon {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.emptyState {
+  margin-top: 28px;
+  min-height: 120px;
+  padding: 25px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  color: #687586;
+}
+
+.emptyState p {
+  max-width: 600px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.intelligenceDashboard {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 24px;
+  padding: 45px;
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr;
+  align-items: center;
+  gap: 50px;
+  border: 1px solid rgba(103, 232, 249, 0.18);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 80% 50%, rgba(103, 232, 249, 0.12), transparent 35%),
+    #080d12;
+}
+
+.intelligenceTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #67e8f9;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.intelligenceDashboard h2 {
+  margin: 20px 0;
+  font-size: clamp(40px, 5vw, 68px);
+  line-height: 0.9;
+  letter-spacing: -4px;
+}
+
+.intelligenceDashboard h2 span {
+  color: #67e8f9;
+}
+
+.intelligenceDashboard p {
+  max-width: 550px;
+  color: #7f8b9b;
+  line-height: 1.7;
+}
+
+.intelligenceStatus {
+  min-height: 210px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid rgba(103, 232, 249, 0.18);
+  border-radius: 18px;
+  background: rgba(5, 8, 12, 0.6);
+}
+
+.intelligenceStatus svg {
+  margin-bottom: 25px;
+  color: #67e8f9;
+}
+
+.intelligenceStatus span {
+  color: #67e8f9;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.intelligenceStatus strong {
+  margin: 7px 0 12px;
+  font-size: 30px;
+}
+
+.intelligenceStatus small {
+  color: #687586;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.achievementGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.achievementGrid div {
+  min-height: 110px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  color: #596574;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.achievementGrid strong {
+  font-size: 10px;
+  letter-spacing: 1.2px;
+}
+
+.myAllInFooter {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 35px 32px 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  color: #596574;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.myAllInFooter img {
+  width: 75px;
+}
+
+/* MY ALL IN — MOBILE */
+
+@media (max-width: 700px) {
+  .myAllInNav {
+    height: 70px;
+    padding: 0 20px;
+  }
+
+  .myAllInBrand img {
+    width: 85px;
+  }
+
+  .backHome {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .playerDashboard {
+    padding: 50px 18px 70px;
+  }
+
+  .dashboardIntro {
+    display: block;
+    margin-bottom: 30px;
+  }
+
+  .dashboardIntro h1 {
+    font-size: 52px;
+    letter-spacing: -3px;
+  }
+
+  .dashboardIntro > p {
+    margin-top: 25px;
+  }
+
+  .playerIdCard {
+    min-height: 330px;
+    padding: 25px;
+    border-radius: 20px;
+  }
+
+  .playerIdTop img {
+    width: 70px;
+  }
+
+  .playerIdTop h2 {
+    font-size: 45px;
+  }
+
+  .playerIdentity {
+    gap: 35px;
+  }
+
+  .playerNumber strong,
+  .aiRating strong {
+    font-size: 24px;
+  }
+
+  .playerIdBottom {
+    gap: 20px;
+    font-size: 8px;
+  }
+
+  .dashboardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboardCard,
+  .dashboardWideCard {
+    padding: 24px;
+  }
+
+  .seasonStats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .intelligenceDashboard {
+    padding: 30px 24px;
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+
+  .intelligenceDashboard h2 {
+    font-size: 46px;
+    letter-spacing: -3px;
+  }
+
+  .achievementGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .myAllInFooter {
+    padding: 30px 20px;
+  }
+}
