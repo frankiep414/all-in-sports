@@ -20,12 +20,14 @@ export default async function MyAllInPage() {
     process.env.SUPABASE_SECRET_KEY!
   );
 
-  const { data: player } = await supabase
+  const { data: player, error: playerError } = await supabase
     .from('players')
     .select('id, full_name')
     .order('id', { ascending: false })
     .limit(1)
     .single();
+  console.log('MY ALL IN PLAYER:', player);
+console.log('MY ALL IN ERROR:', playerError);
   return (
     <main className="myAllInPage">
       <nav className="myAllInNav">
