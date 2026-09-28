@@ -1,4 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+'use client';
+
+import { useEffect, useState } from 'react';
 
 import {
   ArrowLeft,
@@ -13,21 +15,32 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
-export const dynamic = 'force-dynamic';
-export default async function MyAllInPage() {
-    const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!
-  );
 
-  const { data: player, error: playerError } = await supabase
-    .from('players')
-    .select('id, full_name')
-    .order('id', { ascending: false })
-    .limit(1)
-    .single();
-  console.log('MY ALL IN PLAYER:', player);
-console.log('MY ALL IN ERROR:', playerError);
+export default function MyAllInPage() {
+  const [player, setPlayer] = useState<{
+    id: number;
+    full_name: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const savedPlayerId = localStorage.getItem('allInPlayerId');
+
+    if (!savedPlayerId) {
+      return;
+    }
+
+    fetch(`/api/player?id=${savedPlayerId}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data?.id) {
+          setPlayer(data);
+        }
+      })
+      .catch((error) => {
+        console.error('Unable to load player:', error);
+      });
+  }, []);
+  
   return (
     <main className="myAllInPage">
       <nav className="myAllInNav">
