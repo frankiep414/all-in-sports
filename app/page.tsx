@@ -142,7 +142,13 @@ export default function Home() {
   const [playedBefore, setPlayedBefore] = useState(false);
   const [signupComplete, setSignupComplete] = useState(false);
   const [selectedChampion, setSelectedChampion] = useState<(typeof champions)[number] | null>(null);
-  
+  useEffect(() => {
+  const savedPlayerId = localStorage.getItem('allInPlayerId');
+
+  if (savedPlayerId) {
+    setShowPlayerSignup(false);
+  }
+}, []);
   return (
     <main>
       {showPlayerSignup && (
