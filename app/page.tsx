@@ -234,6 +234,11 @@ export default function Home() {
 
 localStorage.setItem('allInPlayerId', String(result.playerId));
 
+setCurrentPlayer({
+  id: result.playerId,
+  full_name: String(data.fullName),
+});
+
 setSignupComplete(true);
   } catch (error) {
     console.error(error);
