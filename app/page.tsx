@@ -142,11 +142,26 @@ export default function Home() {
   const [playedBefore, setPlayedBefore] = useState(false);
   const [signupComplete, setSignupComplete] = useState(false);
   const [selectedChampion, setSelectedChampion] = useState<(typeof champions)[number] | null>(null);
+  const [currentPlayer, setCurrentPlayer] = useState<{
+  id: number;
+  full_name: string;
+} | null>(null);
   useEffect(() => {
   const savedPlayerId = localStorage.getItem('allInPlayerId');
 
   if (savedPlayerId) {
     setShowPlayerSignup(false);
+
+    fetch(`/api/player?id=${savedPlayerId}`)
+      .then((response) => response.json())
+      .then((player) => {
+        if (player?.id) {
+          setCurrentPlayer(player);
+        }
+      })
+      .catch((error) => {
+        console.error('Unable to load player:', error);
+      });
   }
 }, []);
   return (
