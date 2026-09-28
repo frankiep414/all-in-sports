@@ -170,14 +170,6 @@ export default function Home() {
   <div className="signupOverlay">
     <div className="signupModal">
 
-      <button
-        className="signupClose"
-        onClick={() => setShowPlayerSignup(false)}
-        aria-label="Close"
-      >
-        ×
-      </button>
-
       {!signupComplete ? (
         <>
           <div className="signupEyebrow">
