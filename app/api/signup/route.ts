@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
     const supabase = createClient(supabaseUrl, supabaseSecretKey);
 
-    const { error } = await supabase.from('players').insert({
+   const { data: newPlayer, error } = await supabase.from('players').insert({
       full_name: fullName,
       phone,
       email,
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       sms_consent: Boolean(smsConsent),
       sms_consent_at: smsConsent ? new Date().toISOString() : null,
       consent_source: 'player_signup_popup',
-    });
+}).select('id').single();
 
     if (error) {
       console.error('Supabase signup error:', error);
@@ -80,7 +80,6 @@ export async function POST(request: Request) {
       }
     }
 
-    return Response.json({ success: true });
     return Response.json({ success: true });
   } catch (error) {
     console.error('Signup API error:', error);
