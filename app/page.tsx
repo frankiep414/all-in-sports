@@ -141,6 +141,7 @@ export default function Home() {
     const [showPlayerSignup, setShowPlayerSignup] = useState(true);
   const [playedBefore, setPlayedBefore] = useState(false);
   const [signupComplete, setSignupComplete] = useState(false);
+  const [selectedChampion, setSelectedChampion] = useState<(typeof champions)[number] | null>(null);
   
   return (
     <main>
@@ -364,6 +365,58 @@ export default function Home() {
     </div>
   </div>
 )}
+      
+            {selectedChampion && (
+        <div
+          className="championshipOverlay"
+          onClick={() => setSelectedChampion(null)}
+        >
+          <div
+            className="championshipModal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="championshipClose"
+              onClick={() => setSelectedChampion(null)}
+              aria-label="Close championship"
+            >
+              ×
+            </button>
+
+            <div className="championshipModalImage">
+              <img
+                src={selectedChampion.image}
+                alt={`${selectedChampion.team} - ${selectedChampion.season} ${selectedChampion.year} Champions`}
+              />
+              <div className="championshipModalOverlay" />
+
+              <div className="championshipBadge">
+                <Trophy size={18} />
+                ALL IN CHAMPIONS
+              </div>
+            </div>
+
+            <div className="championshipModalContent">
+              <p className="eyebrow">
+                {selectedChampion.year} • {selectedChampion.season}
+              </p>
+
+              <h2>{selectedChampion.team}</h2>
+
+              <p className="championshipDescription">
+                Forever part of All In history.
+              </p>
+
+              <div className="championshipLegacy">
+                <span>ALL IN HISTORY</span>
+                <strong>{selectedChampion.year}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <nav className="nav">
       <nav className="nav">
         <div className="navInner">
           <a className="brand" href="#">
@@ -631,7 +684,18 @@ export default function Home() {
 
           <div className="championsGrid">
             {champions.map((champion, index) => (
-              <article className="championCard" key={`${champion.year}-${champion.season}-${champion.team}`}>
+           <article
+  className="championCard"
+  key={`${champion.year}-${champion.season}-${champion.team}`}
+  onClick={() => setSelectedChampion(champion)}
+  role="button"
+  tabIndex={0}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      setSelectedChampion(champion);
+    }
+  }}
+>
                 <div className="championImageWrap">
                   <img
                     src={champion.image}
