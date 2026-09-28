@@ -1573,3 +1573,217 @@ padding: 40px 24px 50px;
 .signupLegal a:hover {
   text-decoration: underline;
 }
+
+/* =========================
+   ALL IN HISTORY
+   ========================= */
+
+.historySection {
+  position: relative;
+  padding: 110px 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(34, 211, 238, 0.08), transparent 30%),
+    radial-gradient(circle at 85% 80%, rgba(139, 92, 246, 0.08), transparent 30%),
+    #05070a;
+}
+
+.historyInner {
+  position: relative;
+  z-index: 2;
+}
+
+.historyHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 50px;
+  margin-bottom: 50px;
+}
+
+.historyHeader h2 {
+  margin: 10px 0 0;
+  font-size: clamp(46px, 6vw, 82px);
+  line-height: 0.9;
+  letter-spacing: -4px;
+}
+
+.historyHeader h2 span {
+  color: #67e8f9;
+}
+
+.historyIntro {
+  max-width: 430px;
+  margin: 0 0 5px;
+  color: #8b98a9;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.championsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.championCard {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.025);
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.championCard:hover {
+  transform: translateY(-6px);
+  border-color: rgba(103, 232, 249, 0.35);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+}
+
+.championImageWrap {
+  position: relative;
+  height: 300px;
+  overflow: hidden;
+  background: #0a0d12;
+}
+
+.championImage {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.championCard:hover .championImage {
+  transform: scale(1.04);
+}
+
+.championOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(5, 7, 10, 0.85), transparent 50%),
+    linear-gradient(to right, rgba(5, 7, 10, 0.15), transparent);
+  pointer-events: none;
+}
+
+.championYear {
+  position: absolute;
+  left: 18px;
+  bottom: 16px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(5, 7, 10, 0.72);
+  backdrop-filter: blur(12px);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.championNumber {
+  position: absolute;
+  top: 15px;
+  right: 16px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.championInfo {
+  padding: 21px;
+}
+
+.championTrophy {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 20px;
+  color: #67e8f9;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.8px;
+}
+
+.championInfo p {
+  margin: 0 0 5px;
+  color: #7f8b9b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.championInfo h3 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.05;
+  letter-spacing: -0.8px;
+}
+
+.championView {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 25px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  color: #9ca8b8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+/* History tablet */
+@media (max-width: 900px) {
+  .historyHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .championsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* History mobile */
+@media (max-width: 640px) {
+  .historySection {
+    padding: 75px 0;
+  }
+
+  .historyHeader {
+    margin-bottom: 30px;
+  }
+
+  .historyHeader h2 {
+    font-size: 48px;
+    line-height: 0.92;
+    letter-spacing: -2.5px;
+  }
+
+  .historyIntro {
+    font-size: 14px;
+  }
+
+  .championsGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .championImageWrap {
+    height: 300px;
+  }
+
+  .championInfo {
+    padding: 20px;
+  }
+}
