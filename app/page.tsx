@@ -539,24 +539,24 @@ setSignupComplete(true);
             <div className="playerIdentity">
   <span>PLAYER PROFILE</span>
  <strong>{currentPlayer?.full_name || 'PLAYER'}</strong>
-  <small>MIDFIELDER • #10</small>
+ <small>PLAYER ID • #{currentPlayer?.id ? String(currentPlayer.id).padStart(4, '0') : '----'}</small>
 </div>
 
             <div className="miniStats">
               <div>
-                <strong>12</strong>
+                <strong>0</strong>
                 <span>GP</span>
               </div>
               <div>
-                <strong>08</strong>
+                <strong>0</strong>
                 <span>G</span>
               </div>
               <div>
-                <strong>05</strong>
+                <strong>0</strong>
                 <span>A</span>
               </div>
               <div>
-                <strong>8.4</strong>
+                <strong>Unrated</strong>
                 <span>AI rating</span>
               </div>
             </div>
