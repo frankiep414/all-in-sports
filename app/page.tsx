@@ -538,7 +538,7 @@ setSignupComplete(true);
 
             <div className="playerIdentity">
   <span>PLAYER PROFILE</span>
-  <strong>MARCUS REYES</strong>
+ <strong>{currentPlayer?.full_name || 'PLAYER'}</strong>
   <small>MIDFIELDER • #10</small>
 </div>
 
