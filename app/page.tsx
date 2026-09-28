@@ -19,6 +19,69 @@ import {
   Zap,
 } from 'lucide-react';
 
+const champions = [
+  {
+    year: '2026',
+    season: 'Summer Coed',
+    team: 'They Not Like Us',
+    image: '/history/2026-summer-coed-they-not-like-us.webp',
+  },
+  {
+    year: '2026',
+    season: 'Spring Tournament',
+    team: 'Wolverines',
+    image: '/history/2026-spring-tournament-wolverines.webp',
+  },
+  {
+    year: '2026',
+    season: 'Winter II Men’s',
+    team: 'San Pedro FC',
+    image: '/history/2026-winter-ii-mens-san-pedro.webp',
+  },
+  {
+    year: '2026',
+    season: 'Winter Men’s',
+    team: 'All Things Soccer FC',
+    image: '/history/2026-winter-mens-all-things-soccer.webp',
+  },
+  {
+    year: '2026',
+    season: 'Winter Men’s',
+    team: 'They Not Like Us FC',
+    image: '/history/2026-winter-mens-they-not-like-us.webp',
+  },
+  {
+    year: '2025',
+    season: 'Winter Men’s',
+    team: '21FC',
+    image: '/history/2025-winter-mens-21fc.webp',
+  },
+  {
+    year: '2024',
+    season: 'Winter Tournament',
+    team: 'Mickey Mouse FC',
+    image: '/history/2024-winter-tournament-mickey-mouse.webp',
+  },
+  {
+    year: '2023',
+    season: 'Fall Futsal',
+    team: 'Gran Combo',
+    image: '/history/2023-fall-futsal-gran-combo.webp',
+  },
+  {
+    year: '2023',
+    season: 'Summer',
+    team: 'Gran Combo',
+    image: '/history/2023-summer-gran-combo.webp',
+  },
+  {
+    year: '2023',
+    season: 'Winter',
+    team: 'Los Galacticos',
+    image: '/history/2023-winter-los-galacticos.webp',
+  },
+];
+
 const experiences = [
   {
     icon: Play,
@@ -548,7 +611,65 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <section className="historySection" id="history">
+        <div className="section historyInner">
+          <div className="historyHeader">
+            <div>
+              <p className="eyebrow">ALL IN HISTORY</p>
+              <h2>
+                BUILT BY THE
+                <br />
+                <span>CHAMPIONS.</span>
+              </h2>
+            </div>
 
+            <p className="historyIntro">
+              Every season leaves a mark. Explore the teams that went All In
+              and earned their place in our history.
+            </p>
+          </div>
+
+          <div className="championsGrid">
+            {champions.map((champion, index) => (
+              <article className="championCard" key={`${champion.year}-${champion.season}-${champion.team}`}>
+                <div className="championImageWrap">
+                  <img
+                    src={champion.image}
+                    alt={`${champion.team} - ${champion.season} ${champion.year} Champions`}
+                    className="championImage"
+                    loading="lazy"
+                  />
+
+                  <div className="championOverlay" />
+
+                  <div className="championYear">
+                    {champion.year}
+                  </div>
+
+                  <div className="championNumber">
+                    {String(index + 1).padStart(2, '0')}
+                  </div>
+                </div>
+
+                <div className="championInfo">
+                  <div className="championTrophy">
+                    <Trophy size={18} />
+                    CHAMPIONS
+                  </div>
+
+                  <p>{champion.season}</p>
+                  <h3>{champion.team}</h3>
+
+                  <div className="championView">
+                    VIEW CHAMPIONSHIP
+                    <ArrowRight size={15} />
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
       <section className="intelligenceSection">
         <div className="aiBackgroundText">AI</div>
 
