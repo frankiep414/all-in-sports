@@ -17,7 +17,7 @@ export default function MyAllInPage() {
     <main className="myAllInPage">
       <nav className="myAllInNav">
         <a href="/" className="myAllInBrand">
-          <img src="/all-in-logo.svg" alt="All In Sports" />
+         <img src="/all-in-sports-future.png" alt="All In Sports" />
         </a>
 
         <a href="/" className="backHome">
@@ -53,7 +53,7 @@ export default function MyAllInPage() {
               <p>YOUR ALL IN PROFILE</p>
             </div>
 
-            <img src="/all-in-logo.svg" alt="" />
+         <img src="/all-in-sports-future.png" alt="All In Sports" />
           </div>
 
           <div className="playerIdentity">
