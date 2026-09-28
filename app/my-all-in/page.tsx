@@ -14,7 +14,18 @@ import {
   Zap,
 } from 'lucide-react';
 
-export default function MyAllInPage() {
+export default async function MyAllInPage() {
+    const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SECRET_KEY!
+  );
+
+  const { data: player } = await supabase
+    .from('players')
+    .select('id, full_name')
+    .order('id', { ascending: false })
+    .limit(1)
+    .single();
   return (
     <main className="myAllInPage">
       <nav className="myAllInNav">
