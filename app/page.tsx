@@ -417,7 +417,6 @@ export default function Home() {
       )}
 
       <nav className="nav">
-      <nav className="nav">
         <div className="navInner">
           <a className="brand" href="#">
             <img src="/all-in-sports-future.png" alt="All In Sports" />
