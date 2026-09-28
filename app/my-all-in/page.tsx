@@ -62,7 +62,7 @@ export default async function MyAllInPage() {
           <div className="playerIdTop">
             <div>
               <span className="playerIdLabel">ALL IN // PLAYER ID</span>
-              <h2>PLAYER</h2>
+            <h2>{player?.full_name || 'PLAYER'}</h2>
               <p>YOUR ALL IN PROFILE</p>
             </div>
 
