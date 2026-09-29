@@ -95,7 +95,7 @@ export async function POST(request: Request) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'All In Sports <onboarding@resend.dev>',
+         from: 'All In Sports <welcome@allinsportsnj.com>',
           to: [email],
           subject: `Welcome to All In Sports, ${firstName}! ⚽`,
           html: `
