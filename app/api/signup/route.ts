@@ -78,6 +78,45 @@ export async function POST(request: Request) {
       } catch (smsError) {
         console.error('Twilio welcome SMS error:', smsError);
       }
+
+            // Send welcome email
+  try {
+    const resendApiKey = process.env.RESEND_API_KEY;
+
+    if (!resendApiKey) {
+      console.error('Missing RESEND_API_KEY');
+    } else {
+      const firstName = fullName.split(' ')[0];
+
+      const emailResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'All In Sports <onboarding@resend.dev>',
+          to: [email],
+          subject: `Welcome to All In Sports, ${firstName}! ⚽`,
+          html: `
+            <h1>You're officially All In! ⚽</h1>
+            <p>Hey ${firstName},</p>
+            <p>Welcome to All In Sports.</p>
+            <p>We're building the future of local sports — bringing together your Player ID, stats, highlights, leagues, events and more.</p>
+            <p>Your All In journey starts here.</p>
+            <p><strong>We'll keep you posted as new features roll out.</strong></p>
+            <p>— All In Sports</p>
+          `,
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        console.error('Resend welcome email error:', await emailResponse.text());
+      }
+    }
+  } catch (emailError) {
+    console.error('Welcome email error:', emailError);
+  }
     }
 
     return Response.json({
