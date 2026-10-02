@@ -174,11 +174,10 @@ export default function Home() {
         setShowAuthWelcome(false);
         setShowPlayerSignup(true);
       }}
-      onLogin={() => {
-        setShowAuthWelcome(false);
-        setShowPlayerSignup(true);
-        setPlayedBefore(true);
-      }}
+    onLogin={() => {
+  setShowAuthWelcome(false);
+  setShowPlayerSignup(false);
+}}
     />
   );
 }
