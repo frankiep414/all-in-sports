@@ -167,23 +167,24 @@ export default function Home() {
       });
   }
 }, []);
+  if (showAuthWelcome) {
+  return (
+    <AuthWelcome
+      onEmailSignup={() => {
+        setShowAuthWelcome(false);
+        setShowPlayerSignup(true);
+      }}
+      onLogin={() => {
+        setShowAuthWelcome(false);
+        setShowPlayerSignup(true);
+        setPlayedBefore(true);
+      }}
+    />
+  );
+}
 return (
   <main>
-    {showAuthWelcome && (
-      <AuthWelcome
-        onEmailSignup={() => {
-          setShowAuthWelcome(false);
-          setShowPlayerSignup(true);
-        }}
-        onLogin={() => {
-          setShowAuthWelcome(false);
-          setShowPlayerSignup(true);
-          setPlayedBefore(true);
-        }}
-      />
-    )}
-
-    {!showAuthWelcome && showPlayerSignup && (
+    {showPlayerSignup && (
   <div className="signupOverlay">
     <div className="signupModal">
 
