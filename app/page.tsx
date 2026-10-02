@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import AuthWelcome from './AuthWelcome';
 
 import {
   ArrowRight,
@@ -138,7 +139,8 @@ const intelligence = [
 ];
 
 export default function Home() {
-    const [showPlayerSignup, setShowPlayerSignup] = useState(true);
+  const [showAuthWelcome, setShowAuthWelcome] = useState(true);
+  const [showPlayerSignup, setShowPlayerSignup] = useState(true);
   const [playedBefore, setPlayedBefore] = useState(false);
   const [signupComplete, setSignupComplete] = useState(false);
   const [selectedChampion, setSelectedChampion] = useState<(typeof champions)[number] | null>(null);
@@ -151,6 +153,7 @@ export default function Home() {
 
   if (savedPlayerId) {
     setShowPlayerSignup(false);
+    setShowAuthWelcome(false);
 
     fetch(`/api/player?id=${savedPlayerId}`)
       .then((response) => response.json())
@@ -164,9 +167,23 @@ export default function Home() {
       });
   }
 }, []);
-  return (
-    <main>
-      {showPlayerSignup && (
+return (
+  <main>
+    {showAuthWelcome && (
+      <AuthWelcome
+        onEmailSignup={() => {
+          setShowAuthWelcome(false);
+          setShowPlayerSignup(true);
+        }}
+        onLogin={() => {
+          setShowAuthWelcome(false);
+          setShowPlayerSignup(true);
+          setPlayedBefore(true);
+        }}
+      />
+    )}
+
+    {!showAuthWelcome && showPlayerSignup && (
   <div className="signupOverlay">
     <div className="signupModal">
 
