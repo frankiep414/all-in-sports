@@ -154,6 +154,7 @@ export default function Home() {
   id: number;
   full_name: string;
 } | null>(null);
+  const [verifiedEmail, setVerifiedEmail] = useState('');
   useEffect(() => {
   const savedPlayerId = localStorage.getItem('allInPlayerId');
 
@@ -180,9 +181,9 @@ export default function Home() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (user?.email) {
-      console.log('Verified Supabase user:', user.email);
-    }
+   if (user?.email) {
+  setVerifiedEmail(user.email);
+}
   }
 
   checkSupabaseUser();
