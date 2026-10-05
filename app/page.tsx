@@ -305,8 +305,7 @@ setSignupComplete(true);
   <input
     type="email"
     name="email"
-    value={verifiedEmail}
-    readOnly
+ defaultValue={verifiedEmail}
     required
   />
 </label>
