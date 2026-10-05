@@ -276,15 +276,7 @@ setSignupComplete(true);
                 />
               </label>
 
-              <label>
-                Email
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="you@email.com"
-                  required
-                />
-              </label>
+             
             </div>
 
             <div className="signupQuestion">
