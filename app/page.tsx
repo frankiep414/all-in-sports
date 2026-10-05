@@ -300,6 +300,16 @@ setSignupComplete(true);
              
             </div>
 
+            <label>
+  Email
+  <input
+    type="email"
+    name="email"
+    value={verifiedEmail}
+    readOnly
+    required
+  />
+</label>
             <div className="signupQuestion">
               <span>Have you played with All In before?</span>
 
