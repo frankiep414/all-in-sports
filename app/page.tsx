@@ -173,6 +173,20 @@ export default function Home() {
       });
   }
 }, []);
+
+  useEffect(() => {
+  async function checkSupabaseUser() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user?.email) {
+      console.log('Verified Supabase user:', user.email);
+    }
+  }
+
+  checkSupabaseUser();
+}, []);
   if (showAuthWelcome) {
   return (
     <AuthWelcome
