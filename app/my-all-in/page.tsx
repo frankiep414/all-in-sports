@@ -87,7 +87,9 @@ export default function MyAllInPage() {
           <div className="playerIdentity">
             <div className="playerNumber">
               <span>PLAYER</span>
-              <strong>#----</strong>
+             <strong>
+  #{player?.id ? String(player.id).padStart(4, '0') : '----'}
+</strong>
             </div>
 
             <div className="aiRating">
