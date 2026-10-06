@@ -560,6 +560,27 @@ setSignupComplete(true);
         ? String(currentPlayer.id).padStart(4, '0')
         : '----'}
     </small>
+    <div className="launchpadMiniStats">
+  <div>
+    <strong>0</strong>
+    <span>GP</span>
+  </div>
+
+  <div>
+    <strong>0</strong>
+    <span>G</span>
+  </div>
+
+  <div>
+    <strong>0</strong>
+    <span>A</span>
+  </div>
+
+  <div>
+    <strong>—</strong>
+    <span>AI RATING</span>
+  </div>
+</div>
   </div>
 </div>
     <div className="launchpadGrid">
