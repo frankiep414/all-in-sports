@@ -547,7 +547,7 @@ setSignupComplete(true);
         Play soccer. Compete. Meet people. Go All In.
       </p>
     </div>
-<div className="launchpadPlayer">
+<a href="/my-all-in" className="launchpadPlayer">
   <img
     src="/all-in-player.png"
     alt=""
@@ -627,7 +627,7 @@ setSignupComplete(true);
       </div>
     </div>
   </div>
-</div>
+</a>
     <div className="launchpadGrid">
 
       <a href="#play" className="launchCard">
