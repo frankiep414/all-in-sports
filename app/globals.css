@@ -3068,11 +3068,15 @@ padding: 40px 24px 50px;
   width: 100%;
 }
 
-  .launchCard {
-    min-height: 125px;
-    padding: 20px;
-    display: block;
-  }
+ .launchCard {
+  min-width: 0;
+  width: 100%;
+  min-height: 190px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
   .launchIcon {
     width: 42px;
@@ -3081,8 +3085,18 @@ padding: 40px 24px 50px;
   }
 
   .launchCard h2 {
-    font-size: 23px;
-  }
+  font-size: 20px;
+  line-height: 1.05;
+  letter-spacing: -0.5px;
+  white-space: normal;
+  overflow-wrap: normal;
+}
+
+  .launchCardContent p {
+  font-size: 14px;
+  line-height: 1.35;
+  white-space: normal;
+}
 
   .launchArrow {
     right: 20px;
