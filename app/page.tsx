@@ -585,6 +585,49 @@ setSignupComplete(true);
 </div>
   </div>
 </div>
+    <div className="mobilePlayerIdentity">
+  <img
+    src="/all-in-player.png"
+    alt=""
+    aria-hidden="true"
+  />
+
+  <div className="mobilePlayerDetails">
+    <span className="mobilePlayerLabel">MY ALL IN</span>
+
+    <strong>
+      {currentPlayer?.full_name || 'PLAYER'}
+    </strong>
+
+    <small>
+      PLAYER ID • #{currentPlayer?.id
+        ? String(currentPlayer.id).padStart(4, '0')
+        : '----'}
+    </small>
+
+    <div className="mobilePlayerStats">
+      <div>
+        <strong>0</strong>
+        <span>GP</span>
+      </div>
+
+      <div>
+        <strong>0</strong>
+        <span>G</span>
+      </div>
+
+      <div>
+        <strong>0</strong>
+        <span>A</span>
+      </div>
+
+      <div>
+        <strong>—</strong>
+        <span>AI RATING</span>
+      </div>
+    </div>
+  </div>
+</div>
     <div className="launchpadGrid">
 
       <a href="#play" className="launchCard">
