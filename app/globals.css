@@ -3041,6 +3041,10 @@ padding: 40px 24px 50px;
 }
 
 /* Mobile */
+
+.mobilePlayerIdentity {
+  display: none;
+}
 @media (max-width: 600px) {
   .homeLaunchpad {
     min-height: calc(100vh - 75px);
@@ -3105,6 +3109,89 @@ padding: 40px 24px 50px;
 
   .launchpadHint {
     display: none;
+  }
+    /* Mobile My All In player identity */
+  .mobilePlayerIdentity {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin: 6px 0 24px;
+    padding: 14px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 18px;
+    background:
+      linear-gradient(135deg, rgba(92, 210, 255, 0.08), transparent 55%),
+      rgba(255, 255, 255, 0.025);
+    overflow: hidden;
+  }
+
+  .mobilePlayerIdentity > img {
+    width: 92px;
+    height: 118px;
+    object-fit: contain;
+    object-position: center bottom;
+    flex-shrink: 0;
+    margin-right: 14px;
+  }
+
+  .mobilePlayerDetails {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobilePlayerLabel {
+    display: block;
+    color: #70d9ff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin-bottom: 3px;
+  }
+
+  .mobilePlayerDetails > strong {
+    display: block;
+    color: #fff;
+    font-size: 18px;
+    line-height: 1.05;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .mobilePlayerDetails > small {
+    display: block;
+    margin-top: 5px;
+    color: #8792a8;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.3px;
+  }
+
+  .mobilePlayerStats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 13px;
+  }
+
+  .mobilePlayerStats > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .mobilePlayerStats strong {
+    color: #fff;
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .mobilePlayerStats span {
+    margin-top: 4px;
+    color: #70d9ff;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.7px;
+    white-space: nowrap;
   }
 }
 
