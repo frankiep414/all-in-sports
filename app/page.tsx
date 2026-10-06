@@ -584,7 +584,7 @@ setSignupComplete(true);
   </div>
 </div>
   </div>
-</div>
+</a>
     <div className="mobilePlayerIdentity">
   <img
     src="/all-in-player.png"
