@@ -520,9 +520,11 @@ setSignupComplete(true);
             <a href="#community">Community</a>
           </div>
 
-         <a href="/my-all-in" className="profileButton">
+     <a href="/my-all-in" className="profileButton">
   <CircleUserRound size={18} />
-  My All In
+  {currentPlayer?.full_name
+    ? currentPlayer.full_name.split(' ')[0]
+    : 'My All In'}
 </a>
         </div>
       </nav>
