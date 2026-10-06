@@ -531,7 +531,9 @@ setSignupComplete(true);
   <div className="launchpadInner">
 
     <div className="launchpadIntro">
-      <p className="launchpadEyebrow">ALL IN SPORTS</p>
+     <p className="launchpadEyebrow">
+  WELCOME BACK{currentPlayer?.full_name ? `, ${currentPlayer.full_name.split(' ')[0].toUpperCase()}` : ''}.
+</p>
 
       <h1>
         WHAT DO YOU WANT
