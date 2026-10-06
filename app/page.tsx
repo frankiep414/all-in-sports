@@ -590,15 +590,28 @@ setSignupComplete(true);
         <ArrowRight className="launchArrow" size={24} />
       </a>
 
+      <a href="#history" className="launchCard">
+  <div className="launchIcon">
+    <Trophy size={28} />
+  </div>
+
+  <div className="launchCardContent">
+    <span className="launchNumber">04</span>
+    <h2>HISTORY</h2>
+    <p>Champions & All In Legacy</p>
+  </div>
+
+  <ArrowRight className="launchArrow" size={24} />
+</a>
       <a href="#my-all-in" className="launchCard">
         <div className="launchIcon">
           <CircleUserRound size={28} />
         </div>
 
         <div className="launchCardContent">
-          <span className="launchNumber">04</span>
+          <span className="launchNumber">05</span>
           <h2>MY ALL IN</h2>
-          <p>Player ID & Profile</p>
+         <p>Player ID, Stats & Achievements</p>
         </div>
 
         <ArrowRight className="launchArrow" size={24} />
@@ -612,7 +625,7 @@ setSignupComplete(true);
 
   </div>
 </section>
-      <section className="section" id="play">
+      <section className="section" id="play" style={{ display: 'none' }}>
         <div className="sectionHeading">
           <div>
             <p className="eyebrow">YOUR NEXT MOVE</p>
