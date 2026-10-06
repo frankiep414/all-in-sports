@@ -632,7 +632,7 @@ setSignupComplete(true);
       </div>
     </div>
   </div>
-
+</div>
     <div className="launchpadGrid">
 
       <a href="#play" className="launchCard">
