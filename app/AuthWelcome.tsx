@@ -391,16 +391,6 @@ export default function AuthWelcome({
           Continue with Google
         </button>
 
-        {/* APPLE */}
-        <button
-          type="button"
-          style={socialButton}
-          onClick={() => alert('Apple sign-in coming next')}
-        >
-          <span style={{ fontSize: '24px' }}>●</span>
-          Continue with Apple
-        </button>
-
         {/* DIVIDER */}
         <div
           style={{
