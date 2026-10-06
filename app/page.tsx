@@ -603,19 +603,6 @@ setSignupComplete(true);
 
   <ArrowRight className="launchArrow" size={24} />
 </a>
-      <a href="#my-all-in" className="launchCard">
-        <div className="launchIcon">
-          <CircleUserRound size={28} />
-        </div>
-
-        <div className="launchCardContent">
-          <span className="launchNumber">05</span>
-          <h2>MY ALL IN</h2>
-         <p>Player ID, Stats & Achievements</p>
-        </div>
-
-        <ArrowRight className="launchArrow" size={24} />
-      </a>
 
     </div>
 
