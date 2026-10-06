@@ -585,7 +585,12 @@ setSignupComplete(true);
 </div>
   </div>
 </a>
-    <div className="mobilePlayerIdentity">
+    <div
+  className="mobilePlayerIdentity"
+  onClick={() => window.location.href = '/my-all-in'}
+  role="link"
+  tabIndex={0}
+>
   <img
     src="/all-in-player.png"
     alt=""
@@ -627,7 +632,7 @@ setSignupComplete(true);
       </div>
     </div>
   </div>
-</a>
+
     <div className="launchpadGrid">
 
       <a href="#play" className="launchCard">
