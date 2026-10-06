@@ -181,11 +181,36 @@ useEffect(() => {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (user?.email) {
-      setVerifiedEmail(user.email);
+    if (!user?.email) {
+      return;
+    }
 
-      // User successfully authenticated with Google.
-      // Move them into the All In player setup flow.
+    const email = user.email;
+    setVerifiedEmail(email);
+
+    try {
+      const response = await fetch(
+        `/api/player?email=${encodeURIComponent(email)}`
+      );
+
+      if (response.ok) {
+        const player = await response.json();
+
+        if (player?.id) {
+          localStorage.setItem('allInPlayerId', String(player.id));
+          setCurrentPlayer(player);
+          setShowAuthWelcome(false);
+          setShowPlayerSignup(false);
+          return;
+        }
+      }
+
+      // Authenticated, but no existing player uses this email.
+      // Send them through the Player ID setup flow.
+      setShowAuthWelcome(false);
+      setShowPlayerSignup(true);
+    } catch (error) {
+      console.error('Unable to look up player by email:', error);
       setShowAuthWelcome(false);
       setShowPlayerSignup(true);
     }
