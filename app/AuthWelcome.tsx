@@ -373,7 +373,19 @@ export default function AuthWelcome({
         <button
           type="button"
           style={socialButton}
-          onClick={() => alert('Google sign-in coming next')}
+          onClick={async () => {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: 'https://allinsportsnj.com',
+    },
+  });
+
+  if (error) {
+    console.error('Google sign-in error:', error);
+    alert('Unable to sign in with Google. Please try again.');
+  }
+}}
         >
           <span style={{ fontWeight: 900, fontSize: '21px' }}>G</span>
           Continue with Google
