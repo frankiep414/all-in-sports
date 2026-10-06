@@ -545,7 +545,23 @@ setSignupComplete(true);
         Play soccer. Compete. Meet people. Go All In.
       </p>
     </div>
+<div className="launchpadPlayer">
+  <img
+    src="/all-in-player.png"
+    alt=""
+    aria-hidden="true"
+  />
 
+  <div className="launchpadPlayerInfo">
+    <span>MY ALL IN</span>
+    <strong>{currentPlayer?.full_name || 'PLAYER'}</strong>
+    <small>
+      PLAYER ID • #{currentPlayer?.id
+        ? String(currentPlayer.id).padStart(4, '0')
+        : '----'}
+    </small>
+  </div>
+</div>
     <div className="launchpadGrid">
 
       <a href="#play" className="launchCard">
