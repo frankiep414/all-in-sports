@@ -527,113 +527,89 @@ setSignupComplete(true);
         </div>
       </nav>
 
-      <section className="hero heroCinematic">
-        <div className="heroGlow heroGlowOne" />
-        <div className="heroGlow heroGlowTwo" />
+      <section className="homeLaunchpad">
+  <div className="launchpadInner">
 
-        <div className="gridOverlay" />
-        
-        <img
-  className="heroPlayer"
-  src="/all-in-player.png"
-  alt=""
-  aria-hidden="true"
-/>
+    <div className="launchpadIntro">
+      <p className="launchpadEyebrow">ALL IN SPORTS</p>
 
-        <div className="heroContent">
-          <div className="heroBadge">
-            <Sparkles size={14} />
-            THE FUTURE OF LOCAL SPORTS
-          </div>
+      <h1>
+        WHAT DO YOU WANT
+        <br />
+        TO <span>DO?</span>
+      </h1>
 
-          <p className="heroKicker">ALL IN // AI SPORTS</p>
-          
-<div className="heroLogo">
-  <img src="/all-in-sports-future.png" alt="All In Sports" />
-</div>
-          <h1>
-            MORE THAN
-            <br />
-            <span>A GAME.</span>
-          </h1>
+      <p className="launchpadSubtitle">
+        Play soccer. Compete. Meet people. Go All In.
+      </p>
+    </div>
 
-          <p className="heroText">
-            Play. Compete. Connect. A new kind of sports community built for
-            the players who go all in.
-          </p>
+    <div className="launchpadGrid">
 
-          <div className="heroActions">
-            <button className="primaryButton">
-              Find a Game
-              <ArrowRight size={18} />
-            </button>
-
-            <button className="ghostButton">
-              Explore All In
-              <ChevronRight size={18} />
-            </button>
-          </div>
-
-          <div className="heroStats">
-            <div>
-              <strong>PLAY</strong>
-              <span>Pickup & Open Play</span>
-            </div>
-            <div>
-              <strong>COMPETE</strong>
-              <span>Leagues & Tournaments</span>
-            </div>
-            <div>
-              <strong>CONNECT</strong>
-              <span>Players & Community</span>
-            </div>
-          </div>
+      <a href="#play" className="launchCard">
+        <div className="launchIcon">
+          <Play size={28} />
         </div>
 
-        <div className="heroVisual">
-          <div className="techCard">
-            <div className="techCardTop">
-              <span className="liveDot" />
-              ALL IN PLAYER ID
-              <span className="beta">FUTURE</span>
-            </div>
-
-  <div className="playerAvatar">
-  <img src="/all-in-player.png" alt="Marcus Reyes" />
-</div>
-
-            <div className="playerIdentity">
-  <span>PLAYER PROFILE</span>
- <strong>{currentPlayer?.full_name || 'PLAYER'}</strong>
- <small>PLAYER ID • #{currentPlayer?.id ? String(currentPlayer.id).padStart(4, '0') : '----'}</small>
-</div>
-
-            <div className="miniStats">
-              <div>
-                <strong>0</strong>
-                <span>GP</span>
-              </div>
-              <div>
-                <strong>0</strong>
-                <span>G</span>
-              </div>
-              <div>
-                <strong>0</strong>
-                <span>A</span>
-              </div>
-              <div>
-                <strong>Unrated</strong>
-                <span>AI rating</span>
-              </div>
-            </div>
-
-            <div className="scanLine" />
-
-            <p>AI-powered match intelligence</p>
-          </div>
+        <div className="launchCardContent">
+          <span className="launchNumber">01</span>
+          <h2>PLAY</h2>
+          <p>Pickup & Open Play</p>
         </div>
-      </section>
 
+        <ArrowRight className="launchArrow" size={24} />
+      </a>
+
+      <a href="#compete" className="launchCard">
+        <div className="launchIcon">
+          <Trophy size={28} />
+        </div>
+
+        <div className="launchCardContent">
+          <span className="launchNumber">02</span>
+          <h2>COMPETE</h2>
+          <p>Leagues & Tournaments</p>
+        </div>
+
+        <ArrowRight className="launchArrow" size={24} />
+      </a>
+
+      <a href="#events" className="launchCard">
+        <div className="launchIcon">
+          <CalendarDays size={28} />
+        </div>
+
+        <div className="launchCardContent">
+          <span className="launchNumber">03</span>
+          <h2>EVENTS</h2>
+          <p>Parties & Special Events</p>
+        </div>
+
+        <ArrowRight className="launchArrow" size={24} />
+      </a>
+
+      <a href="#my-all-in" className="launchCard">
+        <div className="launchIcon">
+          <CircleUserRound size={28} />
+        </div>
+
+        <div className="launchCardContent">
+          <span className="launchNumber">04</span>
+          <h2>MY ALL IN</h2>
+          <p>Player ID & Profile</p>
+        </div>
+
+        <ArrowRight className="launchArrow" size={24} />
+      </a>
+
+    </div>
+
+    <p className="launchpadHint">
+      Choose where you want to go.
+    </p>
+
+  </div>
+</section>
       <section className="section" id="play">
         <div className="sectionHeading">
           <div>
