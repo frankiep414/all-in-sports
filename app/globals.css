@@ -2859,3 +2859,236 @@ padding: 40px 24px 50px;
     padding: 30px 20px;
   }
 }
+
+/* =========================================================
+   ALL IN — HOME LAUNCHPAD
+   ========================================================= */
+
+.homeLaunchpad {
+  min-height: calc(100vh - 92px);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(89, 205, 255, 0.10), transparent 38%),
+    linear-gradient(180deg, #080b10 0%, #05070a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 55px 32px 65px;
+}
+
+.launchpadInner {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.launchpadIntro {
+  text-align: center;
+  margin-bottom: 45px;
+}
+
+.launchpadEyebrow {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: #6edcff;
+}
+
+.launchpadIntro h1 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(48px, 5vw, 76px);
+  line-height: 0.95;
+  letter-spacing: -3px;
+  font-weight: 900;
+}
+
+.launchpadIntro h1 span {
+  color: #6edcff;
+}
+
+.launchpadSubtitle {
+  margin: 22px auto 0;
+  color: #aeb7c4;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.launchpadGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.launchCard {
+  position: relative;
+  min-height: 245px;
+  padding: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.035);
+  text-decoration: none;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+.launchCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    145deg,
+    rgba(110, 220, 255, 0.09),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.launchCard:hover {
+  transform: translateY(-6px);
+  border-color: rgba(110, 220, 255, 0.65);
+  background: rgba(110, 220, 255, 0.07);
+}
+
+.launchCard:hover::before {
+  opacity: 1;
+}
+
+.launchIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(110, 220, 255, 0.10);
+  border: 1px solid rgba(110, 220, 255, 0.22);
+  color: #6edcff;
+}
+
+.launchCardContent {
+  position: relative;
+  z-index: 1;
+}
+
+.launchNumber {
+  display: block;
+  margin-bottom: 7px;
+  color: #6edcff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.launchCard h2 {
+  margin: 0 0 8px;
+  color: #ffffff;
+  font-size: 27px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+.launchCard p {
+  margin: 0;
+  color: #929ba8;
+  font-size: 14px;
+}
+
+.launchArrow {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  color: #6edcff;
+  transition: transform 0.25s ease;
+}
+
+.launchCard:hover .launchArrow {
+  transform: translateX(5px);
+}
+
+.launchpadHint {
+  margin: 25px 0 0;
+  text-align: center;
+  color: #626c79;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* Tablet */
+@media (max-width: 950px) {
+  .homeLaunchpad {
+    align-items: flex-start;
+    padding-top: 50px;
+  }
+
+  .launchpadGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .launchCard {
+    min-height: 210px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .homeLaunchpad {
+    min-height: calc(100vh - 75px);
+    padding: 38px 18px 45px;
+  }
+
+  .launchpadIntro {
+    text-align: left;
+    margin-bottom: 30px;
+  }
+
+  .launchpadIntro h1 {
+    font-size: 45px;
+    letter-spacing: -2px;
+  }
+
+  .launchpadSubtitle {
+    margin-top: 16px;
+    font-size: 16px;
+  }
+
+  .launchpadGrid {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+
+  .launchCard {
+    min-height: 125px;
+    padding: 20px;
+    display: block;
+  }
+
+  .launchIcon {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 18px;
+  }
+
+  .launchCard h2 {
+    font-size: 23px;
+  }
+
+  .launchArrow {
+    right: 20px;
+    bottom: 20px;
+  }
+
+  .launchpadHint {
+    display: none;
+  }
+}
