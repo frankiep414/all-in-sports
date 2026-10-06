@@ -175,15 +175,20 @@ export default function Home() {
   }
 }, []);
 
-  useEffect(() => {
+useEffect(() => {
   async function checkSupabaseUser() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-   if (user?.email) {
-  setVerifiedEmail(user.email);
-}
+    if (user?.email) {
+      setVerifiedEmail(user.email);
+
+      // User successfully authenticated with Google.
+      // Move them into the All In player setup flow.
+      setShowAuthWelcome(false);
+      setShowPlayerSignup(true);
+    }
   }
 
   checkSupabaseUser();
