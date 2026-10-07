@@ -4536,3 +4536,43 @@ html {
     scroll-behavior: auto;
   }
 }
+
+/* CARMITA — COMPACT TOP NAVIGATION */
+
+.carmitaQuickNav {
+  background: #080c11;
+}
+
+.carmitaQuickNavInner {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.carmitaQuickNavInner a {
+  min-height: 54px;
+  padding: 12px 16px;
+}
+
+/* SHOW MORE OF THE CARMITA FLYER */
+
+.carmitaArtworkFade {
+  display: none;
+}
+
+.carmitaArtworkFrame {
+  height: 610px;
+}
+
+.carmitaHeroArtwork {
+  min-height: 630px;
+}
+
+@media (max-width: 700px) {
+  .carmitaArtworkFrame {
+    height: 520px;
+  }
+
+  .carmitaHeroArtwork {
+    min-height: auto;
+  }
+}
