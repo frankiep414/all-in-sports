@@ -122,9 +122,38 @@ export default function PlayForCarmitaPage() {
         </div>
       </section>
 
+{/* QUICK NAVIGATION */}
+<nav className="carmitaQuickNav" aria-label="Explore Play for Carmita">
+  <div className="carmitaQuickNavInner">
 
+    <a href="#why-we-play">
+      <span>01</span>
+      <strong>WHY WE PLAY</strong>
+      <span className="carmitaQuickArrow">↗</span>
+    </a>
+
+    <a href="#bigger-purpose">
+      <span>02</span>
+      <strong>BIGGER PURPOSE</strong>
+      <span className="carmitaQuickArrow">↗</span>
+    </a>
+
+    <a href="#event-information">
+      <span>03</span>
+      <strong>EVENT INFORMATION</strong>
+      <span className="carmitaQuickArrow">↗</span>
+    </a>
+
+    <a href="#register">
+      <span>04</span>
+      <strong>REGISTRATION</strong>
+      <span className="carmitaQuickArrow">↗</span>
+    </a>
+
+  </div>
+</nav>
       {/* STORY */}
-      <section className="carmitaStory">
+    <section id="why-we-play" className="carmitaStory">
         <div className="carmitaContent">
 
           <div className="carmitaStoryHeading">
@@ -156,7 +185,7 @@ export default function PlayForCarmitaPage() {
 
 
           {/* FOUNDATION */}
-          <div className="carmitaFoundation">
+          <div id="bigger-purpose" className="carmitaFoundation">
 
             <div className="carmitaFoundationCopy">
               <p className="eyebrow">PLAYING FOR A BIGGER PURPOSE</p>
@@ -187,7 +216,7 @@ export default function PlayForCarmitaPage() {
 
 
       {/* EVENT DETAILS */}
-      <section className="carmitaDetailsSection">
+      <section id="event-information" className="carmitaDetailsSection">
         <div className="carmitaContent">
 
           <div className="carmitaDetailsHeader">
