@@ -4330,3 +4330,106 @@ padding: 40px 24px 50px;
   }
 
 }
+
+/* =========================================================
+   PLAY FOR CARMITA — HERO CAMPAIGN ART
+   ========================================================= */
+
+.carmitaHeroArtwork {
+  position: relative;
+  min-height: 590px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carmitaArtworkGlow {
+  position: absolute;
+  width: 540px;
+  height: 540px;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      rgba(168, 70, 255, 0.17) 0%,
+      rgba(34, 230, 255, 0.07) 42%,
+      transparent 72%
+    );
+  filter: blur(65px);
+}
+
+/*
+  We are deliberately showing ONLY the upper campaign artwork.
+  The original flyer file itself is not modified.
+*/
+.carmitaArtworkFrame {
+  position: relative;
+  width: min(610px, 100%);
+  height: 535px;
+  overflow: hidden;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: #05070a;
+  box-shadow:
+    0 45px 120px rgba(0, 0, 0, 0.60),
+    0 0 70px rgba(137, 70, 255, 0.10);
+  transform: rotate(1deg);
+}
+
+.carmitaArtworkFrame img {
+  position: absolute;
+  width: 100%;
+  height: auto;
+
+  /*
+    Flyer is portrait.
+    This scales it up so the family + campaign artwork
+    dominate instead of showing the entire flyer.
+  */
+  left: 0;
+  top: 0;
+  display: block;
+}
+
+/*
+  Fade the bottom of the cropped flyer into the website
+  instead of ending with a hard rectangular edge.
+*/
+.carmitaArtworkFade {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      180deg,
+      transparent 55%,
+      rgba(5, 7, 10, 0.15) 72%,
+      #05070a 100%
+    );
+}
+
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+
+  .carmitaHeroArtwork {
+    width: 100%;
+    min-height: auto;
+  }
+
+  .carmitaArtworkFrame {
+    width: 100%;
+    height: 440px;
+    border-radius: 20px;
+    transform: none;
+  }
+
+  .carmitaArtworkGlow {
+    width: 350px;
+    height: 350px;
+  }
+
+}
