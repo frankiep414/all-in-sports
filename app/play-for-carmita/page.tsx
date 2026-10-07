@@ -123,9 +123,6 @@ export default function PlayForCarmitaPage() {
       </section>
 
 
-          </section>
-
-
       {/* STORY */}
       <section className="carmitaStory">
         <div className="carmitaContent">
