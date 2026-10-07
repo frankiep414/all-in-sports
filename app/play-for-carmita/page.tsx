@@ -103,26 +103,21 @@ export default function PlayForCarmitaPage() {
           </div>
 
 
-          {/* ORIGINAL PHOTO — NEVER ALTERED */}
-          <div className="carmitaHeroPhoto">
+         {/* PLAY FOR CARMITA CAMPAIGN ART */}
+<div className="carmitaHeroArtwork">
 
-            <div className="carmitaPhotoAura" />
+  <div className="carmitaArtworkGlow" />
 
-            <div className="carmitaPhotoShell">
-              <img
-                src="/mom and chris_frank.jpg"
-                alt="Carmita with Frank and Chris"
-              />
+  <div className="carmitaArtworkFrame">
+    <img
+      src="/play-for-carmita-flyer.png"
+      alt="Play for Carmita charity soccer tournament"
+    />
 
-              <div className="carmitaPhotoOverlay" />
+    <div className="carmitaArtworkFade" />
+  </div>
 
-              <div className="carmitaPhotoTag">
-                <span>WHY WE PLAY</span>
-                <strong>FOR MOM.</strong>
-              </div>
-            </div>
-
-          </div>
+</div>
 
         </div>
       </section>
