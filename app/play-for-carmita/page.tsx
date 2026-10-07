@@ -33,6 +33,36 @@ export default function PlayForCarmitaPage() {
         </div>
       </nav>
 
+      {/* QUICK NAVIGATION */}
+<nav className="carmitaQuickNav" aria-label="Explore Play for Carmita">
+  <div className="carmitaQuickNavInner">
+
+    <a href="#why-we-play">
+      <span>01</span>
+      <strong>WHY WE PLAY</strong>
+      <span className="carmitaQuickArrow">↗</span>
+    </a>
+
+    <a href="#bigger-purpose">
+      <span>02</span>
+      <strong>BIGGER PURPOSE</strong>
+      <span className="carmitaQuickArrow">↗</span>
+    </a>
+
+    <a href="#event-information">
+      <span>03</span>
+      <strong>EVENT INFORMATION</strong>
+      <span className="carmitaQuickArrow">↗</span>
+    </a>
+
+    <a href="#register">
+      <span>04</span>
+      <strong>REGISTRATION</strong>
+      <span className="carmitaQuickArrow">↗</span>
+    </a>
+
+  </div>
+</nav>
 
       {/* HERO */}
       <section className="carmitaHero">
@@ -122,36 +152,7 @@ export default function PlayForCarmitaPage() {
         </div>
       </section>
 
-{/* QUICK NAVIGATION */}
-<nav className="carmitaQuickNav" aria-label="Explore Play for Carmita">
-  <div className="carmitaQuickNavInner">
 
-    <a href="#why-we-play">
-      <span>01</span>
-      <strong>WHY WE PLAY</strong>
-      <span className="carmitaQuickArrow">↗</span>
-    </a>
-
-    <a href="#bigger-purpose">
-      <span>02</span>
-      <strong>BIGGER PURPOSE</strong>
-      <span className="carmitaQuickArrow">↗</span>
-    </a>
-
-    <a href="#event-information">
-      <span>03</span>
-      <strong>EVENT INFORMATION</strong>
-      <span className="carmitaQuickArrow">↗</span>
-    </a>
-
-    <a href="#register">
-      <span>04</span>
-      <strong>REGISTRATION</strong>
-      <span className="carmitaQuickArrow">↗</span>
-    </a>
-
-  </div>
-</nav>
       {/* STORY */}
     <section id="why-we-play" className="carmitaStory">
         <div className="carmitaContent">
