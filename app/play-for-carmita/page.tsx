@@ -110,7 +110,7 @@ export default function PlayForCarmitaPage() {
 
   <div className="carmitaArtworkFrame">
     <img
-      src="/play-for-carmita-flyer.png"
+      src="/Play_For_Carmita_Correct_Official_All_In_Logo.png"
       alt="Play for Carmita charity soccer tournament"
     />
 
