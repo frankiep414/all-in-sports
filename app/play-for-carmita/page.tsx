@@ -123,32 +123,7 @@ export default function PlayForCarmitaPage() {
       </section>
 
 
-      {/* EVENT BAR */}
-      <section className="carmitaEventBar">
-        <div className="carmitaEventBarInner">
-
-          <div>
-            <span>01</span>
-            <strong>SUNDAY, NOVEMBER 1</strong>
-          </div>
-
-          <div>
-            <span>02</span>
-            <strong>11:00 AM – 4:00 PM</strong>
-          </div>
-
-          <div>
-            <span>03</span>
-            <strong>COED · 7V7</strong>
-          </div>
-
-          <div>
-            <span>04</span>
-            <strong>SAME GAME. BIGGER PURPOSE.</strong>
-          </div>
-
-        </div>
-      </section>
+          </section>
 
 
       {/* STORY */}
