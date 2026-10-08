@@ -155,9 +155,11 @@ export default function Home() {
   full_name: string;
 } | null>(null);
   const [verifiedEmail, setVerifiedEmail] = useState('');
+  const [authChecking, setAuthChecking] = useState(true);
   async function loadVerifiedPlayer() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token || !session.user.email) {
+      setAuthChecking(false);
       localStorage.removeItem('allInPlayerId');
       setCurrentPlayer(null);
       setShowAuthWelcome(true);
@@ -174,14 +176,17 @@ export default function Home() {
       setCurrentPlayer(player);
       setShowAuthWelcome(false);
       setShowPlayerSignup(false);
+      setAuthChecking(false);
     } else if (response.status === 404) {
       localStorage.removeItem('allInPlayerId');
       setCurrentPlayer(null);
       setShowAuthWelcome(false);
       setShowPlayerSignup(true);
+      setAuthChecking(false);
     } else {
       console.error('Unable to verify player profile:', response.status);
       setShowAuthWelcome(true);
+      setAuthChecking(false);
     }
   }
 
@@ -198,6 +203,7 @@ export default function Home() {
     return () => subscription.unsubscribe();
   }, []);
 
+  if (authChecking) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center' }}>Loading All In Sports…</main>;
   if (showAuthWelcome) {
   return (
     <AuthWelcome
