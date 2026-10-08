@@ -108,15 +108,15 @@ export default function PlayForCarmitaPage() {
               <div>
                 <CalendarDays size={17} />
                 <span>
-                  <strong>NOV 1</strong>
-                  SUNDAY
+                  <strong>OCT 31</strong>
+                  SATURDAY
                 </span>
               </div>
 
               <div>
                 <Clock3 size={17} />
                 <span>
-                  <strong>11AM–4PM</strong>
+                  <strong>9AM–2PM</strong>
                   EVENT TIME
                 </span>
               </div>
