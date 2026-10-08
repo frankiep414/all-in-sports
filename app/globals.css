@@ -4620,3 +4620,47 @@ html {
 .carmitaQuickNavInner a:nth-child(2):hover {
   background: linear-gradient(135deg, #d9b5ff, #b47aff);
 }
+
+/* CARMITA — HIGH VISIBILITY NAVIGATION */
+
+.carmitaQuickNavInner a {
+  background: linear-gradient(
+    135deg,
+    #6edcff 0%,
+    #39c9f5 100%
+  );
+  border: 1px solid #8be8ff;
+  color: #061018;
+  box-shadow: 0 4px 22px rgba(34, 230, 255, 0.18);
+}
+
+.carmitaQuickNavInner a:hover {
+  background: linear-gradient(
+    135deg,
+    #a8ecff 0%,
+    #6edcff 100%
+  );
+  border-color: #c4f4ff;
+  box-shadow: 0 8px 30px rgba(34, 230, 255, 0.32);
+  transform: translateY(-3px);
+}
+
+.carmitaQuickNavInner a > span:first-child,
+.carmitaQuickArrow {
+  color: #273a54;
+}
+
+.carmitaQuickNavInner strong {
+  color: #061018;
+  font-weight: 900;
+}
+
+/* Purple accent on the second button */
+.carmitaQuickNavInner a:nth-child(2) {
+  background: linear-gradient(135deg, #c18aff, #9954ed);
+  border-color: #d3a7ff;
+}
+
+.carmitaQuickNavInner a:nth-child(2):hover {
+  background: linear-gradient(135deg, #d9b5ff, #b47aff);
+}
