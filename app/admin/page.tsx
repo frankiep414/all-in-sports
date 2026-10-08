@@ -43,6 +43,28 @@ export default function AdminPage() {
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update draft.');}
     finally{setDraftActionBusy(false);}
   }
+  async function changeStatus(item:PickupGame,action:'publish'|'cancel'){
+    const question=action==='publish'
+      ?`Publish "${item.title}" to the public Play page? Registration and payment will remain closed.`
+      :`Cancel "${item.title}"? It will disappear from the public Play page.`;
+    if(!window.confirm(question))return;
+    setDraftActionBusy(true);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Please sign in again.');
+      const response=await fetch('/api/admin/games',{method:'PATCH',
+       headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+       body:JSON.stringify({id:item.id,action})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Unable to change game status.');
+      await loadGames(session.access_token);
+      setEditMessage(action==='publish'?'Game published on the preview Play page. Registration remains closed.':'Game cancelled.');
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update game.');}
+    finally{setDraftActionBusy(false);}
+  }
   function beginEdit(item:PickupGame) {
     const format=(iso:string)=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso));
     const pieces=(iso:string)=>Object.fromEntries(format(iso).map(part=>[part.type,part.value]));
@@ -216,6 +238,12 @@ export default function AdminPage() {
                 {item.status==='draft' && <button type="button" disabled={draftActionBusy||editSaving}
                   onClick={()=>void draftAction(item,'delete')}
                   style={{marginTop:14,marginLeft:12,background:'transparent',color:'#ffaaaa',border:'1px solid #7e4444',borderRadius:9,padding:'10px 18px',fontWeight:700,cursor:'pointer'}}>DELETE DRAFT</button>}
+                {item.status==='draft' && <button type="button" disabled={draftActionBusy||editSaving}
+                  onClick={()=>void changeStatus(item,'publish')}
+                  style={{marginTop:14,marginLeft:12,background:'#a9e6b8',color:'#08101a',border:0,borderRadius:9,padding:'10px 18px',fontWeight:800}}>PUBLISH GAME</button>}
+                {item.status==='published' && <button type="button" disabled={draftActionBusy}
+                  onClick={()=>void changeStatus(item,'cancel')}
+                  style={{marginTop:14,background:'transparent',color:'#ffaaaa',border:'1px solid #7e4444',borderRadius:9,padding:'10px 18px',fontWeight:700}}>CANCEL GAME</button>}
                 {editingId===item.id && <form onSubmit={saveEdit} style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,marginTop:18,paddingTop:16,borderTop:'1px solid #303945'}}>
                   {([['title','Game title','text'],['venue','Field / location','text'],['date','Game date','date'],
                     ['start','Start time','time'],['end','End time','time'],['price','Price per player ($)','number'],
@@ -255,7 +283,7 @@ export default function AdminPage() {
               </article>)}
             </div>
           </section>
-          <p style={{color:'#b8c1d0',marginTop:32}}>Game drafts can be saved and reviewed. Publishing, registration management, and payments are not enabled yet.</p>
+          <p style={{color:'#b8c1d0',marginTop:32}}>Draft games can be published to the Play page. Registration and payments are not enabled yet.</p>
         </>}
       </section>
     </main>
