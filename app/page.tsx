@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import AuthWelcome from './AuthWelcome';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 import {
   ArrowRight,
@@ -157,6 +159,12 @@ export default function Home() {
   const [verifiedEmail, setVerifiedEmail] = useState('');
   const [authChecking, setAuthChecking] = useState(true);
   async function loadVerifiedPlayer() {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      setAuthChecking(false);
+      console.error('Supabase public environment variables are missing.');
+      return;
+    }
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token || !session.user.email) {
       setAuthChecking(false);
@@ -198,6 +206,8 @@ export default function Home() {
 
   useEffect(() => {
     void loadVerifiedPlayer();
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') void loadVerifiedPlayer();
       if (event === 'SIGNED_OUT') {
