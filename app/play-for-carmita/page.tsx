@@ -204,8 +204,8 @@ export default function PlayForCarmitaPage() {
 
               <div>
                 <span>LOCATION</span>
-                <h3>COMING SOON</h3>
-                <p>Harrison / Jersey City, NJ</p>
+                <h3>HARRISON HIGH SCHOOL</h3>
+                <p>Harrison, NJ</p>
               </div>
             </article>
 
