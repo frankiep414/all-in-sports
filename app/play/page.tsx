@@ -1,12 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type Method = 'zelle' | 'card';
 
 export default function PlayPage() {
   const [method, setMethod] = useState<Method>('zelle');
+  const [games,setGames]=useState<Array<{id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number}>>([]);
+  const [gamesLoading,setGamesLoading]=useState(true);
+  const [gamesError,setGamesError]=useState(false);
+  useEffect(()=>{
+    let active=true;
+    fetch('/api/games',{cache:'no-store'}).then(async response=>{
+      if(!response.ok)throw new Error('Unavailable');
+      return response.json();
+    }).then(result=>{if(active)setGames(result.games||[]);})
+      .catch(()=>{if(active)setGamesError(true);})
+      .finally(()=>{if(active)setGamesLoading(false);});
+    return ()=>{active=false;};
+  },[]);
   return (
     <main style={{minHeight:'100vh',background:'#080b10',color:'#f6f8fb',padding:'clamp(24px,5vw,72px)'}}>
       <nav style={{display:'flex',justifyContent:'space-between',gap:16,marginBottom:65,flexWrap:'wrap'}}>
@@ -16,10 +29,18 @@ export default function PlayPage() {
       <section style={{maxWidth:960,margin:'0 auto'}}>
         <p style={{color:'#95d9ff',letterSpacing:4,fontWeight:800}}>PLAY // PICKUP & OPEN PLAY</p>
         <h1 style={{fontSize:'clamp(42px,8vw,88px)',lineHeight:1.04,margin:'16px 0',fontWeight:900}}>Your next game starts here.</h1>
-        <p style={{fontSize:19,color:'#b8c1d0',lineHeight:1.6,maxWidth:730}}>Browse upcoming All In Sports sessions, reserve your spot, and choose how you want to pay.</p>
+        <p style={{fontSize:19,color:'#b8c1d0',lineHeight:1.6,maxWidth:730}}>Browse upcoming All In Sports sessions. Registration and payment options are coming soon.</p>
         <div style={{border:'1px solid #303945',borderRadius:18,padding:28,background:'#111820',marginTop:34}}>
           <h2 style={{marginTop:0}}>Upcoming games</h2>
-          <p style={{color:'#b8c1d0',lineHeight:1.6}}>No games are posted yet. Once we publish confirmed sessions, you’ll see the date, field, price, spots remaining, and registration here.</p>
+          {gamesLoading && <p style={{color:'#b8c1d0'}}>Loading upcoming games…</p>}
+          {gamesError && <p role="alert" style={{color:'#ffb7b7'}}>Unable to load games. Please try again later.</p>}
+          {!gamesLoading && !gamesError && games.length===0 && <p style={{color:'#b8c1d0'}}>No games are posted yet. Check back soon.</p>}
+          {!gamesError && games.map(item=><article key={item.id} style={{padding:'18px 0',borderTop:'1px solid #303945'}}>
+            <h3 style={{margin:'0 0 8px'}}>{item.title}</h3>
+            <p style={{color:'#b8c1d0',margin:'0 0 8px'}}>{item.venue} · {new Date(item.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'})}</p>
+            <p style={{margin:'0 0 8px'}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
+            <strong style={{color:'#95d9ff'}}>Registration coming soon — no spots can be reserved yet.</strong>
+          </article>)}
           <p style={{color:'#95d9ff',fontWeight:700}}>Registration is not open yet.</p>
         </div>
         <h2 style={{marginTop:52}}>How payment will work</h2>
