@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
-
 import {
   ArrowLeft,
   ArrowRight,
@@ -28,6 +26,14 @@ export default function MyAllInPage() {
   useEffect(() => {
     let active = true;
     async function loadPlayer() {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if (!url || !key) {
+        console.error('Supabase public configuration is missing.');
+        if (active) window.location.replace('/');
+        return;
+      }
+      const supabase = createClient(url, key);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         if (active) window.location.replace('/');
