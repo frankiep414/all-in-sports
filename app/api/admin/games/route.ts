@@ -40,7 +40,7 @@ function newYorkOffset(utcMs: number): number {
   Number(p.hour),Number(p.minute),Number(p.second))-utcMs;
 }
 function newYorkInstant(local: string): Date | null {
- const match=/^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})$/.exec(local);
+ const match=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(local);
  if(!match) return null;
  const [y,m,d,h,min]=match.slice(1).map(Number);
  const naive=Date.UTC(y,m-1,d,h,min);
