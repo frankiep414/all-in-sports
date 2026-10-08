@@ -16,7 +16,7 @@ export default function Page() {
           <p style={{color:'#e2b8ff',letterSpacing:3,fontWeight:800}}>FEATURED COMMUNITY EVENT</p>
           <h3 style={{fontSize:'clamp(30px,5vw,54px)',margin:'12px 0'}}>PLAY FOR CARMITA</h3>
           <p style={{fontSize:19,color:'#e4d8ec',lineHeight:1.6}}>A charity soccer tournament honoring our mom and supporting the Brain Aneurysm Foundation.</p>
-          <p style={{color:'#fff',lineHeight:1.8}}>Saturday, October 31, 2026 · 9 AM–2 PM<br />Coed 7v7 · $250 per team / $25 per player<br />Harrison / Jersey City, NJ · Venue to be confirmed</p>
+          <p style={{color:'#fff',lineHeight:1.8}}>Saturday, October 31, 2026 · 9 AM–2 PM<br />Coed 7v7 · $250 per team / $25 per player<br />Harrison High School · Harrison, NJ</p>
           <Link href="/play-for-carmita" style={{display:'inline-block',marginTop:16,padding:'15px 24px',borderRadius:12,background:'#e2b8ff',color:'#160d1b',fontWeight:900,textDecoration:'none'}}>EXPLORE THE EVENT →</Link>
         </section>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(190px,1fr))',gap:16,marginTop:48}}>
