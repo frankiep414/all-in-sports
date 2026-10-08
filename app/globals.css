@@ -4827,3 +4827,167 @@ html {
     padding: 26px 22px;
   }
 }
+
+
+/* PLAY FOR CARMITA — BIGGER PURPOSE PAGE */
+
+.carmitaPurposePage {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 80% 10%, rgba(154,85,240,.15), transparent 50%),
+    #05070a;
+  color: #fff;
+  padding: 65px 24px 100px;
+}
+
+.carmitaPurposeInner {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.carmitaPurposeBack {
+  display: inline-block;
+  margin-bottom: 70px;
+  color: #6edcff;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.carmitaPurposeEyebrow {
+  color: #b88aff;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.carmitaPurposePage h1 {
+  max-width: 1000px;
+  margin: 20px 0;
+  font-size: clamp(38px, 6vw, 82px);
+  line-height: 1.05;
+  font-weight: 900;
+}
+
+.carmitaPurposePage h1 span {
+  color: #b88aff;
+}
+
+.carmitaPurposeLead {
+  max-width: 760px;
+  color: #b8c4d2;
+  font-size: 18px;
+  line-height: 1.8;
+}
+
+.carmitaPurposeFoundation {
+  margin: 65px 0;
+  padding: 32px;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  align-items: center;
+  gap: 36px;
+  border: 1px solid rgba(184,138,255,.25);
+  border-radius: 22px;
+  background: rgba(255,255,255,.035);
+}
+
+.carmitaPurposeFoundation img {
+  width: 100%;
+  border-radius: 12px;
+}
+
+.carmitaPurposeFoundation h2 {
+  font-size: 22px;
+  margin-bottom: 14px;
+}
+
+.carmitaPurposeFoundation p {
+  color: #b8c4d2;
+  line-height: 1.8;
+}
+
+.carmitaPurposeSectionTitle {
+  font-size: clamp(28px, 4vw, 48px);
+  margin-bottom: 28px;
+}
+
+.carmitaPurposeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.carmitaPurposeGrid article {
+  padding: 30px;
+  border: 1px solid rgba(184,138,255,.22);
+  border-radius: 20px;
+  background: rgba(255,255,255,.03);
+}
+
+.carmitaPurposeGrid article span {
+  color: #b88aff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.carmitaPurposeGrid h3 {
+  margin: 22px 0 14px;
+  font-size: 19px;
+}
+
+.carmitaPurposeGrid article p {
+  color: #b8c4d2;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.carmitaPurposeGrid .carmitaPurposeEmergency {
+  color: #ffb5b5;
+  font-weight: 800;
+  margin-top: 16px;
+}
+
+.carmitaPurposeActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 45px;
+}
+
+.carmitaPurposeActions a {
+  display: inline-block;
+  padding: 16px 22px;
+  border-radius: 12px;
+  background: #b88aff;
+  color: #080b11;
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.carmitaPurposeActions a:last-child {
+  background: transparent;
+  color: #6edcff;
+  border: 1px solid rgba(110,220,255,.35);
+}
+
+@media (max-width: 850px) {
+  .carmitaPurposeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .carmitaPurposeFoundation {
+    grid-template-columns: 1fr;
+  }
+
+  .carmitaPurposeFoundation img {
+    max-width: 220px;
+  }
+
+  .carmitaPurposeBack {
+    margin-bottom: 45px;
+  }
+}
