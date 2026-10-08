@@ -17,6 +17,32 @@ export default function AdminPage() {
   const [editGame,setEditGame]=useState({title:'',venue:'',date:'',start:'',end:'',price:'',capacity:''});
   const [editSaving,setEditSaving]=useState(false);
   const [editMessage,setEditMessage]=useState('');
+  const [editRepeat,setEditRepeat]=useState(false);
+  const [editWeeks,setEditWeeks]=useState(8);
+  const [draftActionBusy,setDraftActionBusy]=useState(false);
+  async function draftAction(item:PickupGame,action:'convert'|'delete') {
+    const description=action==='delete'
+      ?`Permanently delete draft "${item.title}"? This cannot be undone.`
+      :`Convert "${item.title}" into ${editWeeks} weekly draft games, including the original? This will create ${editWeeks-1} new drafts.`;
+    if(!window.confirm(description))return;
+    setDraftActionBusy(true);setEditMessage('');
+    try {
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Please sign in again.');
+      const response=await fetch('/api/admin/games',{method:action==='delete'?'DELETE':'PUT',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({id:item.id,...(action==='convert'?{weeks:editWeeks}:{})})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Unable to update draft.');
+      await loadGames(session.access_token);
+      setEditingId(null);setEditRepeat(false);
+      setEditMessage(action==='delete'?'Draft deleted.':`Converted to ${editWeeks} weekly drafts. Your original game is week one.`);
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update draft.');}
+    finally{setDraftActionBusy(false);}
+  }
   function beginEdit(item:PickupGame) {
     const format=(iso:string)=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso));
     const pieces=(iso:string)=>Object.fromEntries(format(iso).map(part=>[part.type,part.value]));
@@ -24,7 +50,7 @@ export default function AdminPage() {
     setEditGame({title:item.title,venue:item.venue,date:`${start.year}-${start.month}-${start.day}`,
       start:`${start.hour}:${start.minute}`,end:`${end.hour}:${end.minute}`,
       price:(item.price_cents/100).toFixed(2),capacity:String(item.capacity)});
-    setEditingId(item.id);setEditMessage('');
+    setEditingId(item.id);setEditRepeat(false);setEditWeeks(8);setEditMessage('');
   }
   async function saveEdit(event:React.FormEvent<HTMLFormElement>) {
     event.preventDefault();if(!editingId)return;
@@ -186,6 +212,10 @@ export default function AdminPage() {
                 <p style={{marginBottom:0}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
                 {item.status==='draft' && <button type="button" onClick={()=>beginEdit(item)}
                   style={{marginTop:14,background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'10px 18px',fontWeight:800,cursor:'pointer'}}>EDIT GAME</button>}
+
+                {item.status==='draft' && <button type="button" disabled={draftActionBusy||editSaving}
+                  onClick={()=>void draftAction(item,'delete')}
+                  style={{marginTop:14,marginLeft:12,background:'transparent',color:'#ffaaaa',border:'1px solid #7e4444',borderRadius:9,padding:'10px 18px',fontWeight:700,cursor:'pointer'}}>DELETE DRAFT</button>}
                 {editingId===item.id && <form onSubmit={saveEdit} style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,marginTop:18,paddingTop:16,borderTop:'1px solid #303945'}}>
                   {([['title','Game title','text'],['venue','Field / location','text'],['date','Game date','date'],
                     ['start','Start time','time'],['end','End time','time'],['price','Price per player ($)','number'],
@@ -195,11 +225,32 @@ export default function AdminPage() {
                         onChange={e=>setEditGame(current=>({...current,[field]:e.target.value}))}
                         style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:11,fontSize:15}}/>
                     </label>)}
-                  <div style={{gridColumn:'1 / -1',display:'flex',gap:12,alignItems:'center'}}>
+
+                  {!item.series_id && <div style={{gridColumn:'1 / -1',display:'grid',gap:10}}>
+                    <label style={{display:'flex',alignItems:'center',gap:10}}>
+                      <input type="checkbox" checked={editRepeat} onChange={e=>setEditRepeat(e.target.checked)}/>
+                      Make this game recurring every week
+                    </label>
+                    {editRepeat && <label style={{display:'grid',gap:6,maxWidth:250}}>
+                      Number of weeks (including this game)
+                      <input type="number" min={2} max={16} step={1} value={editWeeks}
+                        onChange={e=>setEditWeeks(Number(e.target.value))}
+                        style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:11}}/>
+                    </label>}
+                    {editRepeat && <p style={{margin:0,color:'#b8c1d0'}}>Save any changes to this game first. Then select Make Recurring to create the remaining dates.</p>}
+                  </div>}
+                  <div style={{gridColumn:'1 / -1',display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>
                     <button type="submit" disabled={editSaving} style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800}}>{editSaving?'Saving…':'SAVE CHANGES'}</button>
+
+                    {editRepeat && !item.series_id && <button type="button" disabled={draftActionBusy||editSaving||editWeeks<2||editWeeks>16}
+                      onClick={()=>void draftAction(item,'convert')}
+                      style={{background:'#a9e6b8',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800}}>
+                      {draftActionBusy?'Working…':`MAKE RECURRING (${editWeeks} WEEKS)`}
+                    </button>}
                     <button type="button" onClick={()=>{setEditingId(null);setEditMessage('');}} style={{background:'transparent',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:'11px 18px'}}>CANCEL</button>
                   </div>
-                  <p style={{gridColumn:'1 / -1',color:'#b8c1d0',margin:0}}>This updates only this game, not other dates in its series.</p>
+
+                  <p style={{gridColumn:'1 / -1',color:'#b8c1d0',margin:0}}>Saving edits updates only this game. Make Recurring uses the currently saved details.</p>
                 </form>}
               </article>)}
             </div>
