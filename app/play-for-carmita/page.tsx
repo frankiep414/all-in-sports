@@ -215,6 +215,82 @@ export default function PlayForCarmitaPage() {
         </div>
       </section>
 
+      {/* BRAIN ANEURYSM AWARENESS */}
+<section className="carmitaAwareness">
+  <div className="carmitaAwarenessInner">
+
+    <div className="carmitaAwarenessHeader">
+      <p className="eyebrow">BRAIN ANEURYSM AWARENESS</p>
+      <h2>
+        KNOW THE SIGNS.
+        <br />
+        <span>SPREAD AWARENESS.</span>
+      </h2>
+      <p>
+        Play for Carmita is about more than remembering someone
+        we love. It's also about helping others understand brain
+        aneurysms and why awareness matters.
+      </p>
+    </div>
+
+    <div className="carmitaAwarenessGrid">
+
+      <article className="carmitaAwarenessCard">
+        <span className="carmitaAwarenessNumber">01 / UNDERSTAND</span>
+        <h3>WHAT IS A BRAIN ANEURYSM?</h3>
+        <p>
+          A brain aneurysm is a weakened area in the wall of a
+          blood vessel in the brain that bulges outward. Many
+          aneurysms never cause symptoms, but if one ruptures,
+          it can cause life-threatening bleeding in the brain.
+        </p>
+      </article>
+
+      <article className="carmitaAwarenessCard">
+        <span className="carmitaAwarenessNumber">02 / RECOGNIZE</span>
+        <h3>KNOW THE WARNING SIGNS</h3>
+        <p>
+          A sudden, extremely severe headache can be a sign of
+          a ruptured aneurysm. Other symptoms may include
+          vomiting, a stiff neck, vision changes, confusion,
+          or loss of consciousness.
+        </p>
+        <p className="carmitaAwarenessUrgent">
+          If a rupture is suspected, call 911 immediately.
+        </p>
+      </article>
+
+      <article className="carmitaAwarenessCard">
+        <span className="carmitaAwarenessNumber">03 / MAKE AN IMPACT</span>
+        <h3>WHY YOUR SUPPORT MATTERS</h3>
+        <p>
+          Brain aneurysms can change lives and families in an
+          instant. By coming together, we can help raise
+          awareness and support the Brain Aneurysm Foundation's
+          work in research, education, and patient support.
+        </p>
+      </article>
+
+    </div>
+
+    <div className="carmitaAwarenessFooter">
+      <p>
+        Awareness starts with a conversation.
+        Share what you learn. It could make a difference.
+      </p>
+
+      <a
+        href="https://www.bafound.org/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="carmitaAwarenessLink"
+      >
+        LEARN MORE AT THE FOUNDATION ↗
+      </a>
+    </div>
+
+  </div>
+</section>
 
       {/* EVENT DETAILS */}
       <section id="event-information" className="carmitaDetailsSection">
