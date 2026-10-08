@@ -158,6 +158,7 @@ export default function Home() {
 } | null>(null);
   const [verifiedEmail, setVerifiedEmail] = useState('');
   const [authChecking, setAuthChecking] = useState(true);
+  const [playerLoadError, setPlayerLoadError] = useState('');
   async function loadVerifiedPlayer() {
     const supabase = getSupabaseClient();
     if (!supabase) {
@@ -174,6 +175,7 @@ export default function Home() {
       return;
     }
     setVerifiedEmail(session.user.email);
+    setPlayerLoadError('');
     try {
     const response = await fetch('/api/player', {
       headers: { Authorization: `Bearer ${session.access_token}` },
@@ -194,12 +196,14 @@ export default function Home() {
       setAuthChecking(false);
     } else {
       console.error('Unable to verify player profile:', response.status);
-      setShowAuthWelcome(true);
+      setPlayerLoadError(`Your email is verified, but your Player ID could not be loaded (error ${response.status}). Please contact All In Sports. Do not request another code.`);
+      setShowAuthWelcome(false);
       setAuthChecking(false);
     }
     } catch (error) {
       console.error('Player verification failed:', error);
-      setShowAuthWelcome(true);
+      setPlayerLoadError('Your email is verified, but we could not load your Player ID. Please try again later. Do not request another code.');
+      setShowAuthWelcome(false);
       setAuthChecking(false);
     }
   }
@@ -220,6 +224,7 @@ export default function Home() {
   }, []);
 
   if (authChecking) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center' }}>Loading All In Sports…</main>;
+  if (playerLoadError) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center' }}><div><h1>YOU’RE VERIFIED.</h1><p>{playerLoadError}</p><button onClick={() => { setAuthChecking(true); void loadVerifiedPlayer(); }} style={{ padding: '12px 24px', cursor: 'pointer' }}>Retry Player ID lookup</button></div></main>;
   if (showAuthWelcome) {
   return (
     <AuthWelcome
