@@ -3,6 +3,17 @@ import twilio from 'twilio';
 
 export async function POST(request: Request) {
   try {
+    const token = request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
+    const authUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if (!token || !authUrl || !publicKey) {
+      return Response.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+    const authClient = createClient(authUrl, publicKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    if (authError || !user?.email) {
+      return Response.json({ error: 'Authentication required.' }, { status: 401 });
+    }
     const body = await request.json();
 
     const {
@@ -15,7 +26,7 @@ export async function POST(request: Request) {
       smsConsent,
     } = body;
 
-    if (!fullName || !phone || !email) {
+    if (!fullName || !phone || !email || typeof fullName !== 'string' || typeof phone !== 'string' || typeof email !== 'string' || email.trim().toLowerCase() !== user.email.toLowerCase()) {
       return Response.json(
         { error: 'Name, phone, and email are required.' },
         { status: 400 }
@@ -36,10 +47,15 @@ export async function POST(request: Request) {
 
     const supabase = createClient(supabaseUrl, supabaseSecretKey);
 
+    const { data: existing, error: lookupError } = await supabase.from('players')
+      .select('id').ilike('email', user.email).maybeSingle();
+    if (lookupError) return Response.json({ error: 'Unable to check existing Player ID.' }, { status: 500 });
+    if (existing) return Response.json({ success: true, playerId: existing.id, existing: true });
+
    const { data: newPlayer, error } = await supabase.from('players').insert({
       full_name: fullName,
       phone,
-      email,
+      email: user.email,
       played_before: Boolean(playedBefore),
       team_name: playedBefore ? teamName || null : null,
       divisions:
@@ -79,14 +95,17 @@ export async function POST(request: Request) {
         console.error('Twilio welcome SMS error:', smsError);
       }
 
-            // Send welcome email
+
+    }
+
+    // Send welcome email
   try {
     const resendApiKey = process.env.RESEND_API_KEY;
 
     if (!resendApiKey) {
       console.error('Missing RESEND_API_KEY');
     } else {
-      const firstName = fullName.split(' ')[0];
+      const firstName = fullName.trim().split(' ')[0].replace(/[<>&"']/g, '');
 
       const emailResponse = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -117,8 +136,6 @@ export async function POST(request: Request) {
   } catch (emailError) {
     console.error('Welcome email error:', emailError);
   }
-    }
-
     return Response.json({
   success: true,
   playerId: newPlayer.id,
