@@ -176,7 +176,7 @@ export default function AdminPage() {
             {gamesError && <p role="alert">{gamesError}</p>}
             {!gamesError && games.length===0 && <p style={{color:'#b8c1d0'}}>No saved games yet. Create your first draft above.</p>}
             {editMessage && <p role="status" style={{color:'#95d9ff'}}>{editMessage}</p>}
-            <div style={{display:'grid',gap:12'}}>
+            <div style={{display:'grid',gap:12}}>
               {games.map(item=><article key={item.id} style={{border:'1px solid #303945',borderRadius:14,padding:20,background:'#111820'}}>
                 <div style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
                   <strong>{item.title}</strong><span style={{color:'#95d9ff',fontWeight:700}}>{item.status.toUpperCase()}</span>
