@@ -49,7 +49,7 @@ export default function PlayForCarmitaPage() {
       <span className="carmitaQuickArrow">↗</span>
     </a>
 
-    <a href="#event-information">
+    href="/play-for-carmita/event-information"
       <span>03</span>
       <strong>EVENT INFORMATION</strong>
       <span className="carmitaQuickArrow">↗</span>
