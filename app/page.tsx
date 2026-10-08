@@ -166,6 +166,7 @@ export default function Home() {
       return;
     }
     setVerifiedEmail(session.user.email);
+    try {
     const response = await fetch('/api/player', {
       headers: { Authorization: `Bearer ${session.access_token}` },
       cache: 'no-store',
@@ -185,6 +186,11 @@ export default function Home() {
       setAuthChecking(false);
     } else {
       console.error('Unable to verify player profile:', response.status);
+      setShowAuthWelcome(true);
+      setAuthChecking(false);
+    }
+    } catch (error) {
+      console.error('Player verification failed:', error);
       setShowAuthWelcome(true);
       setAuthChecking(false);
     }
