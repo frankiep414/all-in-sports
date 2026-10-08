@@ -4,11 +4,21 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
+type PickupGame = {id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;status:string};
 type Status = 'loading' | 'authorized' | 'denied' | 'error';
 
 export default function AdminPage() {
   const [status, setStatus] = useState<Status>('loading');
   const [saving,setSaving] = useState(false);
+  const [games,setGames] = useState<PickupGame[]>([]);
+  const [gamesError,setGamesError] = useState('');
+  async function loadGames(token:string) {
+    const response=await fetch('/api/admin/games',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
+    if(!response.ok) {setGamesError('Unable to load games.');return;}
+    const result=await response.json();
+    setGames(result.games || []);
+    setGamesError('');
+  }
   const [message,setMessage] = useState('');
   const [game,setGame] = useState({title:'',venue:'',date:'',start:'',end:'',price:'20',capacity:'20'});
   async function createDraft(event: React.FormEvent<HTMLFormElement>) {
@@ -33,6 +43,7 @@ export default function AdminPage() {
       const result=await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not save game.');
       setMessage('Game draft saved successfully. It is not published.');
+      await loadGames(session.access_token);
       setGame({title:'',venue:'',date:'',start:'',end:'',price:'20',capacity:'20'});
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Unable to save game.');
@@ -56,6 +67,7 @@ export default function AdminPage() {
           cache: 'no-store',
         });
         if (active) setStatus(response.ok ? 'authorized' : response.status === 401 || response.status === 403 ? 'denied' : 'error');
+        if (response.ok && active) await loadGames(session.access_token);
       } catch {
         if (active) setStatus('error');
       }
@@ -80,7 +92,7 @@ export default function AdminPage() {
           <p style={{color:'#b8c1d0',fontSize:18}}>Manage your games, registrations, and payments in one place.</p>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',gap:16,marginTop:40}}>
             {[
-              ['Games','Create sessions, set pricing and player limits.','COMING NEXT'],
+              ['Games','Create sessions, set pricing and player limits.','DRAFT CREATION READY'],
               ['Registrations','Track players, pending spots and paid rosters.','IN DEVELOPMENT'],
               ['Zelle payments','Verify bank receipts before confirming spots.','IN DEVELOPMENT'],
               ['Stripe payments','Track confirmed checkout payments and refunds.','NOT CONNECTED'],
@@ -105,7 +117,21 @@ export default function AdminPage() {
               </div>
             </form>
           </section>
-          <p style={{color:'#b8c1d0',marginTop:32}}>Administrator access is verified. Game creation, registration management, and payment actions are not enabled yet.</p>
+          <section style={{marginTop:36}}>
+            <h2>Saved games</h2>
+            {gamesError && <p role="alert">{gamesError}</p>}
+            {!gamesError && games.length===0 && <p style={{color:'#b8c1d0'}}>No saved games yet. Create your first draft above.</p>}
+            <div style={{display:'grid',gap:12}}>
+              {games.map(item=><article key={item.id} style={{border:'1px solid #303945',borderRadius:14,padding:20,background:'#111820'}}>
+                <div style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+                  <strong>{item.title}</strong><span style={{color:'#95d9ff',fontWeight:700}}>{item.status.toUpperCase()}</span>
+                </div>
+                <p style={{color:'#b8c1d0'}}>{item.venue} · {new Date(item.starts_at).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'})}</p>
+                <p style={{marginBottom:0}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
+              </article>)}
+            </div>
+          </section>
+          <p style={{color:'#b8c1d0',marginTop:32}}>Game drafts can be saved and reviewed. Publishing, registration management, and payments are not enabled yet.</p>
         </>}
       </section>
     </main>
