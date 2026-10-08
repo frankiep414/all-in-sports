@@ -4664,3 +4664,28 @@ html {
 .carmitaQuickNavInner a:nth-child(2):hover {
   background: linear-gradient(135deg, #d9b5ff, #b47aff);
 }
+
+/* CARMITA — ACTIVITY DESCRIPTIONS */
+
+.carmitaActivityGrid > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.carmitaActivityGrid > div p {
+  margin: 4px 0 0;
+  color: #aebbc9;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.7;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+@media (max-width: 700px) {
+  .carmitaActivityGrid > div p {
+    font-size: 13px;
+  }
+}
