@@ -274,6 +274,8 @@ return (
   };
 
   try {
+    const supabase = getSupabaseClient();
+    if (!supabase) throw new Error('Signup configuration unavailable.');
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) throw new Error('Sign in before claiming your Player ID.');
     const response = await fetch('/api/signup', {
