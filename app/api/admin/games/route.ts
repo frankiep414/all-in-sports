@@ -119,3 +119,37 @@ export async function POST(request: Request) {
   return Response.json({games:data,count:rows.length},{status:201});
  }catch(error){console.error('Game creation error:',error);return Response.json({error:'Invalid request.'},{status:400});}
 }
+
+export async function PATCH(request: Request) {
+ try {
+  const access=await getAdmin(request);
+  if(!access.admin) return Response.json({error:'Administrator access required.'},{status:access.status || 403});
+  const body=await request.json();
+  const id=typeof body.id==='string'?body.id:'';
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
+   return Response.json({error:'Invalid game ID.'},{status:400});
+  const title=typeof body.title==='string'?body.title.trim():'';
+  const venue=typeof body.venue==='string'?body.venue.trim():'';
+  const start=typeof body.starts_at==='string'?new Date(body.starts_at):new Date(NaN);
+  const end=typeof body.ends_at==='string'?new Date(body.ends_at):new Date(NaN);
+  const price=body.price_cents,capacity=body.capacity;
+  if(title.length<3 || title.length>120 || venue.length<3 || venue.length>200 ||
+   !Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) ||
+   end<=start || !Number.isInteger(price) || price<0 || price>100000 ||
+   !Number.isInteger(capacity) || capacity<2 || capacity>100)
+   return Response.json({error:'Check the updated game details.'},{status:400});
+  const {data:existing,error:findError}=await access.admin.from('pickup_games').select('id,status').eq('id',id).maybeSingle();
+  if(findError) return Response.json({error:'Unable to verify game.'},{status:500});
+  if(!existing) return Response.json({error:'Game not found.'},{status:404});
+  if(existing.status!=='draft') return Response.json({error:'Only draft games can be edited at this stage.'},{status:409});
+  const {data,error}=await access.admin.from('pickup_games').update({
+   title,venue,starts_at:start.toISOString(),ends_at:end.toISOString(),price_cents:price,capacity
+  }).eq('id',id).eq('status','draft').select('id').maybeSingle();
+  if(error) {console.error('Game update failed',{code:error.code,message:error.message});return Response.json({error:'Unable to update game.'},{status:500});}
+  if(!data) return Response.json({error:'Game changed; refresh and try again.'},{status:409});
+  return Response.json({updated:true});
+ }catch(error) {
+  console.error('Game update error',{name:error instanceof Error?error.name:'Unknown'});
+  return Response.json({error:'Unable to update game.'},{status:500});
+ }
+}
