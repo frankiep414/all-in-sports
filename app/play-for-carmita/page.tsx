@@ -274,30 +274,47 @@ export default function PlayForCarmitaPage() {
           </div>
 
 
-          {/* ACTIVITIES */}
-          <div className="carmitaActivityGrid">
+        {/* ACTIVITIES */}
+<div className="carmitaActivityGrid">
 
-            <div>
-              <span>01</span>
-              <strong>CHARITY<br />TOURNAMENT</strong>
-            </div>
+  <div>
+    <span>01</span>
+    <strong>CHARITY<br />TOURNAMENT</strong>
+    <p>
+      Coed 7v7 soccer for competitive and recreational teams.
+      Register your team for $250 or join individually for $25.
+      Individual players will be assigned to teams.
+    </p>
+  </div>
 
-            <div>
-              <span>02</span>
-              <strong>KIDS + FAMILY<br />ACTIVITIES</strong>
-            </div>
+  <div>
+    <span>02</span>
+    <strong>KIDS + FAMILY<br />ACTIVITIES</strong>
+    <p>
+      A day for the whole family, featuring games, fun zones,
+      and activities for kids throughout the event.
+    </p>
+  </div>
 
-            <div>
-              <span>03</span>
-              <strong>HALLOWEEN<br />COSTUME CONTEST</strong>
-            </div>
+  <div>
+    <span>03</span>
+    <strong>HALLOWEEN<br />COSTUME CONTEST</strong>
+    <p>
+      Keep the Halloween spirit going! Kids and adults are
+      invited to dress up and join the costume contest.
+    </p>
+  </div>
 
-            <div>
-              <span>04</span>
-              <strong>CHAMPIONSHIP<br />PRIZES</strong>
-            </div>
+  <div>
+    <span>04</span>
+    <strong>CHAMPIONSHIP<br />PRIZES</strong>
+    <p>
+      Play for the championship, compete for bragging rights,
+      and celebrate with awards for the winning teams.
+    </p>
+  </div>
 
-          </div>
+</div>
 
         </div>
       </section>
