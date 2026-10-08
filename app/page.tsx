@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import AuthWelcome from './AuthWelcome';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 import {
   ArrowRight,
@@ -155,80 +157,79 @@ export default function Home() {
   full_name: string;
 } | null>(null);
   const [verifiedEmail, setVerifiedEmail] = useState('');
-  useEffect(() => {
-  const savedPlayerId = localStorage.getItem('allInPlayerId');
-
-  if (savedPlayerId) {
-    setShowPlayerSignup(false);
-    setShowAuthWelcome(false);
-
-    fetch(`/api/player?id=${savedPlayerId}`)
-      .then((response) => response.json())
-      .then((player) => {
-        if (player?.id) {
-          setCurrentPlayer(player);
-        }
-      })
-      .catch((error) => {
-        console.error('Unable to load player:', error);
-      });
-  }
-}, []);
-
-useEffect(() => {
-  async function checkSupabaseUser() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user?.email) {
+  const [authChecking, setAuthChecking] = useState(true);
+  const [playerLoadError, setPlayerLoadError] = useState('');
+  async function loadVerifiedPlayer() {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      setAuthChecking(false);
+      console.error('Supabase public environment variables are missing.');
       return;
     }
-
-    const email = user.email;
-    setVerifiedEmail(email);
-
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token || !session.user.email) {
+      setAuthChecking(false);
+      localStorage.removeItem('allInPlayerId');
+      setCurrentPlayer(null);
+      setShowAuthWelcome(true);
+      return;
+    }
+    setVerifiedEmail(session.user.email);
+    setPlayerLoadError('');
     try {
-      const response = await fetch(
-        `/api/player?email=${encodeURIComponent(email)}`
-      );
-
-      if (response.ok) {
-        const player = await response.json();
-
-        if (player?.id) {
-          localStorage.setItem('allInPlayerId', String(player.id));
-          setCurrentPlayer(player);
-          setShowAuthWelcome(false);
-          setShowPlayerSignup(false);
-          return;
-        }
-      }
-
-      // Authenticated, but no existing player uses this email.
-      // Send them through the Player ID setup flow.
+    const response = await fetch('/api/player', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      cache: 'no-store',
+    });
+    if (response.ok) {
+      const player = await response.json();
+      localStorage.setItem('allInPlayerId', String(player.id));
+      setCurrentPlayer(player);
+      setShowAuthWelcome(false);
+      setShowPlayerSignup(false);
+      setAuthChecking(false);
+    } else if (response.status === 404) {
+      localStorage.removeItem('allInPlayerId');
+      setCurrentPlayer(null);
       setShowAuthWelcome(false);
       setShowPlayerSignup(true);
+      setAuthChecking(false);
+    } else {
+      console.error('Unable to verify player profile:', response.status);
+      setPlayerLoadError(`Your email is verified, but your Player ID could not be loaded (error ${response.status}). Please contact All In Sports. Do not request another code.`);
+      setShowAuthWelcome(false);
+      setAuthChecking(false);
+    }
     } catch (error) {
-      console.error('Unable to look up player by email:', error);
+      console.error('Player verification failed:', error);
+      setPlayerLoadError('Your email is verified, but we could not load your Player ID. Please try again later. Do not request another code.');
       setShowAuthWelcome(false);
-      setShowPlayerSignup(true);
+      setAuthChecking(false);
     }
   }
 
-  checkSupabaseUser();
-}, []);
+  useEffect(() => {
+    void loadVerifiedPlayer();
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') void loadVerifiedPlayer();
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('allInPlayerId');
+        setCurrentPlayer(null);
+        setShowAuthWelcome(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (authChecking) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center' }}>Loading All In Sports…</main>;
+  if (playerLoadError) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center' }}><div><h1>YOU’RE VERIFIED.</h1><p>{playerLoadError}</p><button onClick={() => { setAuthChecking(true); void loadVerifiedPlayer(); }} style={{ padding: '12px 24px', cursor: 'pointer' }}>Retry Player ID lookup</button></div></main>;
   if (showAuthWelcome) {
   return (
     <AuthWelcome
-      onEmailSignup={() => {
-        setShowAuthWelcome(false);
-        setShowPlayerSignup(true);
-      }}
-    onLogin={() => {
-  setShowAuthWelcome(false);
-  setShowPlayerSignup(false);
-}}
+      onEmailSignup={() => { void loadVerifiedPlayer(); }}
+    onLogin={() => { void loadVerifiedPlayer(); }}
     />
   );
 }
@@ -270,18 +271,23 @@ return (
   const data = {
     fullName: formData.get('fullName'),
     phone: formData.get('phone'),
-    email: formData.get('email'),
+    email: verifiedEmail,
     playedBefore: formData.get('playedBefore') === 'yes',
     teamName: formData.get('teamName'),
-    divisions: formData.getAll('divisions'),
+    divisions: formData.getAll('division'),
     smsConsent: formData.get('smsConsent') === 'on',
   };
 
   try {
+    const supabase = getSupabaseClient();
+    if (!supabase) throw new Error('Signup configuration unavailable.');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error('Sign in before claiming your Player ID.');
     const response = await fetch('/api/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify(data),
     });
@@ -331,14 +337,14 @@ setSignupComplete(true);
             </div>
 
             <label>
-  Email
-  <input
-    type="email"
-    name="email"
- defaultValue={verifiedEmail}
-    required
-  />
-</label>
+              Verified email
+              <input
+                type="email"
+                value={verifiedEmail}
+                readOnly
+                aria-label="Verified email address"
+              />
+            </label>
             <div className="signupQuestion">
               <span>Have you played with All In before?</span>
 
@@ -514,7 +520,7 @@ setSignupComplete(true);
           </a>
 
           <div className="navLinks">
-            <a href="#play">Play</a>
+            <a href="/play">Play</a>
             <a href="#leagues">Leagues</a>
             <a href="#tournaments">Tournaments</a>
             <a href="#community">Community</a>
@@ -635,7 +641,7 @@ setSignupComplete(true);
 </div>
     <div className="launchpadGrid">
 
-      <a href="#play" className="launchCard">
+      <a href="/play" className="launchCard">
         <div className="launchIcon">
           <Play size={28} />
         </div>
@@ -649,7 +655,7 @@ setSignupComplete(true);
         <ArrowRight className="launchArrow" size={24} />
       </a>
 
-      <a href="#compete" className="launchCard">
+      <a href="/compete" className="launchCard">
         <div className="launchIcon">
           <Trophy size={28} />
         </div>
@@ -663,7 +669,7 @@ setSignupComplete(true);
         <ArrowRight className="launchArrow" size={24} />
       </a>
 
-      <a href="#events" className="launchCard">
+      <a href="/events" className="launchCard">
         <div className="launchIcon">
           <CalendarDays size={28} />
         </div>

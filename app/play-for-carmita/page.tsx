@@ -108,15 +108,15 @@ export default function PlayForCarmitaPage() {
               <div>
                 <CalendarDays size={17} />
                 <span>
-                  <strong>NOV 1</strong>
-                  SUNDAY
+                  <strong>OCT 31</strong>
+                  SATURDAY
                 </span>
               </div>
 
               <div>
                 <Clock3 size={17} />
                 <span>
-                  <strong>11AM–4PM</strong>
+                  <strong>9AM–2PM</strong>
                   EVENT TIME
                 </span>
               </div>
@@ -182,8 +182,8 @@ export default function PlayForCarmitaPage() {
 
               <div>
                 <span>DATE &amp; TIME</span>
-                <h3>NOVEMBER 1</h3>
-                <p>Sunday · 11:00 AM – 4:00 PM</p>
+                <h3>OCTOBER 31</h3>
+                <p>Saturday · 9:00 AM – 2:00 PM</p>
               </div>
             </article>
 
@@ -204,8 +204,8 @@ export default function PlayForCarmitaPage() {
 
               <div>
                 <span>LOCATION</span>
-                <h3>COMING SOON</h3>
-                <p>Harrison / Jersey City, NJ</p>
+                <h3>HARRISON HIGH SCHOOL</h3>
+                <p>Harrison, NJ</p>
               </div>
             </article>
 

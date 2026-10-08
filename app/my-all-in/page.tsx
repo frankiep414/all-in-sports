@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
 
 import {
   ArrowLeft,
@@ -23,22 +24,34 @@ export default function MyAllInPage() {
   } | null>(null);
 
   useEffect(() => {
-    const savedPlayerId = localStorage.getItem('allInPlayerId');
-
-    if (!savedPlayerId) {
-      return;
-    }
-
-    fetch(`/api/player?id=${savedPlayerId}`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data?.id) {
-          setPlayer(data);
-        }
-      })
-      .catch((error) => {
-        console.error('Unable to load player:', error);
+    let active = true;
+    async function loadPlayer() {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if (!url || !key) {
+        console.error('Supabase public configuration is missing.');
+        if (active) window.location.replace('/');
+        return;
+      }
+      const supabase = createClient(url, key);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        if (active) window.location.replace('/');
+        return;
+      }
+      const response = await fetch('/api/player', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        cache: 'no-store',
       });
+      if (response.ok) {
+        const profile = await response.json();
+        if (active) setPlayer(profile);
+      } else if (active) {
+        window.location.replace('/');
+      }
+    }
+    void loadPlayer();
+    return () => { active = false; };
   }, []);
   
   return (
@@ -128,12 +141,13 @@ export default function MyAllInPage() {
             </div>
 
             <p className="cardEyebrow">MY SEASON</p>
-            <h3>The story starts here.</h3>
+            <h3>Your stats start here.</h3>
+            <p>Stats are recorded from the launch of Player IDs onward. Previous games, goals, assists, and wins are not backfilled.</p>
 
             <div className="seasonStats">
               <div>
                 <strong>0</strong>
-                <span>GAMES</span>
+                <span>RECORDED GAMES</span>
               </div>
               <div>
                 <strong>—</strong>
@@ -145,7 +159,7 @@ export default function MyAllInPage() {
               </div>
               <div>
                 <strong>0</strong>
-                <span>WINS</span>
+                <span>RECORDED WINS</span>
               </div>
             </div>
           </section>
@@ -208,6 +222,7 @@ export default function MyAllInPage() {
             <div>
               <p className="cardEyebrow">ACHIEVEMENTS</p>
               <h3>Earn your legacy.</h3>
+              <p>Past championship titles can be added after we verify the winning team's roster. Other stats begin at zero.</p>
             </div>
           </div>
 

@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 type AuthWelcomeProps = {
   onEmailSignup: () => void;
@@ -32,19 +34,19 @@ export default function AuthWelcome({
     setAuthLoading(true);
     setAuthMessage('');
 
+    const supabase = getSupabaseClient();
+    if (!supabase) { setAuthMessage('Sign-in is temporarily unavailable.'); setAuthLoading(false); return; }
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        shouldCreateUser: authMode === 'signup',
+        // Existing Player IDs may predate Supabase Auth; create a login identity if needed.
+        // The authenticated email is matched to the existing players record afterward.
+        shouldCreateUser: true,
       },
     });
 
     if (error) {
-      setAuthMessage(
-        authMode === 'login'
-          ? 'We could not find an All In account with that email.'
-          : error.message
-      );
+      setAuthMessage(error.message);
       setAuthLoading(false);
       return;
     }
@@ -63,6 +65,8 @@ export default function AuthWelcome({
     setAuthLoading(true);
     setAuthMessage('');
 
+    const supabase = getSupabaseClient();
+    if (!supabase) { setAuthMessage('Sign-in is temporarily unavailable.'); setAuthLoading(false); return; }
     const { error } = await supabase.auth.verifyOtp({
       email: email.trim(),
       token: otp.trim(),
@@ -70,7 +74,8 @@ export default function AuthWelcome({
     });
 
     if (error) {
-      setAuthMessage('That code is invalid or expired. Please try again.');
+      // Surface Supabase's actual error so configuration and token issues can be distinguished.
+      setAuthMessage(`Verification failed: ${error.message}`);
       setAuthLoading(false);
       return;
     }
@@ -374,10 +379,12 @@ export default function AuthWelcome({
           type="button"
           style={socialButton}
           onClick={async () => {
+  const supabase = getSupabaseClient();
+  if (!supabase) { setAuthMessage('Google sign-in is temporarily unavailable.'); return; }
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: 'https://allinsportsnj.com',
+      redirectTo: window.location.origin,
     },
   });
 
