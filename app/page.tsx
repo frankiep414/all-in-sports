@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react';
 import AuthWelcome from './AuthWelcome';
 import { createClient } from '@supabase/supabase-js';
 
+let browserSupabase: ReturnType<typeof createClient> | null = null;
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return null;
-  return createClient(url, key);
+  if (!browserSupabase) browserSupabase = createClient(url, key);
+  return browserSupabase;
 }
 
 import {
@@ -213,7 +215,11 @@ export default function Home() {
     const supabase = getSupabaseClient();
     if (!supabase) return;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') void loadVerifiedPlayer();
+      // Supabase auth callbacks run under an internal lock. Defer getSession/fetch
+      // until after the callback returns to avoid hanging on login.
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+        window.setTimeout(() => { void loadVerifiedPlayer(); }, 0);
+      }
       if (event === 'SIGNED_OUT') {
         localStorage.removeItem('allInPlayerId');
         setCurrentPlayer(null);
