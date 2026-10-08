@@ -74,7 +74,8 @@ export default function AuthWelcome({
     });
 
     if (error) {
-      setAuthMessage('That code is invalid or expired. Please try again.');
+      // Surface Supabase's actual error so configuration and token issues can be distinguished.
+      setAuthMessage(`Verification failed: ${error.message}`);
       setAuthLoading(false);
       return;
     }
