@@ -153,3 +153,77 @@ export async function PATCH(request: Request) {
   return Response.json({error:'Unable to update game.'},{status:500});
  }
 }
+
+export async function DELETE(request: Request) {
+ try {
+  const access=await getAdmin(request);
+  if(!access.admin) return Response.json({error:'Administrator access required.'},{status:access.status||403});
+  const body=await request.json();
+  const id=typeof body.id==='string'?body.id:'';
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
+   return Response.json({error:'Invalid game ID.'},{status:400});
+  const {data,error}=await access.admin.from('pickup_games').delete().eq('id',id).eq('status','draft').select('id').maybeSingle();
+  if(error) return Response.json({error:'Unable to delete draft.'},{status:500});
+  if(!data) return Response.json({error:'Draft not found or not deletable.'},{status:409});
+  return Response.json({deleted:true});
+ }catch{return Response.json({error:'Unable to delete draft.'},{status:500});}
+}
+
+export async function PUT(request: Request) {
+ try {
+  const token=request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
+  const access=await getAdmin(request);
+  if(!access.admin||!token) return Response.json({error:'Administrator access required.'},{status:access.status||403});
+  const body=await request.json();
+  const id=typeof body.id==='string'?body.id:'';
+  const weeks=body.weeks;
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ||
+   !Number.isInteger(weeks)||weeks<2||weeks>16)
+   return Response.json({error:'Choose 2 to 16 weeks.'},{status:400});
+  const {data:game,error:lookupError}=await access.admin.from('pickup_games')
+   .select('id,title,venue,starts_at,ends_at,price_cents,capacity,status,series_id,created_by').eq('id',id).maybeSingle();
+  if(lookupError) return Response.json({error:'Unable to load draft.'},{status:500});
+  if(!game||game.status!=='draft'||game.series_id)
+   return Response.json({error:'Only standalone drafts can become recurring.'},{status:409});
+  const start=new Date(game.starts_at),end=new Date(game.ends_at);
+  if(start.getTime()<=Date.now()||end<=start)
+   return Response.json({error:'The first game must be in the future.'},{status:400});
+  const parts=(date:Date)=>{
+   const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',
+    year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'})
+    .formatToParts(date).map(x=>[x.type,x.value]));
+   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+  };
+  const localStart=parts(start),localEnd=parts(end);
+  if(localStart.slice(0,10)!==localEnd.slice(0,10))
+   return Response.json({error:'Recurring games must start and end on the same date.'},{status:400});
+  const seriesId=crypto.randomUUID();
+  const rows=[];
+  for(let i=1;i<weeks;i++){
+   const begins=newYorkInstant(nextWeek(localStart,i));
+   const finishes=newYorkInstant(nextWeek(localEnd,i));
+   if(!begins||!finishes||finishes<=begins)
+    return Response.json({error:'A weekly date is invalid.'},{status:400});
+   rows.push({title:game.title,venue:game.venue,starts_at:begins.toISOString(),
+    ends_at:finishes.toISOString(),price_cents:game.price_cents,capacity:game.capacity,
+    status:'draft',created_by:game.created_by,series_id:seriesId,occurrence_index:i+1});
+  }
+  // Insert new dates first. If marking the original fails, remove inserted dates.
+  const {data:inserted,error:insertError}=await access.admin.from('pickup_games')
+   .insert(rows).select('id');
+  if(insertError) return Response.json({error:'Unable to create recurring drafts.'},{status:500});
+  const {data:original,error:updateError}=await access.admin.from('pickup_games')
+   .update({series_id:seriesId,occurrence_index:1}).eq('id',id).eq('status','draft')
+   .is('series_id',null).select('id').maybeSingle();
+  if(updateError||!original){
+   const {error:rollbackError}=await access.admin.from('pickup_games').delete()
+    .eq('series_id',seriesId).eq('status','draft');
+   if(rollbackError) console.error('Recurring conversion rollback failed',{seriesId,code:rollbackError.code});
+   return Response.json({error:'Unable to finish conversion. Refresh the game list before retrying.'},{status:500});
+  }
+  return Response.json({converted:true,count:weeks,series_id:seriesId,created:inserted?.length||0});
+ }catch(error){
+  console.error('Recurring conversion error',{name:error instanceof Error?error.name:'Unknown'});
+  return Response.json({error:'Unable to convert game.'},{status:500});
+ }
+}
