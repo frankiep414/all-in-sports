@@ -4991,3 +4991,13 @@ html {
     margin-bottom: 45px;
   }
 }
+
+
+.carmitaStandalonePage {
+  min-height: 100vh;
+  padding: 90px 30px;
+}
+
+.carmitaStandalonePage .carmitaStory {
+  padding-top: 60px;
+}
