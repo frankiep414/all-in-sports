@@ -182,8 +182,8 @@ export default function PlayForCarmitaPage() {
 
               <div>
                 <span>DATE &amp; TIME</span>
-                <h3>NOVEMBER 1</h3>
-                <p>Sunday · 11:00 AM – 4:00 PM</p>
+                <h3>OCTOBER 31</h3>
+                <p>Saturday · 9:00 AM – 2:00 PM</p>
               </div>
             </article>
 
