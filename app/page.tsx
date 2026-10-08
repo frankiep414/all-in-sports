@@ -155,80 +155,54 @@ export default function Home() {
   full_name: string;
 } | null>(null);
   const [verifiedEmail, setVerifiedEmail] = useState('');
-  useEffect(() => {
-  const savedPlayerId = localStorage.getItem('allInPlayerId');
-
-  if (savedPlayerId) {
-    setShowPlayerSignup(false);
-    setShowAuthWelcome(false);
-
-    fetch(`/api/player?id=${savedPlayerId}`)
-      .then((response) => response.json())
-      .then((player) => {
-        if (player?.id) {
-          setCurrentPlayer(player);
-        }
-      })
-      .catch((error) => {
-        console.error('Unable to load player:', error);
-      });
-  }
-}, []);
-
-useEffect(() => {
-  async function checkSupabaseUser() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user?.email) {
+  async function loadVerifiedPlayer() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token || !session.user.email) {
+      localStorage.removeItem('allInPlayerId');
+      setCurrentPlayer(null);
+      setShowAuthWelcome(true);
       return;
     }
-
-    const email = user.email;
-    setVerifiedEmail(email);
-
-    try {
-      const response = await fetch(
-        `/api/player?email=${encodeURIComponent(email)}`
-      );
-
-      if (response.ok) {
-        const player = await response.json();
-
-        if (player?.id) {
-          localStorage.setItem('allInPlayerId', String(player.id));
-          setCurrentPlayer(player);
-          setShowAuthWelcome(false);
-          setShowPlayerSignup(false);
-          return;
-        }
-      }
-
-      // Authenticated, but no existing player uses this email.
-      // Send them through the Player ID setup flow.
+    setVerifiedEmail(session.user.email);
+    const response = await fetch('/api/player', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      cache: 'no-store',
+    });
+    if (response.ok) {
+      const player = await response.json();
+      localStorage.setItem('allInPlayerId', String(player.id));
+      setCurrentPlayer(player);
+      setShowAuthWelcome(false);
+      setShowPlayerSignup(false);
+    } else if (response.status === 404) {
+      localStorage.removeItem('allInPlayerId');
+      setCurrentPlayer(null);
       setShowAuthWelcome(false);
       setShowPlayerSignup(true);
-    } catch (error) {
-      console.error('Unable to look up player by email:', error);
-      setShowAuthWelcome(false);
-      setShowPlayerSignup(true);
+    } else {
+      console.error('Unable to verify player profile:', response.status);
+      setShowAuthWelcome(true);
     }
   }
 
-  checkSupabaseUser();
-}, []);
+  useEffect(() => {
+    void loadVerifiedPlayer();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') void loadVerifiedPlayer();
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('allInPlayerId');
+        setCurrentPlayer(null);
+        setShowAuthWelcome(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   if (showAuthWelcome) {
   return (
     <AuthWelcome
-      onEmailSignup={() => {
-        setShowAuthWelcome(false);
-        setShowPlayerSignup(true);
-      }}
-    onLogin={() => {
-  setShowAuthWelcome(false);
-  setShowPlayerSignup(false);
-}}
+      onEmailSignup={() => { void loadVerifiedPlayer(); }}
+    onLogin={() => { void loadVerifiedPlayer(); }}
     />
   );
 }
@@ -273,15 +247,18 @@ return (
     email: formData.get('email'),
     playedBefore: formData.get('playedBefore') === 'yes',
     teamName: formData.get('teamName'),
-    divisions: formData.getAll('divisions'),
+    divisions: formData.getAll('division'),
     smsConsent: formData.get('smsConsent') === 'on',
   };
 
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error('Sign in before claiming your Player ID.');
     const response = await fetch('/api/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify(data),
     });
