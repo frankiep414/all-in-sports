@@ -1,5 +1,34 @@
 import { createClient } from '@supabase/supabase-js';
 
+async function getAdmin(request: Request) {
+ const token=request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
+ if(!token) return {status:401 as const};
+ const url=process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+ const key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+ const secret=process.env.SUPABASE_SECRET_KEY;
+ if(!url || !key || !secret) return {status:500 as const};
+ const auth=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+ const {data:{user},error}=await auth.auth.getUser(token);
+ if(error || !user?.email_confirmed_at) return {status:401 as const};
+ const admin=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
+ const {data:role,error:roleError}=await admin.from('admin_users').select('user_id').eq('user_id',user.id).maybeSingle();
+ if(roleError) return {status:500 as const};
+ if(!role) return {status:403 as const};
+ return {admin};
+}
+
+export async function GET(request: Request) {
+ try {
+  const access=await getAdmin(request);
+  if(!access.admin) return Response.json({error:'Administrator access required.'},{status:access.status || 403});
+  const {data,error}=await access.admin.from('pickup_games')
+    .select('id,title,venue,starts_at,ends_at,price_cents,capacity,status,created_at')
+    .order('starts_at',{ascending:true}).limit(100);
+  if(error) return Response.json({error:'Unable to load games.'},{status:500});
+  return Response.json({games:data});
+ }catch {return Response.json({error:'Unable to load games.'},{status:500});}
+}
+
 export async function POST(request: Request) {
  try {
   const token = request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
