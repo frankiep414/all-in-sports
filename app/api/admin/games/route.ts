@@ -128,6 +128,22 @@ export async function PATCH(request: Request) {
   const id=typeof body.id==='string'?body.id:'';
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
    return Response.json({error:'Invalid game ID.'},{status:400});
+  if(body.action==='publish'||body.action==='cancel'){
+   const {data:game,error:lookupError}=await access.admin.from('pickup_games')
+    .select('id,status,starts_at').eq('id',id).maybeSingle();
+   if(lookupError)return Response.json({error:'Unable to verify game.'},{status:500});
+   if(!game)return Response.json({error:'Game not found.'},{status:404});
+   const next=body.action==='publish'?'published':'cancelled';
+   if(next==='published'&&(game.status!=='draft'||new Date(game.starts_at).getTime()<=Date.now()))
+    return Response.json({error:'Only upcoming drafts can be published.'},{status:409});
+   if(next==='cancelled'&&game.status!=='published')
+    return Response.json({error:'Only published games can be cancelled.'},{status:409});
+   const {data,error}=await access.admin.from('pickup_games').update({status:next})
+    .eq('id',id).eq('status',game.status).select('id').maybeSingle();
+   if(error)return Response.json({error:'Unable to update game status.'},{status:500});
+   if(!data)return Response.json({error:'Game status changed. Refresh and retry.'},{status:409});
+   return Response.json({status:next});
+  }
   const title=typeof body.title==='string'?body.title.trim():'';
   const venue=typeof body.venue==='string'?body.venue.trim():'';
   const start=typeof body.starts_at==='string'?new Date(body.starts_at):new Date(NaN);
@@ -227,3 +243,8 @@ export async function PUT(request: Request) {
   return Response.json({error:'Unable to convert game.'},{status:500});
  }
 }
+
+export async function OPTIONS() {
+ return new Response(null,{status:204,headers:{Allow:'GET, POST, PATCH, PUT, DELETE'}});
+}
+export async function HEAD() {return new Response(null,{status:200});}
