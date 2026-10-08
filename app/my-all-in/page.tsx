@@ -128,12 +128,13 @@ export default function MyAllInPage() {
             </div>
 
             <p className="cardEyebrow">MY SEASON</p>
-            <h3>The story starts here.</h3>
+            <h3>Your stats start here.</h3>
+            <p>Stats are recorded from the launch of Player IDs onward. Previous games, goals, assists, and wins are not backfilled.</p>
 
             <div className="seasonStats">
               <div>
                 <strong>0</strong>
-                <span>GAMES</span>
+                <span>RECORDED GAMES</span>
               </div>
               <div>
                 <strong>—</strong>
@@ -145,7 +146,7 @@ export default function MyAllInPage() {
               </div>
               <div>
                 <strong>0</strong>
-                <span>WINS</span>
+                <span>RECORDED WINS</span>
               </div>
             </div>
           </section>
@@ -208,6 +209,7 @@ export default function MyAllInPage() {
             <div>
               <p className="cardEyebrow">ACHIEVEMENTS</p>
               <h3>Earn your legacy.</h3>
+              <p>Past championship titles can be added after we verify the winning team's roster. Other stats begin at zero.</p>
             </div>
           </div>
 
