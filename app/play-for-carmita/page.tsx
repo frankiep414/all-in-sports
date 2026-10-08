@@ -182,8 +182,9 @@ export default function PlayForCarmitaPage() {
                 families affected by brain aneurysms.
               </p>
             </div>
-          </div>
-          </section>
+</div>
+</div>
+</section>
 
       {/* EVENT DETAILS */}
       <section id="event-information" className="carmitaDetailsSection">
