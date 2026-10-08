@@ -183,6 +183,7 @@ export default function PlayForCarmitaPage() {
               </p>
             </div>
           </div>
+          </section>
 
       {/* EVENT DETAILS */}
       <section id="event-information" className="carmitaDetailsSection">
