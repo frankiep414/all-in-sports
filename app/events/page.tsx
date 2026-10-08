@@ -12,6 +12,13 @@ export default function Page() {
         <h1 style={{fontSize:'clamp(42px,8vw,96px)',lineHeight:1.02,margin:'18px 0',fontWeight:900}}>More than just the game.</h1>
         <h2 style={{fontSize:'clamp(20px,3vw,30px)',color:'#95d9ff',margin:'20px 0'}}>Parties & Community</h2>
         <p style={{fontSize:19,lineHeight:1.7,color:'#b8c1d0',maxWidth:730}}>All In Sports brings people together through private group events, celebrations, and community activities. Details and availability are shared directly with our team.</p>
+        <section style={{marginTop:44,padding:'clamp(24px,4vw,44px)',border:'1px solid #a66ac2',borderRadius:22,background:'linear-gradient(135deg,#25162f,#12151e)'}}>
+          <p style={{color:'#e2b8ff',letterSpacing:3,fontWeight:800}}>FEATURED COMMUNITY EVENT</p>
+          <h3 style={{fontSize:'clamp(30px,5vw,54px)',margin:'12px 0'}}>PLAY FOR CARMITA</h3>
+          <p style={{fontSize:19,color:'#e4d8ec',lineHeight:1.6}}>A charity soccer tournament honoring our mom and supporting the Brain Aneurysm Foundation.</p>
+          <p style={{color:'#fff',lineHeight:1.8}}>Sunday, November 1, 2026 · 11 AM–4 PM<br />Coed 7v7 · $250 per team / $25 per player<br />Harrison / Jersey City, NJ · Venue to be confirmed</p>
+          <Link href="/play-for-carmita" style={{display:'inline-block',marginTop:16,padding:'15px 24px',borderRadius:12,background:'#e2b8ff',color:'#160d1b',fontWeight:900,textDecoration:'none'}}>EXPLORE THE EVENT →</Link>
+        </section>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(190px,1fr))',gap:16,marginTop:48}}>
           <div style={{border:'1px solid #303945',borderRadius:18,padding:24,background:'#111820'}}><strong style={{fontSize:20}}>Private group events</strong><p style={{color:'#95d9ff',fontSize:13}}>DETAILS COMING SOON</p></div>
           <div style={{border:'1px solid #303945',borderRadius:18,padding:24,background:'#111820'}}><strong style={{fontSize:20}}>Celebrations</strong><p style={{color:'#95d9ff',fontSize:13}}>DETAILS COMING SOON</p></div>
