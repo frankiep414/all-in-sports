@@ -9,9 +9,9 @@ alter table public.admin_users enable row level security;
 revoke all on public.admin_users from anon, authenticated;
 -- Check the verified identity before inserting. Never promote by a client-supplied email.
 select id, email, email_confirmed_at from auth.users
-where lower(email) = 'garciachristian12@gmail.com';
--- After confirming Francisco's login email and both verified accounts, grant access:
+where lower(email) in ('francisco.x.garcia1414@gmail.com', 'garciachristian12@gmail.com');
+-- After checking both identities above are correct and verified, uncomment to grant access:
 -- insert into public.admin_users(user_id)
--- select id from auth.users where lower(email) in ('FRANCISCO_VERIFIED_EMAIL', 'garciachristian12@gmail.com')
+-- select id from auth.users where lower(email) in ('francisco.x.garcia1414@gmail.com', 'garciachristian12@gmail.com')
 -- and email_confirmed_at is not null
 -- on conflict (user_id) do nothing;
