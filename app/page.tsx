@@ -271,7 +271,7 @@ return (
   const data = {
     fullName: formData.get('fullName'),
     phone: formData.get('phone'),
-    email: formData.get('email'),
+    email: verifiedEmail,
     playedBefore: formData.get('playedBefore') === 'yes',
     teamName: formData.get('teamName'),
     divisions: formData.getAll('division'),
@@ -337,14 +337,14 @@ setSignupComplete(true);
             </div>
 
             <label>
-  Email
-  <input
-    type="email"
-    name="email"
- defaultValue={verifiedEmail}
-    required
-  />
-</label>
+              Verified email
+              <input
+                type="email"
+                value={verifiedEmail}
+                readOnly
+                aria-label="Verified email address"
+              />
+            </label>
             <div className="signupQuestion">
               <span>Have you played with All In before?</span>
 
