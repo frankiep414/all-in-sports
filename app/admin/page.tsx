@@ -13,6 +13,44 @@ export default function AdminPage() {
   const [repeatWeekly,setRepeatWeekly]=useState(false);
   const [weeks,setWeeks]=useState(8);
   const [games,setGames] = useState<PickupGame[]>([]);
+  const [editingId,setEditingId]=useState<string|null>(null);
+  const [editGame,setEditGame]=useState({title:'',venue:'',date:'',start:'',end:'',price:'',capacity:''});
+  const [editSaving,setEditSaving]=useState(false);
+  const [editMessage,setEditMessage]=useState('');
+  function beginEdit(item:PickupGame) {
+    const format=(iso:string)=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso));
+    const pieces=(iso:string)=>Object.fromEntries(format(iso).map(part=>[part.type,part.value]));
+    const start=pieces(item.starts_at),end=pieces(item.ends_at);
+    setEditGame({title:item.title,venue:item.venue,date:`${start.year}-${start.month}-${start.day}`,
+      start:`${start.hour}:${start.minute}`,end:`${end.hour}:${end.minute}`,
+      price:(item.price_cents/100).toFixed(2),capacity:String(item.capacity)});
+    setEditingId(item.id);setEditMessage('');
+  }
+  async function saveEdit(event:React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();if(!editingId)return;
+    setEditSaving(true);setEditMessage('');
+    try {
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Please sign in again.');
+      const start=new Date(`${editGame.date}T${editGame.start}`);
+      const end=new Date(`${editGame.date}T${editGame.end}`);
+      if(!Number.isFinite(start.getTime())||!Number.isFinite(end.getTime())||end<=start)
+        throw new Error('End time must be after start time.');
+      const response=await fetch('/api/admin/games',{method:'PATCH',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({id:editingId,title:editGame.title,venue:editGame.venue,
+          starts_at:start.toISOString(),ends_at:end.toISOString(),
+          price_cents:Math.round(Number(editGame.price)*100),capacity:Number(editGame.capacity)})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Unable to update game.');
+      await loadGames(session.access_token);
+      setEditingId(null);setEditMessage('Game updated successfully.');
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update game.');}
+    finally{setEditSaving(false);}
+  }
   const [gamesError,setGamesError] = useState('');
   async function loadGames(token:string) {
     const response=await fetch('/api/admin/games',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
@@ -137,7 +175,8 @@ export default function AdminPage() {
             <h2>Saved games</h2>
             {gamesError && <p role="alert">{gamesError}</p>}
             {!gamesError && games.length===0 && <p style={{color:'#b8c1d0'}}>No saved games yet. Create your first draft above.</p>}
-            <div style={{display:'grid',gap:12}}>
+            {editMessage && <p role="status" style={{color:'#95d9ff'}}>{editMessage}</p>}
+            <div style={{display:'grid',gap:12'}}>
               {games.map(item=><article key={item.id} style={{border:'1px solid #303945',borderRadius:14,padding:20,background:'#111820'}}>
                 <div style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
                   <strong>{item.title}</strong><span style={{color:'#95d9ff',fontWeight:700}}>{item.status.toUpperCase()}</span>
@@ -145,6 +184,23 @@ export default function AdminPage() {
                 <p style={{color:'#b8c1d0'}}>{item.venue} · {new Date(item.starts_at).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'})}</p>
                 {item.series_id && <p style={{color:'#95d9ff',marginBottom:8}}>Weekly series · Game {item.occurrence_index}</p>}
                 <p style={{marginBottom:0}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
+                {item.status==='draft' && <button type="button" onClick={()=>beginEdit(item)}
+                  style={{marginTop:14,background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'10px 18px',fontWeight:800,cursor:'pointer'}}>EDIT GAME</button>}
+                {editingId===item.id && <form onSubmit={saveEdit} style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,marginTop:18,paddingTop:16,borderTop:'1px solid #303945'}}>
+                  {([['title','Game title','text'],['venue','Field / location','text'],['date','Game date','date'],
+                    ['start','Start time','time'],['end','End time','time'],['price','Price per player ($)','number'],
+                    ['capacity','Player capacity','number']] as const).map(([field,label,type])=><label key={field} style={{display:'grid',gap:6}}>
+                      {label}<input required type={type} value={editGame[field]} min={field==='price'?'0':field==='capacity'?'2':undefined}
+                        max={field==='capacity'?'100':undefined} step={field==='price'?'0.01':undefined}
+                        onChange={e=>setEditGame(current=>({...current,[field]:e.target.value}))}
+                        style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:11,fontSize:15}}/>
+                    </label>)}
+                  <div style={{gridColumn:'1 / -1',display:'flex',gap:12,alignItems:'center'}}>
+                    <button type="submit" disabled={editSaving} style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800}}>{editSaving?'Saving…':'SAVE CHANGES'}</button>
+                    <button type="button" onClick={()=>{setEditingId(null);setEditMessage('');}} style={{background:'transparent',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:'11px 18px'}}>CANCEL</button>
+                  </div>
+                  <p style={{gridColumn:'1 / -1',color:'#b8c1d0',margin:0}}>This updates only this game, not other dates in its series.</p>
+                </form>}
               </article>)}
             </div>
           </section>
