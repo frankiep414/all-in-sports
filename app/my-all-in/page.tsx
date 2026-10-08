@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
 
 import {
   ArrowLeft,
@@ -23,22 +26,26 @@ export default function MyAllInPage() {
   } | null>(null);
 
   useEffect(() => {
-    const savedPlayerId = localStorage.getItem('allInPlayerId');
-
-    if (!savedPlayerId) {
-      return;
-    }
-
-    fetch(`/api/player?id=${savedPlayerId}`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data?.id) {
-          setPlayer(data);
-        }
-      })
-      .catch((error) => {
-        console.error('Unable to load player:', error);
+    let active = true;
+    async function loadPlayer() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        if (active) window.location.replace('/');
+        return;
+      }
+      const response = await fetch('/api/player', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        cache: 'no-store',
       });
+      if (response.ok) {
+        const profile = await response.json();
+        if (active) setPlayer(profile);
+      } else if (active) {
+        window.location.replace('/');
+      }
+    }
+    void loadPlayer();
+    return () => { active = false; };
   }, []);
   
   return (
