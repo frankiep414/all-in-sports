@@ -39,16 +39,14 @@ export default function AuthWelcome({
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        shouldCreateUser: authMode === 'signup',
+        // Existing Player IDs may predate Supabase Auth; create a login identity if needed.
+        // The authenticated email is matched to the existing players record afterward.
+        shouldCreateUser: true,
       },
     });
 
     if (error) {
-      setAuthMessage(
-        authMode === 'login'
-          ? 'We could not find an All In account with that email.'
-          : error.message
-      );
+      setAuthMessage(error.message);
       setAuthLoading(false);
       return;
     }
