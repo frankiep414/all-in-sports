@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-type PickupGame = {id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;status:string};
+type PickupGame = {id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;status:string;series_id?:string|null;occurrence_index?:number|null};
 type Status = 'loading' | 'authorized' | 'denied' | 'error';
 
 export default function AdminPage() {
   const [status, setStatus] = useState<Status>('loading');
   const [saving,setSaving] = useState(false);
+  const [repeatWeekly,setRepeatWeekly]=useState(false);
+  const [weeks,setWeeks]=useState(8);
   const [games,setGames] = useState<PickupGame[]>([]);
   const [gamesError,setGamesError] = useState('');
   async function loadGames(token:string) {
@@ -38,11 +40,13 @@ export default function AdminPage() {
       if (!Number.isFinite(priceNumber) || !Number.isFinite(capacityNumber)) throw new Error('Enter valid price and capacity.');
       const response=await fetch('/api/admin/games',{
         method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
-        body:JSON.stringify({title:game.title,venue:game.venue,starts_at:start.toISOString(),ends_at:end.toISOString(),price_cents:Math.round(priceNumber*100),capacity:capacityNumber})
+        body:JSON.stringify({title:game.title,venue:game.venue,starts_at:start.toISOString(),ends_at:end.toISOString(),price_cents:Math.round(priceNumber*100),capacity:capacityNumber,
+          repeat_weekly:repeatWeekly,weeks:repeatWeekly?weeks:1,
+          local_start:`${game.date}T${game.start}`,local_end:`${game.date}T${game.end}`})
       });
       const result=await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not save game.');
-      setMessage('Game draft saved successfully. It is not published.');
+      setMessage(repeatWeekly?`${weeks} weekly game drafts saved successfully. None are published.`:'Game draft saved successfully. It is not published.');
       await loadGames(session.access_token);
       setGame({title:'',venue:'',date:'',start:'',end:'',price:'20',capacity:'20'});
     } catch (error) {
@@ -111,6 +115,18 @@ export default function AdminPage() {
               ] as const).map(([field,label,type])=><label key={field} style={{display:'grid',gap:7,color:'#dce6f2',fontWeight:600}}>
                 {label}<input required type={type} value={game[field]} min={field==='price'?'0':field==='capacity'?'2':undefined} max={field==='capacity'?'100':undefined} step={field==='price'?'0.01':undefined} onChange={e=>setGame(current=>({...current,[field]:e.target.value}))} style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:12,fontSize:16}}/>
               </label>)}
+              <div style={{gridColumn:'1 / -1',display:'grid',gap:12}}>
+                <label style={{display:'flex',alignItems:'center',gap:12,fontWeight:700}}>
+                  <input type="checkbox" checked={repeatWeekly} onChange={e=>setRepeatWeekly(e.target.checked)} style={{width:20,height:20}}/>
+                  Repeat this game every week
+                </label>
+                {repeatWeekly && <label style={{display:'grid',gap:8,maxWidth:260}}>
+                  Number of weeks (2–16)
+                  <input type="number" min={2} max={16} step={1} required value={weeks} onChange={e=>setWeeks(Number(e.target.value))}
+                    style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:12,fontSize:16}}/>
+                  <small style={{color:'#b8c1d0'}}>Each week is saved as a separate unpublished game. Times use New York time.</small>
+                </label>}
+              </div>
               <div style={{gridColumn:'1 / -1'}}>
                 <button type="submit" disabled={saving} style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:10,padding:'14px 22px',fontWeight:800,cursor:'pointer'}}>{saving?'Saving…':'SAVE GAME DRAFT'}</button>
                 {message && <p role="status" style={{color:'#c8e5fa'}}>{message}</p>}
@@ -127,6 +143,7 @@ export default function AdminPage() {
                   <strong>{item.title}</strong><span style={{color:'#95d9ff',fontWeight:700}}>{item.status.toUpperCase()}</span>
                 </div>
                 <p style={{color:'#b8c1d0'}}>{item.venue} · {new Date(item.starts_at).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'})}</p>
+                {item.series_id && <p style={{color:'#95d9ff',marginBottom:8}}>Weekly series · Game {item.occurrence_index}</p>}
                 <p style={{marginBottom:0}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
               </article>)}
             </div>
