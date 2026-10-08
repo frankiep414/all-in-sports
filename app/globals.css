@@ -4373,7 +4373,7 @@ padding: 40px 24px 50px;
   box-shadow:
     0 45px 120px rgba(0, 0, 0, 0.60),
     0 0 70px rgba(137, 70, 255, 0.10);
-  transform: rotate(1deg);
+  transform: none;
 }
 
 .carmitaArtworkFrame img {
