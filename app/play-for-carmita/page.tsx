@@ -37,7 +37,7 @@ export default function PlayForCarmitaPage() {
 <nav className="carmitaQuickNav" aria-label="Explore Play for Carmita">
   <div className="carmitaQuickNavInner">
 
-    <a href="#why-we-play">
+   href="/play-for-carmita/why-we-play"
       <span>01</span>
       <strong>WHY WE PLAY</strong>
       <span className="carmitaQuickArrow">↗</span>
