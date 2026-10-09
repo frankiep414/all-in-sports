@@ -10,7 +10,7 @@ export default function PlayPage() {
   const [method, setMethod] = useState<Method>('zelle');
   const [games,setGames]=useState<Array<{id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;registered_count:number;waitlist_count:number;spots_remaining:number}>>([]);
   const [gamesLoading,setGamesLoading]=useState(true);
-  const [registrations,setRegistrations]=useState<Record<string,{id:string;status:string;payment_status:string}>>({});
+  const [registrations,setRegistrations]=useState<Record<string,{id:string;status:string;payment_status:string;payment_reference?:string}>>({});
   const [reporting,setReporting]=useState<string|null>(null);
   const reportingEnabled=process.env.NEXT_PUBLIC_PICKUP_ZELLE_REPORTING_ENABLED==='true';
   const [registering,setRegistering]=useState<string|null>(null);
@@ -34,7 +34,7 @@ export default function PlayPage() {
         body:JSON.stringify({game_id:gameId})});
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'Registration failed.');
-      setRegistrations(current=>({...current,[gameId]:{id:result.registration_id,status:result.status,payment_status:'unpaid'}}));
+      setRegistrations(current=>({...current,[gameId]:{id:result.registration_id,status:result.status,payment_status:'unpaid',payment_reference:result.payment_reference}}));
       setGames(current=>current.map(game=>game.id===gameId?{...game,registered_count:game.registered_count+(result.status==='waitlisted'?0:1),waitlist_count:game.waitlist_count+(result.status==='waitlisted'?1:0),spots_remaining:Math.max(0,game.spots_remaining-(result.status==='waitlisted'?0:1))}:game));
       setRegistrationMessage('Registration received. Your spot is provisional; payment has not been collected. Do not send money yet.');
     }catch(error){setRegistrationMessage(error instanceof Error?error.message:'Registration failed.');}
@@ -66,7 +66,7 @@ export default function PlayPage() {
       if(!token)return;
       const response=await fetch('/api/registrations',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
       if(response.ok){const result=await response.json();if(active)setRegistrations(Object.fromEntries(
-        (result.registrations||[]).map((r:{id:string;game_id:string;status:string;payment_status:string})=>[r.game_id,{id:r.id,status:r.status,payment_status:r.payment_status}])
+        (result.registrations||[]).map((r:{id:string;game_id:string;status:string;payment_status:string;payment_reference?:string})=>[r.game_id,{id:r.id,status:r.status,payment_status:r.payment_status,payment_reference:r.payment_reference}])
       ));}
     }).catch(()=>{});
     return ()=>{active=false;};
@@ -116,6 +116,7 @@ export default function PlayPage() {
                 style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800,cursor:'pointer'}}>
                 {registering===item.id?'Registering…':'REQUEST A SPOT'}
               </button>}
+            {registrations[item.id]?.payment_reference && <p style={{margin:'12px 0',fontSize:14}}>Zelle memo reference: <strong style={{color:'#95d9ff'}}>{registrations[item.id].payment_reference}</strong> <button type="button" onClick={()=>void navigator.clipboard?.writeText(registrations[item.id].payment_reference||'')} style={{marginLeft:8,padding:'4px 9px',borderRadius:6}}>COPY</button></p>}
             {registrations[item.id] && ['pending_payment','offered'].includes(registrations[item.id].status) && registrations[item.id].payment_status==='unpaid' && reportingEnabled &&
               <button type="button" disabled={reporting!==null} onClick={()=>void reportPayment(item.id)}
                 style={{display:'block',marginTop:12,padding:'10px 16px',borderRadius:8,border:'1px solid #95d9ff',background:'#26384a',color:'#fff',fontWeight:700}}>
