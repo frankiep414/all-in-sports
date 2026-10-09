@@ -66,6 +66,26 @@ export default function AdminPage() {
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update game.');}
     finally{setDraftActionBusy(false);}
   }
+  const [testSignupBusy,setTestSignupBusy]=useState(false);
+  async function registerTestGame(gameId:string){
+   if(!window.confirm('Register your own Player ID for this test-only game? No payment will be collected.'))return;
+   setTestSignupBusy(true);setEditMessage('');
+   try{
+    const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if(!url||!key)throw new Error('Authentication unavailable.');
+    const client=createClient(url,key);
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.access_token)throw new Error('Sign in required.');
+    const response=await fetch('/api/registrations',{method:'POST',headers:{
+     'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`
+    },body:JSON.stringify({game_id:gameId})});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||'Unable to register.');
+    setEditMessage('Test registration saved. Open Notification Center to check Registration Received.');
+    if(rosterGame===gameId){setRosterGame(null);setRoster([]);}
+   }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to register test game.');}
+   finally{setTestSignupBusy(false);}
+  }
   const [rosterGame,setRosterGame]=useState<string|null>(null);
   const [roster,setRoster]=useState<Array<{id:string;player_name:string;status:string;payment_status:string;payment_reference?:string;created_at:string}>>([]);
   const [rosterMessage,setRosterMessage]=useState('');
@@ -302,6 +322,11 @@ export default function AdminPage() {
                 <p style={{color:'#b8c1d0'}}>{item.venue} · {new Date(item.starts_at).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'})}</p>
                 {item.series_id && <p style={{color:'#95d9ff',marginBottom:8}}>Weekly series · Game {item.occurrence_index}</p>}
                 <p style={{marginBottom:0}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
+                {item.is_test && item.status==='published' && <button type="button" disabled={testSignupBusy}
+                  onClick={()=>void registerTestGame(item.id)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#95d9ff',color:'#08101a',fontWeight:800}}>
+                  {testSignupBusy?'REGISTERING…':'REGISTER MY PLAYER ID (TEST)'}
+                </button>}
                 <button type="button" onClick={()=>void viewRoster(item.id)}
                   style={{marginTop:14,marginRight:12,background:'#26384a',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:'10px 18px',fontWeight:700}}>
                   {rosterGame===item.id?'HIDE ROSTER':'VIEW ROSTER'}
