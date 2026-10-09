@@ -65,6 +65,25 @@ export default function AdminPage() {
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update game.');}
     finally{setDraftActionBusy(false);}
   }
+  const [rosterGame,setRosterGame]=useState<string|null>(null);
+  const [roster,setRoster]=useState<Array<{id:string;player_name:string;status:string;payment_status:string;created_at:string}>>([]);
+  const [rosterMessage,setRosterMessage]=useState('');
+  async function viewRoster(id:string){
+    if(rosterGame===id){setRosterGame(null);return;}
+    setRosterGame(id);setRoster([]);setRosterMessage('Loading roster…');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Sign in required.');
+      const response=await fetch(`/api/admin/registrations?game_id=${encodeURIComponent(id)}`,{
+       headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Unable to load roster.');
+      setRoster(result.registrations||[]);setRosterMessage('');
+    }catch(error){setRosterMessage(error instanceof Error?error.message:'Unable to load roster.');}
+  }
   function beginEdit(item:PickupGame) {
     const format=(iso:string)=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso));
     const pieces=(iso:string)=>Object.fromEntries(format(iso).map(part=>[part.type,part.value]));
@@ -183,7 +202,7 @@ export default function AdminPage() {
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',gap:16,marginTop:40}}>
             {[
               ['Games','Create sessions, set pricing and player limits.','DRAFT CREATION READY'],
-              ['Registrations','Track players, pending spots and paid rosters.','IN DEVELOPMENT'],
+              ['Registrations','View player registrations and pending payment status.','ROSTER VIEW READY'],
               ['Zelle payments','Verify bank receipts before confirming spots.','IN DEVELOPMENT'],
               ['Stripe payments','Track confirmed checkout payments and refunds.','NOT CONNECTED'],
             ].map(([title,description,tag])=><div key={title} style={{background:'#111820',border:'1px solid #303945',borderRadius:16,padding:24}}>
@@ -232,6 +251,19 @@ export default function AdminPage() {
                 <p style={{color:'#b8c1d0'}}>{item.venue} · {new Date(item.starts_at).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'})}</p>
                 {item.series_id && <p style={{color:'#95d9ff',marginBottom:8}}>Weekly series · Game {item.occurrence_index}</p>}
                 <p style={{marginBottom:0}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
+                <button type="button" onClick={()=>void viewRoster(item.id)}
+                  style={{marginTop:14,marginRight:12,background:'#26384a',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:'10px 18px',fontWeight:700}}>
+                  {rosterGame===item.id?'HIDE ROSTER':'VIEW ROSTER'}
+                </button>
+                {rosterGame===item.id && <div style={{marginTop:14,padding:16,background:'#080b10',borderRadius:10}}>
+                  <h3 style={{marginTop:0}}>Player registrations ({roster.length})</h3>
+                  {rosterMessage && <p role="status">{rosterMessage}</p>}
+                  {!rosterMessage && roster.length===0 && <p>No registrations yet.</p>}
+                  {roster.map(entry=><p key={entry.id} style={{borderTop:'1px solid #303945',paddingTop:10}}>
+                    <strong>{entry.player_name}</strong> · {entry.status.replaceAll('_',' ')} · Payment: {entry.payment_status.replaceAll('_',' ')}
+                  </p>)}
+                  <p style={{color:'#b8c1d0',fontSize:13}}>Pending registrations are not paid or confirmed.</p>
+                </div>}
                 {item.status==='draft' && <button type="button" onClick={()=>beginEdit(item)}
                   style={{marginTop:14,background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'10px 18px',fontWeight:800,cursor:'pointer'}}>EDIT GAME</button>}
 
@@ -283,7 +315,7 @@ export default function AdminPage() {
               </article>)}
             </div>
           </section>
-          <p style={{color:'#b8c1d0',marginTop:32}}>Draft games can be published to the Play page. Registration and payments are not enabled yet.</p>
+          <p style={{color:'#b8c1d0',marginTop:32}}>Published games can accept registration requests. Payment collection and confirmation are not enabled yet.</p>
         </>}
       </section>
     </main>
