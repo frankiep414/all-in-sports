@@ -117,6 +117,10 @@ export default function PlayPage() {
             <>
               <strong>Zelle payment address</strong>
               <p style={{fontSize:19,overflowWrap:'anywhere',color:'#95d9ff',margin:'8px 0'}}>allinsports.imom@gmail.com</p>
+              <div style={{maxWidth:340,margin:'18px 0',padding:12,background:'#fff',borderRadius:12}}>
+                <img src="/all-in-sports-zelle-original-uncropped.png" alt="Official Chase Zelle QR code for ALL IN SPORTS IMOM LLC" style={{display:'block',width:'100%',height:'auto',objectFit:'contain'}} />
+              </div>
+              <p style={{color:'#b8c1d0',fontSize:14}}>Preview only. Scan to verify the recipient is ALL IN SPORTS IMOM LLC, but do not send a payment during testing.</p>
               <p style={{color:'#b8c1d0',marginBottom:0}}>Payment instructions and references are not active. Please do not send payment until All In Sports explicitly provides instructions. Spots are confirmed only after we verify payment.</p>
             </>
           ) : (
