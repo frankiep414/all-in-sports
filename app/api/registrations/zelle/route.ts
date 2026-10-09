@@ -19,7 +19,7 @@ export async function POST(request:Request){
    return Response.json({error:'Please confirm you sent the Zelle payment.'},{status:400});
   const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data:registration,error:lookupError}=await db.from('pickup_registrations')
-   .select('id,status,payment_status').eq('id',body.registration_id).eq('user_id',user.id).maybeSingle();
+   .select('id,game_id,status,payment_status').eq('id',body.registration_id).eq('user_id',user.id).maybeSingle();
   if(lookupError)return Response.json({error:'Registration unavailable.'},{status:503});
   if(!registration)return Response.json({error:'Registration not found.'},{status:404});
   if(registration.payment_status==='pending_verification')
@@ -31,6 +31,14 @@ export async function POST(request:Request){
   const {data,error}=await db.rpc('submit_pickup_payment',{p_registration_id:registration.id,p_user_id:user.id});
   if(error){console.error('Zelle submission failed',{code:error.code});
    return Response.json({error:'Payment reporting unavailable or payment window closed.'},{status:409});}
+  if(data==='pending_verification'){
+   const {error:eventError}=await db.from('notification_events').upsert({
+    event_key:`payment_reported:${registration.id}`,event_type:'payment_reported',
+    game_id:registration.game_id,registration_id:registration.id,
+    payload:{source:'player_zelle_report'}
+   },{onConflict:'event_key',ignoreDuplicates:true});
+   if(eventError)console.error('Payment reported event failed',{code:eventError.code});
+  }
   return Response.json({payment_status:data},{headers:{'Cache-Control':'no-store'}});
  }catch{return Response.json({error:'Unable to report payment.'},{status:503});}
 }
