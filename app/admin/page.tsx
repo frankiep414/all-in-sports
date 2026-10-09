@@ -11,6 +11,7 @@ export default function AdminPage() {
   const [status, setStatus] = useState<Status>('loading');
   const [saving,setSaving] = useState(false);
   const [repeatWeekly,setRepeatWeekly]=useState(false);
+  const [testGame,setTestGame]=useState(false);
   const [weeks,setWeeks]=useState(8);
   const [games,setGames] = useState<PickupGame[]>([]);
   const [editingId,setEditingId]=useState<string|null>(null);
@@ -188,14 +189,14 @@ export default function AdminPage() {
       const response=await fetch('/api/admin/games',{
         method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
         body:JSON.stringify({title:game.title,venue:game.venue,starts_at:start.toISOString(),ends_at:end.toISOString(),price_cents:Math.round(priceNumber*100),capacity:capacityNumber,
-          repeat_weekly:repeatWeekly,weeks:repeatWeekly?weeks:1,
+          repeat_weekly:repeatWeekly,weeks:repeatWeekly?weeks:1,is_test:testGame,
           local_start:`${game.date}T${game.start}`,local_end:`${game.date}T${game.end}`})
       });
       const result=await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not save game.');
       setMessage(repeatWeekly?`${weeks} weekly game drafts saved successfully. None are published.`:'Game draft saved successfully. It is not published.');
       await loadGames(session.access_token);
-      setGame({title:'',venue:'',date:'',start:'',end:'',price:'20',capacity:'20'});
+      setGame({title:'',venue:'',date:'',start:'',end:'',price:'20',capacity:'20'});setTestGame(false);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Unable to save game.');
     } finally {setSaving(false);}
@@ -270,6 +271,7 @@ export default function AdminPage() {
                 {label}<input required type={type} value={game[field]} min={field==='price'?'0':field==='capacity'?'2':undefined} max={field==='capacity'?'100':undefined} step={field==='price'?'0.01':undefined} onChange={e=>setGame(current=>({...current,[field]:e.target.value}))} style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:12,fontSize:16}}/>
               </label>)}
               <div style={{gridColumn:'1 / -1',display:'grid',gap:12}}>
+                <label style={{display:'flex',alignItems:'center',gap:10}}><input type="checkbox" checked={testGame} onChange={e=>setTestGame(e.target.checked)}/> TEST GAME — hide from public Play listings; admins only</label>
                 <label style={{display:'flex',alignItems:'center',gap:12,fontWeight:700}}>
                   <input type="checkbox" checked={repeatWeekly} onChange={e=>setRepeatWeekly(e.target.checked)} style={{width:20,height:20}}/>
                   Repeat this game every week
@@ -295,7 +297,7 @@ export default function AdminPage() {
             <div style={{display:'grid',gap:12}}>
               {games.map(item=><article key={item.id} style={{border:'1px solid #303945',borderRadius:14,padding:20,background:'#111820'}}>
                 <div style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
-                  <strong>{item.title}</strong><span style={{color:'#95d9ff',fontWeight:700}}>{item.status.toUpperCase()}</span>
+                  <strong>{item.title}{item.is_test?' · TEST ONLY':''}</strong><span style={{color:'#95d9ff',fontWeight:700}}>{item.status.toUpperCase()}</span>
                 </div>
                 <p style={{color:'#b8c1d0'}}>{item.venue} · {new Date(item.starts_at).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'})}</p>
                 {item.series_id && <p style={{color:'#95d9ff',marginBottom:8}}>Weekly series · Game {item.occurrence_index}</p>}
