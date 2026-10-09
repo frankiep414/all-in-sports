@@ -1,5 +1,5 @@
 import {createClient} from '@supabase/supabase-js';
-import {registrationEmail} from '../../../../lib/notification-email-templates';
+import {registrationEmail} from '../../../../../lib/notification-email-templates';
 export const dynamic='force-dynamic';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Admin-only email preview: no Resend call, no delivery record, no outgoing message.
