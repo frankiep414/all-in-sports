@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
 
 type Method = 'zelle' | 'card';
 
@@ -9,6 +10,46 @@ export default function PlayPage() {
   const [method, setMethod] = useState<Method>('zelle');
   const [games,setGames]=useState<Array<{id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number}>>([]);
   const [gamesLoading,setGamesLoading]=useState(true);
+  const [registrations,setRegistrations]=useState<Record<string,string>>({});
+  const [registering,setRegistering]=useState<string|null>(null);
+  const [registrationMessage,setRegistrationMessage]=useState('');
+  const [signedIn,setSignedIn]=useState(false);
+  async function getToken(){
+    const url=process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if(!url||!key)return null;
+    const client=createClient(url,key);
+    const {data:{session}}=await client.auth.getSession();
+    return session?.access_token||null;
+  }
+  async function register(gameId:string){
+    setRegistering(gameId);setRegistrationMessage('');
+    try{
+      const token=await getToken();
+      if(!token){setRegistrationMessage('Please sign in through My All In before registering.');return;}
+      const response=await fetch('/api/registrations',{method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
+        body:JSON.stringify({game_id:gameId})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Registration failed.');
+      setRegistrations(current=>({...current,[gameId]:result.status}));
+      setRegistrationMessage('Registration received. Your spot is pending payment verification; do not send payment yet.');
+    }catch(error){setRegistrationMessage(error instanceof Error?error.message:'Registration failed.');}
+    finally{setRegistering(null);}
+  }
+  useEffect(()=>{
+    let active=true;
+    getToken().then(async token=>{
+      if(!active)return;
+      setSignedIn(Boolean(token));
+      if(!token)return;
+      const response=await fetch('/api/registrations',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
+      if(response.ok){const result=await response.json();if(active)setRegistrations(Object.fromEntries(
+        (result.registrations||[]).map((r:{game_id:string;status:string})=>[r.game_id,r.status])
+      ));}
+    }).catch(()=>{});
+    return ()=>{active=false;};
+  },[]);
   const [gamesError,setGamesError]=useState(false);
   useEffect(()=>{
     let active=true;
@@ -29,7 +70,7 @@ export default function PlayPage() {
       <section style={{maxWidth:960,margin:'0 auto'}}>
         <p style={{color:'#95d9ff',letterSpacing:4,fontWeight:800}}>PLAY // PICKUP & OPEN PLAY</p>
         <h1 style={{fontSize:'clamp(42px,8vw,88px)',lineHeight:1.04,margin:'16px 0',fontWeight:900}}>Your next game starts here.</h1>
-        <p style={{fontSize:19,color:'#b8c1d0',lineHeight:1.6,maxWidth:730}}>Browse upcoming All In Sports sessions. Registration and payment options are coming soon.</p>
+        <p style={{fontSize:19,color:'#b8c1d0',lineHeight:1.6,maxWidth:730}}>Browse upcoming All In Sports sessions and request your spot. Payments are not open yet.</p>
         <div style={{border:'1px solid #303945',borderRadius:18,padding:28,background:'#111820',marginTop:34}}>
           <h2 style={{marginTop:0}}>Upcoming games</h2>
           {gamesLoading && <p style={{color:'#b8c1d0'}}>Loading upcoming games…</p>}
@@ -39,9 +80,15 @@ export default function PlayPage() {
             <h3 style={{margin:'0 0 8px'}}>{item.title}</h3>
             <p style={{color:'#b8c1d0',margin:'0 0 8px'}}>{item.venue} · {new Date(item.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'})}</p>
             <p style={{margin:'0 0 8px'}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
-            <strong style={{color:'#95d9ff'}}>Registration coming soon — no spots can be reserved yet.</strong>
+            {registrations[item.id] ? <strong style={{color:'#9ee6bb'}}>Your registration: {registrations[item.id]==='confirmed'?'Confirmed':'Pending payment'}</strong> :
+              <button type="button" disabled={registering!==null} onClick={()=>void register(item.id)}
+                style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800,cursor:'pointer'}}>
+                {registering===item.id?'Registering…':'REGISTER — PAYMENT PENDING'}
+              </button>}
+            {!signedIn && <p style={{color:'#b8c1d0',fontSize:14}}><Link href="/my-all-in" style={{color:'#95d9ff'}}>Sign in or create your Player ID</Link> before registering.</p>}
           </article>)}
-          <p style={{color:'#95d9ff',fontWeight:700}}>Registration is not open yet.</p>
+          {registrationMessage && <p role="status" style={{color:'#95d9ff',fontWeight:700}}>{registrationMessage}</p>}
+          <p style={{color:'#95d9ff',fontWeight:700}}>Registration requests are open for published games in this preview. Payment collection is not enabled.</p>
         </div>
         <h2 style={{marginTop:52}}>How payment will work</h2>
         <p style={{color:'#b8c1d0'}}>Choose a method to preview the payment instructions. This is informational only — no payment or reservation is being created.</p>
@@ -58,7 +105,7 @@ export default function PlayPage() {
             <>
               <strong>Zelle payment address</strong>
               <p style={{fontSize:19,overflowWrap:'anywhere',color:'#95d9ff',margin:'8px 0'}}>allinsports.imom@gmail.com</p>
-              <p style={{color:'#b8c1d0',marginBottom:0}}>When registration opens, each booking will receive a unique reference. Please do not send payment until you have an active booking and its payment instructions. Spots are confirmed only after we verify payment.</p>
+              <p style={{color:'#b8c1d0',marginBottom:0}}>Payment instructions and references are not active. Please do not send payment until All In Sports explicitly provides instructions. Spots are confirmed only after we verify payment.</p>
             </>
           ) : (
             <>
@@ -67,7 +114,7 @@ export default function PlayPage() {
             </>
           )}
         </div>
-        <p style={{color:'#9aa8ba',fontSize:14,marginTop:25}}>We are preparing our registration and payment system. Do not send payment for a game that has not been posted.</p>
+        <p style={{color:'#9aa8ba',fontSize:14,marginTop:25}}>Registration requests are not payment confirmations. Do not send payment until All In Sports provides instructions.</p>
       </section>
     </main>
   );
