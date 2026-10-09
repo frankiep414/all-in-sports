@@ -20,6 +20,15 @@ export async function POST(request:Request){
   const body=await request.json();
   if(typeof body.game_id!=='string'||!uuid.test(body.game_id))
    return Response.json({error:'Invalid game.'},{status:400});
+  const {data:game,error:gameError}=await access.db.from('pickup_games')
+   .select('is_test').eq('id',body.game_id).maybeSingle();
+  if(gameError||!game)return Response.json({error:'Game unavailable.'},{status:503});
+  if(game.is_test){
+   const {data:role,error:roleError}=await access.db.from('admin_users')
+    .select('user_id').eq('user_id',access.user.id).maybeSingle();
+   if(roleError)return Response.json({error:'Access check unavailable.'},{status:503});
+   if(!role)return Response.json({error:'Test games are available only to administrators.'},{status:403});
+  }
   const {data:player,error:playerError}=await access.db.from('players')
    .select('id').ilike('email',access.user.email!).maybeSingle();
   if(playerError)return Response.json({error:'Unable to verify Player ID.'},{status:503});
