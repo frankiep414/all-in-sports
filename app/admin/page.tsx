@@ -279,11 +279,25 @@ export default function AdminPage() {
                   {rosterGame===item.id?'HIDE ROSTER':'VIEW ROSTER'}
                 </button>
                 {rosterGame===item.id && <div style={{marginTop:14,padding:16,background:'#080b10',borderRadius:10}}>
-                  <h3 style={{marginTop:0}}>Player registrations ({roster.length})</h3>
+                  <h3 style={{marginTop:0}}>Registration & waitlist tracker</h3>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(135px,1fr))',gap:10,marginBottom:16}}>
+                    {([
+                      ['Confirmed',roster.filter(r=>r.status==='confirmed').length],
+                      ['Pending payment',roster.filter(r=>r.status==='pending_payment').length],
+                      ['Awaiting verification',roster.filter(r=>r.payment_status==='pending_verification').length],
+                      ['Waitlisted',roster.filter(r=>r.status==='waitlisted').length],
+                      ['Offers active',roster.filter(r=>r.status==='offered').length],
+                      ['Available capacity',Math.max(0,item.capacity-roster.filter(r=>['confirmed','pending_payment','offered'].includes(r.status)).length)]
+                    ] as const).map(([label,count])=><div key={label} style={{border:'1px solid #303945',borderRadius:9,padding:12}}>
+                      <strong style={{display:'block',fontSize:23,color:'#95d9ff'}}>{count}</strong>
+                      <span style={{fontSize:13,color:'#b8c1d0'}}>{label}</span>
+                    </div>)}
+                  </div>
+                  <h4>All registrations ({roster.length})</h4>
                   {rosterMessage && <p role="status">{rosterMessage}</p>}
                   {!rosterMessage && roster.length===0 && <p>No registrations yet.</p>}
                   {roster.map(entry=><div key={entry.id} style={{borderTop:'1px solid #303945',paddingTop:10,marginBottom:10}}>
-                    <strong>{entry.player_name}</strong> · {entry.status.replaceAll('_',' ')} · Payment: {entry.payment_status.replaceAll('_',' ')}
+                    <strong>{entry.player_name}</strong>{entry.status==='waitlisted' ? ` · Waitlist #${roster.filter(r=>r.status==='waitlisted').findIndex(r=>r.id===entry.id)+1}` : ''} · {entry.status.replaceAll('_',' ')} · Payment: {entry.payment_status.replaceAll('_',' ')}
                     {entry.payment_status==='pending_verification' && <button type="button" disabled={paymentBusy}
                       onClick={()=>void adminRegistrationAction('verify_zelle',entry.id)}
                       style={{marginLeft:12,padding:'7px 12px',border:0,borderRadius:7,background:'#a9e6b8',fontWeight:700}}>
