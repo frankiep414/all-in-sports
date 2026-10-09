@@ -33,7 +33,7 @@ export default function PlayPage() {
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'Registration failed.');
       setRegistrations(current=>({...current,[gameId]:result.status}));
-      setRegistrationMessage('Registration received. Your spot is pending payment verification; do not send payment yet.');
+      setRegistrationMessage('Registration received. Your spot is provisional; payment has not been collected. Do not send money yet.');
     }catch(error){setRegistrationMessage(error instanceof Error?error.message:'Registration failed.');}
     finally{setRegistering(null);}
   }
@@ -80,10 +80,10 @@ export default function PlayPage() {
             <h3 style={{margin:'0 0 8px'}}>{item.title}</h3>
             <p style={{color:'#b8c1d0',margin:'0 0 8px'}}>{item.venue} · {new Date(item.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'})}</p>
             <p style={{margin:'0 0 8px'}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
-            {registrations[item.id] ? <strong style={{color:'#9ee6bb'}}>Your registration: {registrations[item.id]==='confirmed'?'Confirmed':'Pending payment'}</strong> :
+            {registrations[item.id] ? <strong style={{color:'#9ee6bb'}}>Your registration: {registrations[item.id]==='confirmed'?'Confirmed — You’re in!':registrations[item.id]==='waitlisted'?'Waitlisted':registrations[item.id]==='offered'?'Waitlist offer':registrations[item.id]==='expired'?'Expired':'Registered — Payment due'}</strong> :
               <button type="button" disabled={registering!==null} onClick={()=>void register(item.id)}
                 style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800,cursor:'pointer'}}>
-                {registering===item.id?'Registering…':'REGISTER — PAYMENT PENDING'}
+                {registering===item.id?'Registering…':'REQUEST A SPOT'}
               </button>}
             {!signedIn && <p style={{color:'#b8c1d0',fontSize:14}}><Link href="/my-all-in" style={{color:'#95d9ff'}}>Sign in or create your Player ID</Link> before registering.</p>}
           </article>)}
