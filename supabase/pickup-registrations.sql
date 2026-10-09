@@ -3,7 +3,7 @@
 create table if not exists public.pickup_registrations (
  id uuid primary key default gen_random_uuid(),
  game_id uuid not null references public.pickup_games(id) on delete restrict,
- player_id uuid not null references public.players(id) on delete restrict,
+ player_id text not null, -- Existing Player ID (supports numeric or UUID player primary keys)
  user_id uuid not null references auth.users(id) on delete restrict,
  status text not null default 'pending_payment'
    check (status in ('pending_payment','confirmed','cancelled')),
@@ -21,7 +21,7 @@ grant select,insert,update on public.pickup_registrations to service_role;
 -- Pending registrations reserve a provisional place; only payment confirmation
 -- can change their status to confirmed in a later admin-only workflow.
 create or replace function public.request_pickup_registration(
- p_game_id uuid,p_player_id uuid,p_user_id uuid
+ p_game_id uuid,p_player_id text,p_user_id uuid
 ) returns table(registration_id uuid,registration_status text) 
 language plpgsql security definer
 set search_path = public,pg_temp
@@ -50,5 +50,5 @@ begin
  return query select v_id,v_status;
 end;
 $$;
-revoke all on function public.request_pickup_registration(uuid,uuid,uuid) from public,anon,authenticated;
+revoke all on function public.request_pickup_registration(uuid,text,uuid) from public,anon,authenticated;
 grant execute on function public.request_pickup_registration(uuid,uuid,uuid) to service_role;
