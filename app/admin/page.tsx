@@ -86,6 +86,25 @@ export default function AdminPage() {
    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to register test game.');}
    finally{setTestSignupBusy(false);}
   }
+  const [emailPreview,setEmailPreview]=useState<{subject:string;text:string}|null>(null);
+  const [emailPreviewStatus,setEmailPreviewStatus]=useState('');
+  async function previewRegistrationEmail(registrationId:string){
+   setEmailPreview(null);setEmailPreviewStatus('Preparing email preview…');
+   try{
+    const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if(!url||!key)throw new Error('Authentication unavailable.');
+    const client=createClient(url,key);
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.access_token)throw new Error('Sign in required.');
+    const response=await fetch('/api/admin/notifications/preview',{method:'POST',headers:{
+     'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`
+    },body:JSON.stringify({registration_id:registrationId})});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||'Preview unavailable.');
+    setEmailPreview({subject:result.subject,text:result.text});
+    setEmailPreviewStatus('Preview only — no email sent.');
+   }catch(error){setEmailPreviewStatus(error instanceof Error?error.message:'Preview unavailable.');}
+  }
   const [rosterGame,setRosterGame]=useState<string|null>(null);
   const [roster,setRoster]=useState<Array<{id:string;player_name:string;status:string;payment_status:string;payment_reference?:string;created_at:string}>>([]);
   const [rosterMessage,setRosterMessage]=useState('');
@@ -279,6 +298,15 @@ export default function AdminPage() {
             {notificationStatus && <p role="status">{notificationStatus}</p>}
             {notificationRows.map(row=><p key={row.id} style={{borderTop:'1px solid #303945',paddingTop:10}}>{row.event_type.replaceAll('_',' ')} · {new Date(row.created_at).toLocaleString()}</p>)}
           </section>
+          <section style={{marginTop:24,border:'1px solid #303945',borderRadius:16,padding:22,background:'#111820'}}>
+            <h2 style={{marginTop:0}}>Registration email preview — TEST ONLY</h2>
+            <p style={{color:'#b8c1d0'}}>Open a test game's roster and click PREVIEW EMAIL. Nothing is sent.</p>
+            {emailPreviewStatus && <p role="status">{emailPreviewStatus}</p>}
+            {emailPreview && <div style={{border:'1px solid #445063',borderRadius:10,padding:16}}>
+              <strong>{emailPreview.subject}</strong>
+              <pre style={{whiteSpace:'pre-wrap',fontFamily:'inherit',lineHeight:1.6}}>{emailPreview.text}</pre>
+            </div>}
+          </section>
           <section style={{marginTop:40,background:'#111820',border:'1px solid #303945',borderRadius:18,padding:26}}>
             <h2 style={{marginTop:0}}>Create a pickup game</h2>
             <p style={{color:'#b8c1d0'}}>Save a draft first. Publishing and player checkout will be added after testing.</p>
@@ -369,6 +397,10 @@ export default function AdminPage() {
                   {!rosterMessage && roster.length===0 && <p>No registrations yet.</p>}
                   {roster.map(entry=><div key={entry.id} style={{borderTop:'1px solid #303945',paddingTop:10,marginBottom:10}}>
                     <strong>{entry.player_name}</strong>{entry.payment_reference ? ` · Ref: ${entry.payment_reference}` : ''}{entry.status==='waitlisted' ? ` · Waitlist #${roster.filter(r=>r.status==='waitlisted').findIndex(r=>r.id===entry.id)+1}` : ''} · {entry.status.replaceAll('_',' ')} · Payment: {entry.payment_status.replaceAll('_',' ')}
+                    {item.is_test && <button type="button" onClick={()=>void previewRegistrationEmail(entry.id)}
+                     style={{marginLeft:12,padding:'7px 12px',border:'1px solid #95d9ff',borderRadius:7,background:'#26384a',color:'#fff'}}>
+                     PREVIEW EMAIL
+                    </button>}
                     {entry.payment_status==='pending_verification' && <button type="button" disabled={paymentBusy}
                       onClick={()=>void adminRegistrationAction('verify_zelle',entry.id)}
                       style={{marginLeft:12,padding:'7px 12px',border:0,borderRadius:7,background:'#a9e6b8',fontWeight:700}}>
