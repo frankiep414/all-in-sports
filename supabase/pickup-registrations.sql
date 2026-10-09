@@ -51,4 +51,4 @@ begin
 end;
 $$;
 revoke all on function public.request_pickup_registration(uuid,text,uuid) from public,anon,authenticated;
-grant execute on function public.request_pickup_registration(uuid,uuid,uuid) to service_role;
+grant execute on function public.request_pickup_registration(uuid,text,uuid) to service_role;
