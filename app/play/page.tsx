@@ -85,10 +85,11 @@ export default function PlayPage() {
                 style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800,cursor:'pointer'}}>
                 {registering===item.id?'Registering…':'REQUEST A SPOT'}
               </button>}
+            <p style={{color:'#b8c1d0',fontSize:14,marginTop:12}}>Payment deadline: 10:00 AM New York time on game day. Unpaid spots may be offered to waitlisted players between 10 AM and noon, with a 60-minute offer window. Payments awaiting verification are protected.</p>
             {!signedIn && <p style={{color:'#b8c1d0',fontSize:14}}><Link href="/my-all-in" style={{color:'#95d9ff'}}>Sign in or create your Player ID</Link> before registering.</p>}
           </article>)}
           {registrationMessage && <p role="status" style={{color:'#95d9ff',fontWeight:700}}>{registrationMessage}</p>}
-          <p style={{color:'#95d9ff',fontWeight:700}}>Registration requests are open for published games in this preview. Payment collection is not enabled.</p>
+          <p style={{color:'#95d9ff',fontWeight:700}}>Registration requests are open in this preview. Payment collection and automatic waitlist notifications are not enabled. Do not send money.</p>
         </div>
         <h2 style={{marginTop:52}}>How payment will work</h2>
         <p style={{color:'#b8c1d0'}}>Choose a method to preview the payment instructions. This is informational only — no payment or reservation is being created.</p>
