@@ -8,7 +8,7 @@ type Method = 'zelle' | 'card';
 
 export default function PlayPage() {
   const [method, setMethod] = useState<Method>('zelle');
-  const [games,setGames]=useState<Array<{id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number}>>([]);
+  const [games,setGames]=useState<Array<{id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;registered_count:number;waitlist_count:number;spots_remaining:number}>>([]);
   const [gamesLoading,setGamesLoading]=useState(true);
   const [registrations,setRegistrations]=useState<Record<string,{status:string;payment_status:string}>>({});
   const [registering,setRegistering]=useState<string|null>(null);
@@ -33,6 +33,7 @@ export default function PlayPage() {
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'Registration failed.');
       setRegistrations(current=>({...current,[gameId]:{status:result.status,payment_status:'unpaid'}}));
+      setGames(current=>current.map(game=>game.id===gameId?{...game,registered_count:game.registered_count+(result.status==='waitlisted'?0:1),waitlist_count:game.waitlist_count+(result.status==='waitlisted'?1:0),spots_remaining:Math.max(0,game.spots_remaining-(result.status==='waitlisted'?0:1))}:game));
       setRegistrationMessage('Registration received. Your spot is provisional; payment has not been collected. Do not send money yet.');
     }catch(error){setRegistrationMessage(error instanceof Error?error.message:'Registration failed.');}
     finally{setRegistering(null);}
@@ -80,6 +81,16 @@ export default function PlayPage() {
             <h3 style={{margin:'0 0 8px'}}>{item.title}</h3>
             <p style={{color:'#b8c1d0',margin:'0 0 8px'}}>{item.venue} · {new Date(item.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'})}</p>
             <p style={{margin:'0 0 8px'}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
+            <div aria-label="Game availability" style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:10,margin:'14px 0'}}>
+              {([
+                ['Spots remaining',item.spots_remaining],
+                ['Registered',item.registered_count],
+                ['Waitlisted',item.waitlist_count]
+              ] as const).map(([label,count])=><div key={label} style={{background:'#19232e',border:'1px solid #303945',borderRadius:10,padding:'12px 10px'}}>
+                <strong style={{display:'block',fontSize:24,color:'#95d9ff'}}>{count}</strong>
+                <span style={{fontSize:13,color:'#b8c1d0'}}>{label}</span>
+              </div>)}
+            </div>
             {registrations[item.id] ? <strong style={{color:'#9ee6bb'}}>Your registration: {registrations[item.id].status==='confirmed'?'Confirmed — You’re in!':registrations[item.id].payment_status==='pending_verification'?'Payment submitted — Awaiting verification':registrations[item.id].status==='waitlisted'?'Waitlisted':registrations[item.id].status==='offered'?'Waitlist offer':registrations[item.id].status==='expired'?'Expired':'Registered — Payment due'}</strong> :
               <button type="button" disabled={registering!==null} onClick={()=>void register(item.id)}
                 style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800,cursor:'pointer'}}>
