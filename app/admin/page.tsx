@@ -86,6 +86,26 @@ export default function AdminPage() {
    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to register test game.');}
    finally{setTestSignupBusy(false);}
   }
+  const [testEmailBusy,setTestEmailBusy]=useState(false);
+  const [testEmailStatus,setTestEmailStatus]=useState('');
+  async function sendRegistrationTestEmail(registrationId:string){
+   if(!window.confirm('Send one real registration test email to your signed-in admin email? This cannot be undone.'))return;
+   setTestEmailBusy(true);setTestEmailStatus('Requesting one test email…');
+   try{
+    const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if(!url||!key)throw new Error('Authentication unavailable.');
+    const client=createClient(url,key);
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.access_token)throw new Error('Sign in required.');
+    const response=await fetch('/api/admin/notifications/send-test',{method:'POST',headers:{
+     'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`
+    },body:JSON.stringify({registration_id:registrationId,confirm:true})});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||'Test email not confirmed.');
+    setTestEmailStatus(`Resend accepted the test email for ${result.recipient}. Check inbox and Resend logs.`);
+   }catch(error){setTestEmailStatus(error instanceof Error?error.message:'Unable to confirm test email.');}
+   finally{setTestEmailBusy(false);}
+  }
   const [emailPreview,setEmailPreview]=useState<{subject:string;text:string}|null>(null);
   const [emailPreviewStatus,setEmailPreviewStatus]=useState('');
   async function previewRegistrationEmail(registrationId:string){
@@ -300,7 +320,8 @@ export default function AdminPage() {
           </section>
           <section style={{marginTop:24,border:'1px solid #303945',borderRadius:16,padding:22,background:'#111820'}}>
             <h2 style={{marginTop:0}}>Registration email preview — TEST ONLY</h2>
-            <p style={{color:'#b8c1d0'}}>Open a test game's roster and click PREVIEW EMAIL. Nothing is sent.</p>
+            <p style={{color:'#b8c1d0'}}>Open a test game's roster to preview or explicitly send one email to your own admin account. Preview does not send. Each registration allows only one test attempt.</p>
+            {testEmailStatus && <p role="status">{testEmailStatus}</p>}
             {emailPreviewStatus && <p role="status">{emailPreviewStatus}</p>}
             {emailPreview && <div style={{border:'1px solid #445063',borderRadius:10,padding:16}}>
               <strong>{emailPreview.subject}</strong>
@@ -397,6 +418,11 @@ export default function AdminPage() {
                   {!rosterMessage && roster.length===0 && <p>No registrations yet.</p>}
                   {roster.map(entry=><div key={entry.id} style={{borderTop:'1px solid #303945',paddingTop:10,marginBottom:10}}>
                     <strong>{entry.player_name}</strong>{entry.payment_reference ? ` · Ref: ${entry.payment_reference}` : ''}{entry.status==='waitlisted' ? ` · Waitlist #${roster.filter(r=>r.status==='waitlisted').findIndex(r=>r.id===entry.id)+1}` : ''} · {entry.status.replaceAll('_',' ')} · Payment: {entry.payment_status.replaceAll('_',' ')}
+                    {item.is_test && <button type="button" disabled={testEmailBusy}
+                     onClick={()=>void sendRegistrationTestEmail(entry.id)}
+                     style={{marginLeft:12,padding:'7px 12px',border:'1px solid #a9e6b8',borderRadius:7,background:'#23422e',color:'#fff'}}>
+                     {testEmailBusy?'SENDING…':'SEND TEST EMAIL'}
+                    </button>}
                     {item.is_test && <button type="button" onClick={()=>void previewRegistrationEmail(entry.id)}
                      style={{marginLeft:12,padding:'7px 12px',border:'1px solid #95d9ff',borderRadius:7,background:'#26384a',color:'#fff'}}>
                      PREVIEW EMAIL
