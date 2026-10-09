@@ -84,6 +84,29 @@ export default function AdminPage() {
       setRoster(result.registrations||[]);setRosterMessage('');
     }catch(error){setRosterMessage(error instanceof Error?error.message:'Unable to load roster.');}
   }
+  const [paymentBusy,setPaymentBusy]=useState(false);
+  async function adminRegistrationAction(action:'verify_zelle'|'reconcile',id:string){
+    if(action==='verify_zelle'&&!window.confirm('Have you independently verified this Zelle payment in your bank account?'))return;
+    if(action==='reconcile'&&!window.confirm('Release unpaid spots after 10 AM and offer available places to the waitlist? No notifications will be sent yet.'))return;
+    setPaymentBusy(true);setRosterMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Sign in required.');
+      const response=await fetch(action==='verify_zelle'?'/api/admin/payments':'/api/admin/waitlist',{
+        method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify(action==='verify_zelle'?{action,registration_id:id}:{action,game_id:id})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Action failed.');
+      setRosterMessage(action==='verify_zelle'?'Zelle payment verified and spot confirmed.':'Waitlist updated. Offers have NOT been messaged to players yet.');
+      const rosterResponse=await fetch(`/api/admin/registrations?game_id=${encodeURIComponent(rosterGame||id)}`,{
+        headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+      if(rosterResponse.ok){const rows=await rosterResponse.json();setRoster(rows.registrations||[]);}
+    }catch(error){setRosterMessage(error instanceof Error?error.message:'Action failed.');}
+    finally{setPaymentBusy(false);}
+  }
   function beginEdit(item:PickupGame) {
     const format=(iso:string)=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso));
     const pieces=(iso:string)=>Object.fromEntries(format(iso).map(part=>[part.type,part.value]));
@@ -259,9 +282,19 @@ export default function AdminPage() {
                   <h3 style={{marginTop:0}}>Player registrations ({roster.length})</h3>
                   {rosterMessage && <p role="status">{rosterMessage}</p>}
                   {!rosterMessage && roster.length===0 && <p>No registrations yet.</p>}
-                  {roster.map(entry=><p key={entry.id} style={{borderTop:'1px solid #303945',paddingTop:10}}>
+                  {roster.map(entry=><div key={entry.id} style={{borderTop:'1px solid #303945',paddingTop:10,marginBottom:10}}>
                     <strong>{entry.player_name}</strong> · {entry.status.replaceAll('_',' ')} · Payment: {entry.payment_status.replaceAll('_',' ')}
-                  </p>)}
+                    {entry.payment_status==='pending_verification' && <button type="button" disabled={paymentBusy}
+                      onClick={()=>void adminRegistrationAction('verify_zelle',entry.id)}
+                      style={{marginLeft:12,padding:'7px 12px',border:0,borderRadius:7,background:'#a9e6b8',fontWeight:700}}>
+                      VERIFY ZELLE
+                    </button>}
+                  </div>)}
+                  <button type="button" disabled={paymentBusy} onClick={()=>void adminRegistrationAction('reconcile',item.id)}
+                    style={{padding:'9px 13px',border:'1px solid #95d9ff',borderRadius:8,color:'#95d9ff',background:'transparent',fontWeight:700}}>
+                    PROCESS GAME-DAY WAITLIST (MANUAL TEST)
+                  </button>
+                  <p style={{color:'#b8c1d0',fontSize:13}}>Only use after 10 AM New York time on game day. This does not notify players.</p>
                   <p style={{color:'#b8c1d0',fontSize:13}}>Pending registrations are not paid or confirmed.</p>
                 </div>}
                 {item.status==='draft' && <button type="button" onClick={()=>beginEdit(item)}
