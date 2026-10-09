@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   const access=await getAdmin(request);
   if(!access.admin) return Response.json({error:'Administrator access required.'},{status:access.status || 403});
   const {data,error}=await access.admin.from('pickup_games')
-    .select('id,title,venue,starts_at,ends_at,price_cents,capacity,status,created_at,series_id,occurrence_index')
+    .select('id,title,venue,starts_at,ends_at,price_cents,capacity,status,created_at,series_id,occurrence_index,is_test')
     .order('starts_at',{ascending:true}).limit(100);
   if(error) return Response.json({error:'Unable to load games.'},{status:500});
   return Response.json({games:data});
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
       return Response.json({error:'One of the weekly dates is invalid.'},{status:400});
     rows.push({
       title,venue,starts_at:begins.toISOString(),ends_at:finishes.toISOString(),
-      price_cents:price,capacity,status:'draft',created_by:user.id,
+      price_cents:price,capacity,status:'draft',created_by:user.id,is_test:body.is_test===true,
       ...(recurring?{series_id:seriesId,occurrence_index:i+1}:{})
     });
   }
@@ -210,7 +210,7 @@ export async function PUT(request: Request) {
    !Number.isInteger(weeks)||weeks<2||weeks>16)
    return Response.json({error:'Choose 2 to 16 weeks.'},{status:400});
   const {data:game,error:lookupError}=await access.admin.from('pickup_games')
-   .select('id,title,venue,starts_at,ends_at,price_cents,capacity,status,series_id,created_by').eq('id',id).maybeSingle();
+   .select('id,title,venue,starts_at,ends_at,price_cents,capacity,status,series_id,created_by,is_test').eq('id',id).maybeSingle();
   if(lookupError) return Response.json({error:'Unable to load draft.'},{status:500});
   if(!game||game.status!=='draft'||game.series_id)
    return Response.json({error:'Only standalone drafts can become recurring.'},{status:409});
@@ -235,7 +235,7 @@ export async function PUT(request: Request) {
     return Response.json({error:'A weekly date is invalid.'},{status:400});
    rows.push({title:game.title,venue:game.venue,starts_at:begins.toISOString(),
     ends_at:finishes.toISOString(),price_cents:game.price_cents,capacity:game.capacity,
-    status:'draft',created_by:game.created_by,series_id:seriesId,occurrence_index:i+1});
+    status:'draft',created_by:game.created_by,is_test:game.is_test,series_id:seriesId,occurrence_index:i+1});
   }
   // Insert new dates first. If marking the original fails, remove inserted dates.
   const {data:inserted,error:insertError}=await access.admin.from('pickup_games')
