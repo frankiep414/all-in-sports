@@ -84,6 +84,23 @@ export default function AdminPage() {
       setRoster(result.registrations||[]);setRosterMessage('');
     }catch(error){setRosterMessage(error instanceof Error?error.message:'Unable to load roster.');}
   }
+  const [notificationRows,setNotificationRows]=useState<Array<{id:string;event_type:string;created_at:string}>>([]);
+  const [notificationStatus,setNotificationStatus]=useState('');
+  async function loadNotifications(){
+    setNotificationStatus('Loading notification history…');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Sign in required.');
+      const response=await fetch('/api/admin/notifications',{headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Unable to load notifications.');
+      setNotificationRows(result.events||[]);
+      setNotificationStatus((result.events||[]).length?'Delivery remains disabled — history only.':'No notifications recorded. Delivery is not enabled.');
+    }catch(error){setNotificationStatus(error instanceof Error?error.message:'Unable to load notifications.');}
+  }
   const [paymentBusy,setPaymentBusy]=useState(false);
   const [demoRegistration,setDemoRegistration]=useState('');
   const [demoConfirmed,setDemoConfirmed]=useState(false);
@@ -234,6 +251,13 @@ export default function AdminPage() {
               <strong style={{fontSize:21}}>{title}</strong><p style={{color:'#b8c1d0',lineHeight:1.6}}>{description}</p><small style={{color:'#95d9ff',fontWeight:800,letterSpacing:1}}>{tag}</small>
             </div>)}
           </div>
+          <section style={{marginTop:30,border:'1px solid #303945',borderRadius:16,padding:22,background:'#111820'}}>
+            <h2 style={{marginTop:0}}>Notification Center</h2>
+            <p style={{color:'#b8c1d0'}}>Email and SMS delivery are not connected or enabled. View recorded events only.</p>
+            <button type="button" onClick={()=>void loadNotifications()} style={{padding:'10px 16px',borderRadius:8,background:'#26384a',color:'#fff',border:'1px solid #95d9ff'}}>REFRESH NOTIFICATION HISTORY</button>
+            {notificationStatus && <p role="status">{notificationStatus}</p>}
+            {notificationRows.map(row=><p key={row.id} style={{borderTop:'1px solid #303945',paddingTop:10}}>{row.event_type.replaceAll('_',' ')} · {new Date(row.created_at).toLocaleString()}</p>)}
+          </section>
           <section style={{marginTop:40,background:'#111820',border:'1px solid #303945',borderRadius:18,padding:26}}>
             <h2 style={{marginTop:0}}>Create a pickup game</h2>
             <p style={{color:'#b8c1d0'}}>Save a draft first. Publishing and player checkout will be added after testing.</p>
