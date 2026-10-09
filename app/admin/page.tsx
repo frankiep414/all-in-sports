@@ -70,7 +70,7 @@ export default function AdminPage() {
   const [rosterMessage,setRosterMessage]=useState('');
   async function viewRoster(id:string){
     if(rosterGame===id){setRosterGame(null);return;}
-    setRosterGame(id);setRoster([]);setRosterMessage('Loading roster…');
+    setRosterGame(id);setRoster([]);setRosterMessage('Loading roster…');setDemoRegistration('');setDemoConfirmed(false);
     try{
       const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
       if(!url||!key)throw new Error('Authentication unavailable.');
@@ -85,6 +85,8 @@ export default function AdminPage() {
     }catch(error){setRosterMessage(error instanceof Error?error.message:'Unable to load roster.');}
   }
   const [paymentBusy,setPaymentBusy]=useState(false);
+  const [demoRegistration,setDemoRegistration]=useState('');
+  const [demoConfirmed,setDemoConfirmed]=useState(false);
   async function adminRegistrationAction(action:'verify_zelle'|'reconcile',id:string){
     if(action==='verify_zelle'&&!window.confirm('Have you independently verified this Zelle payment in your bank account?'))return;
     if(action==='reconcile'&&!window.confirm('Release unpaid spots after 10 AM and offer available places to the waitlist? No notifications will be sent yet.'))return;
@@ -292,6 +294,24 @@ export default function AdminPage() {
                       <strong style={{display:'block',fontSize:23,color:'#95d9ff'}}>{count}</strong>
                       <span style={{fontSize:13,color:'#b8c1d0'}}>{label}</span>
                     </div>)}
+                  </div>
+                  <div style={{border:'1px dashed #95d9ff',borderRadius:10,padding:14,marginBottom:16}}>
+                    <strong style={{color:'#95d9ff'}}>Zelle workflow simulator — no real changes</strong>
+                    <p style={{fontSize:13,color:'#b8c1d0'}}>Preview a reported payment and admin confirmation. No money is sent and no database record is updated.</p>
+                    <select aria-label="Select registration for simulation" value={demoRegistration}
+                      onChange={e=>{setDemoRegistration(e.target.value);setDemoConfirmed(false);}}
+                      style={{width:'100%',maxWidth:400,padding:10,background:'#111820',color:'#fff',border:'1px solid #445063',borderRadius:8}}>
+                      <option value="">Choose an unpaid registration</option>
+                      {roster.filter(r=>r.status==='pending_payment'&&r.payment_status==='unpaid').map(r=>
+                        <option key={r.id} value={r.id}>{r.player_name}</option>)}
+                    </select>
+                    {demoRegistration && <div style={{marginTop:12}}>
+                      <p><strong>SIMULATED:</strong> {demoConfirmed?'Payment verified — Confirmed':'Payment reported — Awaiting verification'}</p>
+                      <button type="button" onClick={()=>setDemoConfirmed(v=>!v)}
+                        style={{padding:'9px 13px',border:'1px solid #95d9ff',borderRadius:8,color:'#fff',background:'#26384a'}}>
+                        {demoConfirmed?'RESET SIMULATION':'SIMULATE ADMIN VERIFICATION'}
+                      </button>
+                    </div>}
                   </div>
                   <h4>All registrations ({roster.length})</h4>
                   {rosterMessage && <p role="status">{rosterMessage}</p>}
