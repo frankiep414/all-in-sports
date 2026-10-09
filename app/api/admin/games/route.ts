@@ -142,7 +142,20 @@ export async function PATCH(request: Request) {
     .eq('id',id).eq('status',game.status).select('id').maybeSingle();
    if(error)return Response.json({error:'Unable to update game status.'},{status:500});
    if(!data)return Response.json({error:'Game status changed. Refresh and retry.'},{status:409});
-   return Response.json({status:next});
+   if(next==='published'){
+    // Durable idempotency key prevents repeat alerts for the same game.
+    // No emails or SMS are sent here. Fail visibly if event recording fails.
+    const {error:eventError}=await access.admin.from('notification_events').upsert({
+     event_key:`game_published:${id}`,event_type:'game_published',game_id:id,
+     payload:{source:'admin_publish'}
+    },{onConflict:'event_key',ignoreDuplicates:true});
+    if(eventError){
+     console.error('Published game notification event failed',{gameId:id,code:eventError.code});
+     return Response.json({status:next,notification_recorded:false,
+      warning:'Game published, but notification history could not be recorded. Do not republish; contact an admin.'});
+    }
+   }
+   return Response.json({status:next,notification_recorded:next==='published'});
   }
   const title=typeof body.title==='string'?body.title.trim():'';
   const venue=typeof body.venue==='string'?body.venue.trim():'';
