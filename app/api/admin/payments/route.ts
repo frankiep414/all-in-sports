@@ -23,6 +23,18 @@ export async function POST(request:Request){
   });
   if(rpcError){console.error('Zelle verification failed',{code:rpcError.code});
    return Response.json({error:'Unable to confirm payment. Check eligibility and SQL setup.'},{status:409});}
+  if(data==='confirmed'){
+   const {data:registration}=await db.from('pickup_registrations')
+    .select('game_id').eq('id',body.registration_id).maybeSingle();
+   if(registration){
+    const {error:eventError}=await db.from('notification_events').upsert({
+     event_key:`payment_verified:${body.registration_id}`,event_type:'payment_verified',
+     game_id:registration.game_id,registration_id:body.registration_id,
+     payload:{source:'admin_bank_verification'}
+    },{onConflict:'event_key',ignoreDuplicates:true});
+    if(eventError)console.error('Payment verified event failed',{code:eventError.code});
+   }
+  }
   return Response.json({status:data});
  }catch{return Response.json({error:'Unable to verify payment.'},{status:503});}
 }
