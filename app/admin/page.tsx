@@ -66,7 +66,7 @@ export default function AdminPage() {
     finally{setDraftActionBusy(false);}
   }
   const [rosterGame,setRosterGame]=useState<string|null>(null);
-  const [roster,setRoster]=useState<Array<{id:string;player_name:string;status:string;payment_status:string;created_at:string}>>([]);
+  const [roster,setRoster]=useState<Array<{id:string;player_name:string;status:string;payment_status:string;payment_reference?:string;created_at:string}>>([]);
   const [rosterMessage,setRosterMessage]=useState('');
   async function viewRoster(id:string){
     if(rosterGame===id){setRosterGame(null);return;}
@@ -317,7 +317,7 @@ export default function AdminPage() {
                   {rosterMessage && <p role="status">{rosterMessage}</p>}
                   {!rosterMessage && roster.length===0 && <p>No registrations yet.</p>}
                   {roster.map(entry=><div key={entry.id} style={{borderTop:'1px solid #303945',paddingTop:10,marginBottom:10}}>
-                    <strong>{entry.player_name}</strong>{entry.status==='waitlisted' ? ` · Waitlist #${roster.filter(r=>r.status==='waitlisted').findIndex(r=>r.id===entry.id)+1}` : ''} · {entry.status.replaceAll('_',' ')} · Payment: {entry.payment_status.replaceAll('_',' ')}
+                    <strong>{entry.player_name}</strong>{entry.payment_reference ? ` · Ref: ${entry.payment_reference}` : ''}{entry.status==='waitlisted' ? ` · Waitlist #${roster.filter(r=>r.status==='waitlisted').findIndex(r=>r.id===entry.id)+1}` : ''} · {entry.status.replaceAll('_',' ')} · Payment: {entry.payment_status.replaceAll('_',' ')}
                     {entry.payment_status==='pending_verification' && <button type="button" disabled={paymentBusy}
                       onClick={()=>void adminRegistrationAction('verify_zelle',entry.id)}
                       style={{marginLeft:12,padding:'7px 12px',border:0,borderRadius:7,background:'#a9e6b8',fontWeight:700}}>
