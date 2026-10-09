@@ -36,6 +36,16 @@ export async function POST(request:Request){
   }
   const row=data?.[0];
   const {data:referenceRow}=await access.db.from('pickup_registrations').select('payment_reference').eq('id',row?.registration_id).eq('user_id',access.user.id).maybeSingle();
+  // Idempotent event record only; no delivery is scheduled or sent.
+  if(row?.registration_id && ['pending_payment','waitlisted','offered'].includes(row.registration_status)){
+   const eventType=row.registration_status==='waitlisted'?'waitlist_joined':'registration_received';
+   const {error:eventError}=await access.db.from('notification_events').upsert({
+    event_key:`${eventType}:${row.registration_id}`,event_type:eventType,
+    game_id:body.game_id,registration_id:row.registration_id,
+    payload:{payment_reference:referenceRow?.payment_reference||null}
+   },{onConflict:'event_key',ignoreDuplicates:true});
+   if(eventError)console.error('Registration notification event failed',{code:eventError.code});
+  }
   return Response.json({registration_id:row?.registration_id,status:row?.registration_status,payment_reference:referenceRow?.payment_reference,
    message:'Registration received. Payment has not been collected or confirmed.'});
  }catch{return Response.json({error:'Unable to register.'},{status:503});}
