@@ -35,7 +35,8 @@ export async function POST(request:Request){
    return Response.json({error:'Unable to register. Please try again.'},{status:503});
   }
   const row=data?.[0];
-  return Response.json({registration_id:row?.registration_id,status:row?.registration_status,
+  const {data:referenceRow}=await access.db.from('pickup_registrations').select('payment_reference').eq('id',row?.registration_id).eq('user_id',access.user.id).maybeSingle();
+  return Response.json({registration_id:row?.registration_id,status:row?.registration_status,payment_reference:referenceRow?.payment_reference,
    message:'Registration received. Payment has not been collected or confirmed.'});
  }catch{return Response.json({error:'Unable to register.'},{status:503});}
 }
@@ -44,7 +45,7 @@ export async function GET(request:Request){
   const access=await session(request);
   if(!access)return Response.json({error:'Sign in required.'},{status:401});
   const {data,error}=await access.db.from('pickup_registrations')
-   .select('id,game_id,status,payment_status,created_at')
+   .select('id,game_id,status,payment_status,payment_reference,created_at')
    .eq('user_id',access.user.id).order('created_at',{ascending:false}).limit(100);
   if(error)return Response.json({error:'Registrations unavailable.'},{status:503});
   return Response.json({registrations:data},{headers:{'Cache-Control':'no-store'}});
