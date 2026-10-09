@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-type PickupGame = {id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;status:string;series_id?:string|null;occurrence_index?:number|null};
+type PickupGame = {id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;status:string;is_test?:boolean;series_id?:string|null;occurrence_index?:number|null};
 type Status = 'loading' | 'authorized' | 'denied' | 'error';
 
 export default function AdminPage() {
