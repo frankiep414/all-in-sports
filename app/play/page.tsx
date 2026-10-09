@@ -10,7 +10,7 @@ export default function PlayPage() {
   const [method, setMethod] = useState<Method>('zelle');
   const [games,setGames]=useState<Array<{id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number}>>([]);
   const [gamesLoading,setGamesLoading]=useState(true);
-  const [registrations,setRegistrations]=useState<Record<string,string>>({});
+  const [registrations,setRegistrations]=useState<Record<string,{status:string;payment_status:string}>>({});
   const [registering,setRegistering]=useState<string|null>(null);
   const [registrationMessage,setRegistrationMessage]=useState('');
   const [signedIn,setSignedIn]=useState(false);
@@ -32,7 +32,7 @@ export default function PlayPage() {
         body:JSON.stringify({game_id:gameId})});
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'Registration failed.');
-      setRegistrations(current=>({...current,[gameId]:result.status}));
+      setRegistrations(current=>({...current,[gameId]:{status:result.status,payment_status:'unpaid'}}));
       setRegistrationMessage('Registration received. Your spot is provisional; payment has not been collected. Do not send money yet.');
     }catch(error){setRegistrationMessage(error instanceof Error?error.message:'Registration failed.');}
     finally{setRegistering(null);}
@@ -45,7 +45,7 @@ export default function PlayPage() {
       if(!token)return;
       const response=await fetch('/api/registrations',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
       if(response.ok){const result=await response.json();if(active)setRegistrations(Object.fromEntries(
-        (result.registrations||[]).map((r:{game_id:string;status:string})=>[r.game_id,r.status])
+        (result.registrations||[]).map((r:{game_id:string;status:string;payment_status:string})=>[r.game_id,{status:r.status,payment_status:r.payment_status}])
       ));}
     }).catch(()=>{});
     return ()=>{active=false;};
@@ -80,7 +80,7 @@ export default function PlayPage() {
             <h3 style={{margin:'0 0 8px'}}>{item.title}</h3>
             <p style={{color:'#b8c1d0',margin:'0 0 8px'}}>{item.venue} · {new Date(item.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'})}</p>
             <p style={{margin:'0 0 8px'}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
-            {registrations[item.id] ? <strong style={{color:'#9ee6bb'}}>Your registration: {registrations[item.id]==='confirmed'?'Confirmed — You’re in!':registrations[item.id]==='waitlisted'?'Waitlisted':registrations[item.id]==='offered'?'Waitlist offer':registrations[item.id]==='expired'?'Expired':'Registered — Payment due'}</strong> :
+            {registrations[item.id] ? <strong style={{color:'#9ee6bb'}}>Your registration: {registrations[item.id].status==='confirmed'?'Confirmed — You’re in!':registrations[item.id].payment_status==='pending_verification'?'Payment submitted — Awaiting verification':registrations[item.id].status==='waitlisted'?'Waitlisted':registrations[item.id].status==='offered'?'Waitlist offer':registrations[item.id].status==='expired'?'Expired':'Registered — Payment due'}</strong> :
               <button type="button" disabled={registering!==null} onClick={()=>void register(item.id)}
                 style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800,cursor:'pointer'}}>
                 {registering===item.id?'Registering…':'REQUEST A SPOT'}
