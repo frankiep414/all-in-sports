@@ -18,7 +18,7 @@ export async function GET(request:Request){
   const gameId=new URL(request.url).searchParams.get('game_id');
   if(!gameId||!/^[0-9a-f-]{36}$/i.test(gameId))return Response.json({error:'Invalid game.'},{status:400});
   const {data,error:lookupError}=await db.from('pickup_registrations')
-    .select('id,user_id,player_id,status,payment_status,created_at')
+    .select('id,user_id,player_id,status,payment_status,payment_reference,created_at')
     .eq('game_id',gameId).order('created_at',{ascending:true}).limit(100);
   if(lookupError)return Response.json({error:'Unable to load roster.'},{status:503});
   const playerIds=[...new Set((data||[]).map(r=>r.player_id))];
@@ -30,7 +30,7 @@ export async function GET(request:Request){
   }
   return Response.json({registrations:(data||[]).map(r=>({
     id:r.id,player_name:names[r.player_id]||'Player',status:r.status,
-    payment_status:r.payment_status,created_at:r.created_at
+    payment_status:r.payment_status,payment_reference:r.payment_reference,created_at:r.created_at
   }))},{headers:{'Cache-Control':'no-store'}});
  }catch{return Response.json({error:'Unable to load roster.'},{status:503});}
 }
