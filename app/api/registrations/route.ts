@@ -25,7 +25,7 @@ export async function POST(request:Request){
   if(playerError)return Response.json({error:'Unable to verify Player ID.'},{status:503});
   if(!player)return Response.json({error:'Complete your All In player profile before registering.'},{status:403});
   const {data,error}=await access.db.rpc('request_pickup_registration',{
-   p_game_id:body.game_id,p_player_id:player.id,p_user_id:access.user.id
+   p_game_id:body.game_id,p_player_id:String(player.id),p_user_id:access.user.id
   });
   if(error){
    if(error.message.includes('GAME_FULL'))return Response.json({error:'This game is full.'},{status:409});
