@@ -55,7 +55,7 @@ export default function PlayForCarmitaPage() {
       <span className="carmitaQuickArrow">↗</span>
     </a>
 
-    <a href="#register">
+    <a href="/play-for-carmita/register">
       <span>04</span>
       <strong>REGISTRATION</strong>
       <span className="carmitaQuickArrow">↗</span>
@@ -94,12 +94,12 @@ export default function PlayForCarmitaPage() {
             </p>
 
             <div className="carmitaHeroActions">
-              <a href="#register" className="primaryButton">
+              <a href="/play-for-carmita/register" className="primaryButton">
                 REGISTER TEAM
                 <ArrowRight size={17} />
               </a>
 
-              <a href="#register" className="ghostButton">
+              <a href="/play-for-carmita/register" className="ghostButton">
                 REGISTER PLAYER
               </a>
             </div>
@@ -179,7 +179,7 @@ export default function PlayForCarmitaPage() {
 
           <div className="carmitaRegisterGrid">
 
-            <button className="carmitaRegisterCard">
+            <a href="/play-for-carmita/register" className="carmitaRegisterCard">
               <div className="carmitaRegisterNumber">01</div>
 
               <div>
@@ -192,10 +192,10 @@ export default function PlayForCarmitaPage() {
                 REGISTER TEAM
                 <ArrowRight size={19} />
               </div>
-            </button>
+            </a>
 
 
-            <button className="carmitaRegisterCard">
+            <a href="/play-for-carmita/register" className="carmitaRegisterCard">
               <div className="carmitaRegisterNumber">02</div>
 
               <div>
@@ -210,16 +210,16 @@ export default function PlayForCarmitaPage() {
                 REGISTER PLAYER
                 <ArrowRight size={19} />
               </div>
-            </button>
+            </a>
 
-            <div className="carmitaRegisterCard" role="group" aria-label="Fun run and walk registration information">
+            <a href="/play-for-carmita/register" className="carmitaRegisterCard">
               <div className="carmitaRegisterNumber">03</div>
               <div>
                 <span>FUN RUN / WALK</span>
                 <h3>$25</h3>
                 <p>2-mile fun run or 1-mile walk. All ages welcome.</p>
               </div>
-              <div className="carmitaRegisterLink">REGISTRATION DETAILS COMING SOON</div>
+              <div className="carmitaRegisterLink">REGISTER FOR RUN / WALK</div>
             </div>
           </div>
 
