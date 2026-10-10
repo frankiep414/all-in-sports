@@ -89,8 +89,8 @@ export default function PlayForCarmitaPage() {
             </h1>
 
             <p className="carmitaHeroText">
-              A charity soccer tournament bringing family, friends and
-              community together for a purpose bigger than the game.
+              A charity soccer tournament, fun run and walk bringing family,
+              friends and community together for a purpose bigger than the game.
             </p>
 
             <div className="carmitaHeroActions">
@@ -108,15 +108,15 @@ export default function PlayForCarmitaPage() {
               <div>
                 <CalendarDays size={17} />
                 <span>
-                  <strong>NOV 1</strong>
-                  SUNDAY
+                  <strong>OCT 31</strong>
+                  SATURDAY
                 </span>
               </div>
 
               <div>
                 <Clock3 size={17} />
                 <span>
-                  <strong>11AM–4PM</strong>
+                  <strong>9AM–1PM</strong>
                   EVENT TIME
                 </span>
               </div>
@@ -172,8 +172,8 @@ export default function PlayForCarmitaPage() {
           </h2>
 
           <p className="carmitaRegisterLead">
-            Bring your squad or come on your own. Individual players
-            will be placed on a team.
+            Bring your squad, come on your own, or join the 2-mile fun run / 1-mile walk.
+            Individual soccer players will be placed on a team.
           </p>
 
 
@@ -212,8 +212,22 @@ export default function PlayForCarmitaPage() {
               </div>
             </button>
 
+            <div className="carmitaRegisterCard" role="group" aria-label="Fun run and walk registration information">
+              <div className="carmitaRegisterNumber">03</div>
+              <div>
+                <span>FUN RUN / WALK</span>
+                <h3>$25</h3>
+                <p>2-mile fun run or 1-mile walk. All ages welcome.</p>
+              </div>
+              <div className="carmitaRegisterLink">REGISTRATION DETAILS COMING SOON</div>
+            </div>
           </div>
 
+          <p style={{ marginTop: 24, lineHeight: 1.7, opacity: 0.85 }}>
+            Saturday, October 31, 2026 · 9:00 AM–1:00 PM · Harrison High School, Harrison, NJ.
+            Join the Halloween costume contest for kids and adults.
+            Proceeds will be donated to the Brain Aneurysm Foundation.
+          </p>
 
           <div className="carmitaClosing">
             <span>SAME GAME.</span>
