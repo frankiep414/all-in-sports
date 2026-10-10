@@ -220,7 +220,7 @@ export default function PlayForCarmitaPage() {
                 <p>2-mile fun run or 1-mile walk. All ages welcome.</p>
               </div>
               <div className="carmitaRegisterLink">REGISTER FOR RUN / WALK</div>
-            </div>
+            </a>
           </div>
 
           <p style={{ marginTop: 24, lineHeight: 1.7, opacity: 0.85 }}>
