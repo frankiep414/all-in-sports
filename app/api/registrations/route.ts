@@ -62,7 +62,7 @@ export async function POST(request:Request){
    const {data:playerName}=await access.db.from('players').select('full_name').eq('id',player.id).maybeSingle();
    try{
     await sendAutomatedTestRegistrationEmail({
-     db:access.db,registrationId:row.registration_id,gameId:body.game_id,
+     registrationId:row.registration_id,gameId:body.game_id,
      userId:access.user.id,email:access.user.email!,
      playerName:playerName?.full_name||'Player',status:row.registration_status,
      reference:referenceRow.payment_reference
