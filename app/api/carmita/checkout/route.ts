@@ -32,10 +32,12 @@ export async function POST(request: Request) {
     if (!['test', 'live'].includes(expectedMode || '') || !secret.startsWith(expectedMode === 'live' ? 'sk_live_' : 'sk_test_')) {
       return NextResponse.json({ error: 'Checkout mode is not configured.' }, { status: 503 });
     }
-    const origin = new URL(request.url).origin;
+    const configuredPrice = expectedMode === 'test' ? process.env['STRIPE_TEST_PRICE_' + kind.toUpperCase()] : price.id;
+    if (!configuredPrice) return NextResponse.json({ error: 'Test price not configured.' }, { status: 503 });
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
     const data = new URLSearchParams();
     data.set('mode', 'payment');
-    data.set('line_items[0][price]', price.id);
+    data.set('line_items[0][price]', configuredPrice);
     data.set('line_items[0][quantity]', '1');
     data.set('customer_email', email);
     data.set('success_url', origin + '/play-for-carmita/registration/success?session_id={CHECKOUT_SESSION_ID}');
