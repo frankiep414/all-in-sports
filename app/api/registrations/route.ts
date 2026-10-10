@@ -1,4 +1,5 @@
 import {createClient} from '@supabase/supabase-js';
+import {sendAutomatedTestRegistrationEmail} from '../../../lib/automated-registration-email';
 export const dynamic='force-dynamic';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 async function session(request:Request){
@@ -54,6 +55,19 @@ export async function POST(request:Request){
     payload:{payment_reference:referenceRow?.payment_reference||null}
    },{onConflict:'event_key',ignoreDuplicates:true});
    if(eventError)console.error('Registration notification event failed',{code:eventError.code});
+  }
+  // Only admin-owned test games can send; explicit Preview-only env flag required.
+  // Send only after event exists, with a unique delivery claim preventing repeat emails.
+  if(game.is_test && row?.registration_id && referenceRow?.payment_reference){
+   const {data:playerName}=await access.db.from('players').select('full_name').eq('id',player.id).maybeSingle();
+   try{
+    await sendAutomatedTestRegistrationEmail({
+     db:access.db,registrationId:row.registration_id,gameId:body.game_id,
+     userId:access.user.id,email:access.user.email!,
+     playerName:playerName?.full_name||'Player',status:row.registration_status,
+     reference:referenceRow.payment_reference
+    });
+   }catch{console.error('Automatic test email could not complete');}
   }
   return Response.json({registration_id:row?.registration_id,status:row?.registration_status,payment_reference:referenceRow?.payment_reference,
    message:'Registration received. Payment has not been collected or confirmed.'});
