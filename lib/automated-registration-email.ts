@@ -4,27 +4,31 @@ import {registrationEmail} from './notification-email-templates';
 // Automated email is deliberately limited to admin-owned test-game registrations.
 // A separate rollout is required for real players and notification preferences.
 export async function sendAutomatedTestRegistrationEmail(input:{
- db:ReturnType<typeof createClient>;registrationId:string;gameId:string;
+ registrationId:string;gameId:string;
  userId:string;email:string;playerName:string;status:string;reference:string;
 }):Promise<void>{
  if(process.env.PICKUP_AUTO_TEST_EMAIL_ENABLED!=='true')return;
  const key=process.env.RESEND_API_KEY;
  if(!key)return;
- const {data:game,error:gameError}=await input.db.from('pickup_games')
+ const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL;
+ const secret=process.env.SUPABASE_SECRET_KEY;
+ if(!url||!secret)return;
+ const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
+ const {data:game,error:gameError}=await db.from('pickup_games')
   .select('id,title,venue,starts_at,is_test').eq('id',input.gameId).maybeSingle();
  if(gameError||!game?.is_test)return;
- const {data:admin,error:adminError}=await input.db.from('admin_users')
+ const {data:admin,error:adminError}=await db.from('admin_users')
   .select('user_id').eq('user_id',input.userId).maybeSingle();
  if(adminError||!admin)return;
- const {data:registration,error:registrationError}=await input.db.from('pickup_registrations')
+ const {data:registration,error:registrationError}=await db.from('pickup_registrations')
   .select('user_id,game_id').eq('id',input.registrationId).maybeSingle();
  if(registrationError||registration?.user_id!==input.userId||registration.game_id!==input.gameId)return;
  const type=input.status==='waitlisted'?'waitlist_joined':'registration_received';
  const eventKey=`${type}:${input.registrationId}`;
- const {data:event,error:eventError}=await input.db.from('notification_events')
+ const {data:event,error:eventError}=await db.from('notification_events')
   .select('id').eq('event_key',eventKey).maybeSingle();
  if(eventError||!event)return;
- const {data:claim,error:claimError}=await input.db.from('notification_deliveries')
+ const {data:claim,error:claimError}=await db.from('notification_deliveries')
   .insert({event_id:event.id,recipient_user_id:input.userId,channel:'email',
    destination:input.email,status:'sending',provider:'resend',attempts:1})
   .select('id').single();
@@ -45,12 +49,12 @@ export async function sendAutomatedTestRegistrationEmail(input:{
   });
   const result=await response.json().catch(()=>({}));
   if(!response.ok||typeof result.id!=='string'){
-   await input.db.from('notification_deliveries').update({
+   await db.from('notification_deliveries').update({
     status:'failed',error_code:`resend_http_${response.status}`,updated_at:new Date().toISOString()
    }).eq('id',claim.id);
    return;
   }
-  await input.db.from('notification_deliveries').update({
+  await db.from('notification_deliveries').update({
    status:'sent',provider_message_id:result.id,updated_at:new Date().toISOString()
   }).eq('id',claim.id);
  }catch{
