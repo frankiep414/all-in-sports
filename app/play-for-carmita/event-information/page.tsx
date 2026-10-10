@@ -39,7 +39,7 @@ export default function CarmitaEventInformationPage() {
             </div>
 
             <p>
-              Soccer, family and community coming together for one
+              Soccer, a fun run and walk, Halloween costumes, family and community coming together for one
               unforgettable day.
             </p>
           </div>
@@ -52,8 +52,8 @@ export default function CarmitaEventInformationPage() {
 
               <div>
                 <span>DATE &amp; TIME</span>
-                <h3>NOVEMBER 1</h3>
-                <p>Sunday · 11:00 AM – 4:00 PM</p>
+                <h3>OCTOBER 31</h3>
+                <p>Saturday · 9:00 AM – 1:00 PM</p>
               </div>
             </article>
 
@@ -74,8 +74,8 @@ export default function CarmitaEventInformationPage() {
 
               <div>
                 <span>LOCATION</span>
-                <h3>COMING SOON</h3>
-                <p>Harrison / Jersey City, NJ</p>
+                <h3>HARRISON HIGH SCHOOL</h3>
+                <p>Harrison, NJ</p>
               </div>
             </article>
 
@@ -97,6 +97,12 @@ export default function CarmitaEventInformationPage() {
 
   <div>
     <span>02</span>
+    <strong>2-MILE FUN RUN<br />1-MILE WALK</strong>
+    <p>All ages welcome. $25 registration for the run or walk.</p>
+  </div>
+
+  <div>
+    <span>03</span>
     <strong>KIDS + FAMILY<br />ACTIVITIES</strong>
     <p>
       A day for the whole family, featuring games, fun zones,
@@ -105,7 +111,7 @@ export default function CarmitaEventInformationPage() {
   </div>
 
   <div>
-    <span>03</span>
+    <span>04</span>
     <strong>HALLOWEEN<br />COSTUME CONTEST</strong>
     <p>
       Keep the Halloween spirit going! Kids and adults are
@@ -114,7 +120,7 @@ export default function CarmitaEventInformationPage() {
   </div>
 
   <div>
-    <span>04</span>
+    <span>05</span>
     <strong>CHAMPIONSHIP<br />PRIZES</strong>
     <p>
       Play for the championship, compete for bragging rights,
@@ -124,6 +130,12 @@ export default function CarmitaEventInformationPage() {
 
 </div>
 
+          <p style={{ marginTop: 32, lineHeight: 1.7 }}>
+            Proceeds will be donated to the Brain Aneurysm Foundation.
+            <a href="/play-for-carmita#register" style={{ display: 'block', marginTop: 16, textDecoration: 'underline' }}>
+              View participation options →
+            </a>
+          </p>
         </div>
       </section>
 
