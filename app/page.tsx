@@ -663,7 +663,7 @@ setSignupComplete(true);
         <ArrowRight className="launchArrow" size={24} />
       </a>
 
-      <a href="#events" className="launchCard">
+      <a href="/events" className="launchCard">
         <div className="launchIcon">
           <CalendarDays size={28} />
         </div>
