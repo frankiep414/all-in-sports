@@ -85,6 +85,8 @@ export default function PlayPage() {
       if(!active)return;
       setSignedIn(Boolean(token));
       if(!token)return;
+      const testResponse=await fetch('/api/games/test',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
+      if(testResponse.ok){const testData=await testResponse.json();if(active)setGames(current=>[...current,...(testData.games||[]).filter((g:{id:string})=>!current.some(x=>x.id===g.id))]);}
       const response=await fetch('/api/registrations',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
       if(response.ok){const result=await response.json();if(active)setRegistrations(Object.fromEntries(
         (result.registrations||[]).map((r:{id:string;game_id:string;status:string;payment_status:string;payment_reference?:string})=>[r.game_id,{id:r.id,status:r.status,payment_status:r.payment_status,payment_reference:r.payment_reference}])
