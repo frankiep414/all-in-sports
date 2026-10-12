@@ -94,15 +94,16 @@ export default function PlayForCarmitaPage() {
             </p>
 
             <div className="carmitaHeroActions">
-              <a href="/play-for-carmita/register" className="primaryButton">
+              <a href="/play-for-carmita/register?type=team" className="primaryButton">
                 REGISTER TEAM
                 <ArrowRight size={17} />
               </a>
 
-              <a href="/play-for-carmita/register" className="ghostButton">
-                REGISTER PLAYER
+              <a href="/play-for-carmita/register?type=individual" className="ghostButton">
+                REGISTER INDIVIDUALLY · $25
               </a>
             </div>
+            <p style={{ marginTop: 16, fontSize: 15, lineHeight: 1.6, opacity: 0.9 }}>Individual registration is $25 total and covers soccer, the fun run/walk, or both. Team registration is $250.</p>
 
             <div className="carmitaHeroMeta">
               <div>
@@ -172,14 +173,13 @@ export default function PlayForCarmitaPage() {
           </h2>
 
           <p className="carmitaRegisterLead">
-            Bring your squad, come on your own, or join the 2-mile fun run / 1-mile walk.
-            Individual soccer players will be placed on a team.
+            One $25 individual registration covers soccer, the 2-mile fun run / 1-mile walk, or both. Soccer players must be 16+ and solo players will be placed on a team. Full soccer teams register for $250.
           </p>
 
 
           <div className="carmitaRegisterGrid">
 
-            <a href="/play-for-carmita/register" className="carmitaRegisterCard">
+            <a href="/play-for-carmita/register?type=team" className="carmitaRegisterCard">
               <div className="carmitaRegisterNumber">01</div>
 
               <div>
@@ -195,31 +195,14 @@ export default function PlayForCarmitaPage() {
             </a>
 
 
-            <a href="/play-for-carmita/register" className="carmitaRegisterCard">
+            <a href="/play-for-carmita/register?type=individual" className="carmitaRegisterCard">
               <div className="carmitaRegisterNumber">02</div>
-
               <div>
                 <span>INDIVIDUAL REGISTRATION</span>
                 <h3>$25</h3>
-                <p>
-                  Sign up individually and we&apos;ll place you on a team.
-                </p>
+                <p>One registration covers coed 7v7 soccer, the 2-mile fun run / 1-mile walk, or both. Soccer ages 16+.</p>
               </div>
-
-              <div className="carmitaRegisterLink">
-                REGISTER PLAYER
-                <ArrowRight size={19} />
-              </div>
-            </a>
-
-            <a href="/play-for-carmita/register" className="carmitaRegisterCard">
-              <div className="carmitaRegisterNumber">03</div>
-              <div>
-                <span>FUN RUN / WALK</span>
-                <h3>$25</h3>
-                <p>2-mile fun run or 1-mile walk. All ages welcome.</p>
-              </div>
-              <div className="carmitaRegisterLink">REGISTER FOR RUN / WALK</div>
+              <div className="carmitaRegisterLink">CHOOSE YOUR ACTIVITIES <ArrowRight size={19} /></div>
             </a>
           </div>
 
