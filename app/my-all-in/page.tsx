@@ -18,6 +18,9 @@ import {
 } from 'lucide-react';
 
 export default function MyAllInPage() {
+  const [upcoming,setUpcoming]=useState<Array<{id:string;title:string;venue:string;starts_at:string;status:string;payment_status:string;payment_reference:string|null}>>([]);
+  const [upcomingLoading,setUpcomingLoading]=useState(true);
+  const [upcomingError,setUpcomingError]=useState(false);
   const [player, setPlayer] = useState<{
     id: number;
     full_name: string;
@@ -46,6 +49,28 @@ export default function MyAllInPage() {
       if (response.ok) {
         const profile = await response.json();
         if (active) setPlayer(profile);
+        try {
+          const regResponse=await fetch('/api/registrations',{headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+          if(!regResponse.ok)throw Error('Registrations unavailable');
+          const regData=await regResponse.json();
+          const registrations=(regData.registrations||[]) as Array<{id:string;game_id:string;status:string;payment_status:string;payment_reference:string|null}>;
+          const ids=[...new Set(registrations.map(reg=>reg.game_id))];
+          if(ids.length){
+            const gamesResponse=await fetch('/api/my-games',{headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+            if(!gamesResponse.ok)throw Error('Games unavailable');
+            const gamesData=await gamesResponse.json();
+            const gameMap=new Map<string,{id:string;title:string;venue:string;starts_at:string}>(
+              (gamesData.games||[]).map((g:{id:string;title:string;venue:string;starts_at:string})=>[g.id,g])
+            );
+            const upcomingGames=registrations.filter(reg=>!['cancelled','expired'].includes(reg.status))
+              .map(reg=>({ ...reg,game:gameMap.get(reg.game_id) }))
+              .filter(entry=>entry.game && new Date(entry.game.starts_at)>new Date())
+              .map(entry=>({...entry.game!,id:entry.id,status:entry.status,payment_status:entry.payment_status,payment_reference:entry.payment_reference}))
+              .sort((a,b)=>new Date(a.starts_at).getTime()-new Date(b.starts_at).getTime());
+            if(active)setUpcoming(upcomingGames);
+          }
+        }catch{if(active)setUpcomingError(true);}
+        finally{if(active)setUpcomingLoading(false);}
       } else if (active) {
         window.location.replace('/');
       }
@@ -124,12 +149,18 @@ export default function MyAllInPage() {
             </div>
 
             <p className="cardEyebrow">NEXT UP</p>
-            <h3>No upcoming game yet.</h3>
-            <p>
-              Your next All In game will appear here when you're registered.
-            </p>
-
-            <a href="/#play" className="dashboardAction">
+            {upcomingLoading ? <p>Loading your upcoming games…</p> :
+              upcomingError ? <p role="alert">Unable to load your games right now. Please refresh.</p> :
+              upcoming.length ? <div>
+                <h3>{upcoming.length} upcoming {upcoming.length===1?'game':'games'}</h3>
+                {upcoming.map(game=><div key={game.id} style={{padding:'12px 0',borderTop:'1px solid #39414d'}}>
+                  <strong>{game.title}</strong>
+                  <p>{game.venue} · {new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'})}</p>
+                  <p>{game.status==='confirmed'?'Confirmed — You’re in!':game.status==='waitlisted'?'Waitlisted':game.payment_status==='pending_verification'?'Payment under review':'Registered — Payment due'}</p>
+                  {game.payment_reference&&<p>Reference: {game.payment_reference}</p>}
+                </div>)}
+              </div> : <><h3>No upcoming game yet.</h3><p>Your next All In game will appear here when you're registered.</p></>}
+            <a href="/play" className="dashboardAction">
               FIND A GAME
               <ArrowRight size={17} />
             </a>
