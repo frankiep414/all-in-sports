@@ -11,6 +11,7 @@ export default function PlayPage() {
   const [games,setGames]=useState<Array<{id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;registered_count:number;waitlist_count:number;spots_remaining:number}>>([]);
   const [gamesLoading,setGamesLoading]=useState(true);
   const [registrations,setRegistrations]=useState<Record<string,{id:string;status:string;payment_status:string;payment_reference?:string}>>({});
+  const [stripeLoading,setStripeLoading]=useState<string|null>(null);
   const [reporting,setReporting]=useState<string|null>(null);
   const reportingEnabled=process.env.NEXT_PUBLIC_PICKUP_ZELLE_REPORTING_ENABLED==='true';
   const [registering,setRegistering]=useState<string|null>(null);
@@ -39,6 +40,26 @@ export default function PlayPage() {
       setRegistrationMessage('Registration received. Your spot is provisional; payment has not been collected. Do not send money yet.');
     }catch(error){setRegistrationMessage(error instanceof Error?error.message:'Registration failed.');}
     finally{setRegistering(null);}
+  }
+  async function openTestStripeCheckout(gameId:string){
+    const registration=registrations[gameId];
+    if(!registration?.id)return;
+    setStripeLoading(gameId);setRegistrationMessage('');
+    try{
+      const token=await getToken();
+      if(!token)throw new Error('Sign in required.');
+      const response=await fetch('/api/stripe/checkout',{method:'POST',headers:{
+        Authorization:`Bearer ${token}`,'Content-Type':'application/json'
+      },body:JSON.stringify({registration_id:registration.id})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Test checkout unavailable.');
+      if(typeof result.checkout_url!=='string'||!result.checkout_url.startsWith('https://checkout.stripe.com/'))
+        throw new Error('Unexpected checkout address.');
+      window.location.assign(result.checkout_url);
+    }catch(error){
+      setRegistrationMessage(error instanceof Error?error.message:'Unable to start test checkout.');
+      setStripeLoading(null);
+    }
   }
   async function reportPayment(gameId:string){
     const registration=registrations[gameId];
@@ -117,6 +138,14 @@ export default function PlayPage() {
                 {registering===item.id?'Registering…':'REQUEST A SPOT'}
               </button>}
             {registrations[item.id]?.payment_reference && <p style={{margin:'12px 0',fontSize:14}}>Zelle memo reference: <strong style={{color:'#95d9ff'}}>{registrations[item.id].payment_reference}</strong> <button type="button" onClick={()=>void navigator.clipboard?.writeText(registrations[item.id].payment_reference||'')} style={{marginLeft:8,padding:'4px 9px',borderRadius:6}}>COPY</button></p>}
+            {item.title.startsWith('TEST') && registrations[item.id] &&
+              ['pending_payment','offered'].includes(registrations[item.id].status) &&
+              registrations[item.id].payment_status==='unpaid' &&
+              <button type="button" disabled={stripeLoading!==null}
+                onClick={()=>void openTestStripeCheckout(item.id)}
+                style={{display:'block',marginTop:12,padding:'10px 16px',borderRadius:8,border:'1px solid #95d9ff',background:'#26384a',color:'#fff',fontWeight:700}}>
+                {stripeLoading===item.id?'Opening Stripe…':'TEST CARD CHECKOUT — NO REAL CHARGE'}
+              </button>}
             {registrations[item.id] && ['pending_payment','offered'].includes(registrations[item.id].status) && registrations[item.id].payment_status==='unpaid' && reportingEnabled &&
               <button type="button" disabled={reporting!==null} onClick={()=>void reportPayment(item.id)}
                 style={{display:'block',marginTop:12,padding:'10px 16px',borderRadius:8,border:'1px solid #95d9ff',background:'#26384a',color:'#fff',fontWeight:700}}>
