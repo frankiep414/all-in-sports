@@ -153,21 +153,34 @@ export default function MyAllInPage() {
               upcomingError ? <p role="alert">Unable to load your games right now. Please refresh.</p> :
               <div>
                 {([
-                  {label:'PENDING PAYMENT',subtitle:'Signed up — payment not yet verified',items:upcoming.filter(g=>['pending_payment','offered'].includes(g.status)&&g.payment_status!=='paid')},
-                  {label:'CONFIRMED — YOU’RE IN!',subtitle:'Payment verified and reservation confirmed',items:upcoming.filter(g=>g.status==='confirmed'&&g.payment_status==='paid')},
-                  {label:'WAITLIST',subtitle:'Waiting for a spot to become available',items:upcoming.filter(g=>g.status==='waitlisted')},
-                ]).map(bucket=><div key={bucket.label} style={{margin:'18px 0',padding:'16px',border:'1px solid #39414d',borderRadius:12}}>
-                  <h3 style={{margin:'0 0 6px'}}>{bucket.label} ({bucket.items.length})</h3>
-                  <p style={{fontSize:13,opacity:.75}}>{bucket.subtitle}</p>
-                  {bucket.items.length===0 ? <p style={{fontSize:14,opacity:.7}}>No games in this section.</p> :
-                    bucket.items.map(game=><div key={game.id} style={{padding:'12px 0',borderTop:'1px solid #39414d'}}>
-                      <strong>{game.title}</strong>
-                      <p>{game.venue} · {new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'})}</p>
-                      <p>{game.status==='waitlisted'?'Waitlisted — not reserved':game.payment_status==='pending_verification'?'Zelle reported — awaiting verification':game.status==='confirmed'?'Paid and confirmed':'Payment due — not fully confirmed'}</p>
-                      {game.payment_reference&&<p>Reference: {game.payment_reference}</p>}
-                      {bucket.label==='PENDING PAYMENT'&&<a href="/play" style={{color:'#95d9ff'}}>VIEW PAYMENT OPTIONS →</a>}
-                    </div>)}
-                </div>)}
+                  {label:'PENDING PAYMENT',subtitle:'Registered · Payment not yet verified',items:upcoming.filter(g=>['pending_payment','offered'].includes(g.status)&&g.payment_status!=='paid')},
+                  {label:'CONFIRMED — YOU’RE IN!',subtitle:'Paid · Spot fully reserved',items:upcoming.filter(g=>g.status==='confirmed'&&g.payment_status==='paid')},
+                  {label:'WAITLIST',subtitle:'Waiting for an available spot',items:upcoming.filter(g=>g.status==='waitlisted')},
+                ]).map(bucket=><section key={bucket.label} style={{margin:'16px 0',border:'1px solid #303945',borderRadius:14,overflow:'hidden',background:'#101821'}}>
+                  <div style={{padding:'15px 18px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+                    <div>
+                      <h3 style={{fontSize:16,margin:'0 0 3px',letterSpacing:1}}>{bucket.label}</h3>
+                      <span style={{fontSize:12,color:'#a9b9c8'}}>{bucket.subtitle}</span>
+                    </div>
+                    <strong style={{fontSize:20,color:'#95d9ff',background:'#1b2c3a',borderRadius:10,padding:'6px 12px'}}>{bucket.items.length}</strong>
+                  </div>
+                  {bucket.items.length===0 ? <p style={{fontSize:13,color:'#a9b9c8',padding:'0 18px 16px',margin:0}}>No games here yet.</p> :
+                    bucket.items.map(game=><details key={game.id} style={{borderTop:'1px solid #303945'}}>
+                      <summary style={{cursor:'pointer',padding:'14px 18px',listStyle:'none',display:'flex',justifyContent:'space-between',alignItems:'center',gap:14}}>
+                        <span style={{minWidth:0,flex:1}}>
+                          <strong style={{display:'block',fontSize:15,lineHeight:1.4,overflowWrap:'anywhere'}}>{game.title}</strong>
+                          <span style={{display:'block',fontSize:13,color:'#a9b9c8',marginTop:4}}>{new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span>
+                        </span>
+                        <span style={{color:'#95d9ff',fontSize:12,fontWeight:700,whiteSpace:'nowrap'}}>DETAILS ＋</span>
+                      </summary>
+                      <div style={{padding:'0 18px 18px',fontSize:14,lineHeight:1.6,color:'#d8e3ee'}}>
+                        <p style={{margin:'0 0 8px'}}>📍 {game.venue}</p>
+                        <p style={{margin:'0 0 8px'}}>{game.status==='waitlisted'?'Waitlisted — no spot reserved':game.payment_status==='pending_verification'?'Zelle reported — awaiting verification':game.status==='confirmed'?'Payment verified — reservation confirmed':'Payment due — reservation not yet confirmed'}</p>
+                        {game.payment_reference&&<p style={{margin:'0 0 12px'}}>Payment reference: <strong>{game.payment_reference}</strong></p>}
+                        {bucket.label==='PENDING PAYMENT'&&<a href="/play" style={{color:'#95d9ff',fontWeight:700,textDecoration:'none'}}>VIEW PAYMENT OPTIONS →</a>}
+                      </div>
+                    </details>)}
+                </section>)}
                 {upcoming.some(g=>!['waitlisted','pending_payment','offered'].includes(g.status)&&!(g.status==='confirmed'&&g.payment_status==='paid'))&&
                   <p role="status">Some registrations need review. Contact All In Sports if a payment is missing.</p>}
               </div>}
