@@ -1,18 +1,21 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { ArrowLeft, ArrowRight, CalendarDays, MapPin } from 'lucide-react';
 
-type RegistrationType = 'team' | 'player' | 'run' | 'walk';
+type RegistrationType = 'team' | 'individual';
+type Activity = 'soccer' | 'run' | 'walk' | 'soccer_run' | 'soccer_walk';
 const options: { id: RegistrationType; title: string; price: number; description: string }[] = [
-  { id: 'team', title: 'Soccer team', price: 250, description: 'Coed 7v7 · Register your full team' },
-  { id: 'player', title: 'Individual soccer player', price: 25, description: 'We will assign you to a team' },
-  { id: 'run', title: '2-mile fun run', price: 25, description: 'Run for Carmita' },
-  { id: 'walk', title: '1-mile walk', price: 25, description: 'Walk for Carmita' },
+  { id: 'team', title: 'Register a soccer team', price: 250, description: 'Coed 7v7 · Register your full team' },
+  { id: 'individual', title: 'Register individually', price: 25, description: 'One $25 registration covers soccer, run/walk, or both' },
 ];
 
-export default function CarmitaRegistrationPage() {
-  const [type, setType] = useState<RegistrationType>('team');
+function CarmitaRegistrationForm() {
+  const searchParams = useSearchParams();
+  const [type, setType] = useState<RegistrationType>(searchParams.get('type') === 'individual' ? 'individual' : 'team')
+  const [activity, setActivity] = useState<Activity>('soccer');
   const [status, setStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -24,11 +27,12 @@ export default function CarmitaRegistrationPage() {
     setMessage('');
     const form = new FormData(event.currentTarget);
     const body = {
-      type, name: String(form.get('name') || '').trim(),
+      type: type === 'team' ? 'team' : activity === 'run' ? 'run' : activity === 'walk' ? 'walk' : 'player',
+      name: String(form.get('name') || '').trim(),
       email: String(form.get('email') || '').trim(),
       phone: String(form.get('phone') || '').trim(),
       teamName: type === 'team' ? String(form.get('teamName') || '').trim() : null,
-      notes: String(form.get('notes') || '').trim(),
+      notes: (type === 'individual' ? 'Activities: ' + activity + '\\n' : '') + String(form.get('notes') || '').trim(),
       website: String(form.get('website') || ''),
     };
     try {
@@ -56,7 +60,7 @@ export default function CarmitaRegistrationPage() {
         <a href="/play-for-carmita" className="carmitaBack"><ArrowLeft size={16} /> BACK TO PLAY FOR CARMITA</a>
         <p className="eyebrow" style={{ marginTop: 34 }}>PLAY FOR CARMITA // REGISTRATION</p>
         <h1 style={{ fontSize: 'clamp(2.8rem, 7vw, 5rem)', lineHeight: 1.06, margin: '12px 0' }}>BE PART OF <span style={{ color: '#6edcff' }}>THE PURPOSE.</span></h1>
-        <p style={{ lineHeight: 1.7, marginBottom: 22 }}>Choose how you want to participate. Proceeds will be donated to the Brain Aneurysm Foundation.</p>
+        <p style={{ lineHeight: 1.7, marginBottom: 22 }}>Register a soccer team for $250, or register individually for $25. Individual registration covers soccer, the fun run/walk, or both — no second payment required. Proceeds will be donated to the Brain Aneurysm Foundation.</p>
         <p style={{ lineHeight: 1.8, marginBottom: 32 }}><CalendarDays size={16} style={{ verticalAlign: 'middle' }} /> Saturday, October 31, 2026 · 9 AM–1 PM<br /><MapPin size={16} style={{ verticalAlign: 'middle' }} /> Harrison High School, Harrison, NJ</p>
         {status === 'success' ? (
           <div style={{ padding: 32, border: '1px solid #6edcff', borderRadius: 18 }}>
@@ -75,6 +79,17 @@ export default function CarmitaRegistrationPage() {
                 </label>)}
               </div>
             </fieldset>
+            {type === 'individual' && <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
+              <legend style={{ fontWeight: 700, marginBottom: 10 }}>What would you like to participate in?</legend>
+              <select value={activity} onChange={event => setActivity(event.target.value as Activity)} style={fieldStyle}>
+                <option value="soccer">Coed 7v7 soccer only (ages 16+)</option>
+                <option value="run">2-mile fun run only</option>
+                <option value="walk">1-mile walk only</option>
+                <option value="soccer_run">Soccer + 2-mile fun run (ages 16+)</option>
+                <option value="soccer_walk">Soccer + 1-mile walk (ages 16+)</option>
+              </select>
+              <p style={{ fontSize: 14, opacity: .8, marginTop: 8 }}>Individual soccer players will be placed on a team. Run and walk are open to all ages.</p>
+            </fieldset>}
             <p style={{ margin: 0 }}>Selected: <strong>{choice.title} — ${choice.price}</strong></p>
             {type === 'team' && <label style={{ display: 'grid', gap: 8 }}>Team name *<input name="teamName" required maxLength={120} placeholder="Your team name" style={fieldStyle} /></label>}
             <label style={{ display: 'grid', gap: 8 }}>{type === 'team' ? 'Team captain / contact name *' : 'Participant name *'}<input name="name" required maxLength={120} autoComplete="name" style={fieldStyle} /></label>
@@ -90,6 +105,10 @@ export default function CarmitaRegistrationPage() {
       </section>
     </main>
   );
+}
+
+export default function CarmitaRegistrationPage() {
+  return <Suspense fallback={<main>Loading registration…</main>}><CarmitaRegistrationForm /></Suspense>;
 }
 
 const fieldStyle = { padding: '13px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,.25)', background: '#101923', color: 'white', width: '100%', fontSize: 16 };
