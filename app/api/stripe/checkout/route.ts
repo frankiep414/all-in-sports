@@ -48,7 +48,7 @@ export async function POST(request:Request){
    return Response.json({error:'Preview URL unavailable.'},{status:503});
   const origin='https://'+host;
   const form=new URLSearchParams({
-   mode:'payment',success_url:origin+'/play?stripe=return',cancel_url:origin+'/play?stripe=cancel',
+   mode:'payment',success_url:origin+'/payment/confirmation?registration_id='+encodeURIComponent(registration.id),cancel_url:origin+'/play?stripe=cancel',
    customer_email:user.email,'client_reference_id':registration.id,
    'metadata[registration_id]':registration.id,'metadata[game_id]':game.id,
    'metadata[payment_reference]':registration.payment_reference,
