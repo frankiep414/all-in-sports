@@ -128,6 +128,37 @@ export async function PATCH(request: Request) {
   const id=typeof body.id==='string'?body.id:'';
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
    return Response.json({error:'Invalid game ID.'},{status:400});
+  if(body.action==='set_test_price'){
+   // Only change the price of an existing published TEST game with no Stripe
+   // checkout attempts or verified payments. Never allow real-game repricing.
+   if(process.env.VERCEL_ENV!=='preview')
+    return Response.json({error:'Test price editing is Preview-only.'},{status:403});
+   const price=body.price_cents;
+   if(!Number.isInteger(price)||price<50||price>100000)
+    return Response.json({error:'Choose a test price between $0.50 and $1,000.'},{status:400});
+   const {data:game,error:lookupError}=await access.admin.from('pickup_games')
+    .select('id,status,is_test,starts_at').eq('id',id).maybeSingle();
+   if(lookupError)return Response.json({error:'Unable to verify game.'},{status:503});
+   if(!game||!game.is_test||game.status!=='published'||new Date(game.starts_at)<=new Date())
+    return Response.json({error:'Only upcoming published test games can be repriced.'},{status:409});
+   const {data:regs,error:regError}=await access.admin.from('pickup_registrations')
+    .select('id,payment_status').eq('game_id',id);
+   if(regError)return Response.json({error:'Unable to verify registrations.'},{status:503});
+   if((regs||[]).some(r=>r.payment_status!=='unpaid'))
+    return Response.json({error:'This game has payment activity and cannot be repriced.'},{status:409});
+   const ids=(regs||[]).map(r=>r.id);
+   if(ids.length){
+    const {data:sessions,error:sessionsError}=await access.admin.from('pickup_stripe_checkout_sessions')
+     .select('id').in('registration_id',ids).limit(1);
+    if(sessionsError)return Response.json({error:'Unable to verify checkout history.'},{status:503});
+    if(sessions?.length)return Response.json({error:'This game already has a checkout attempt. Create a new test game.'},{status:409});
+   }
+   const {data:updated,error:updateError}=await access.admin.from('pickup_games')
+    .update({price_cents:price}).eq('id',id).eq('is_test',true).eq('status','published')
+    .select('id').maybeSingle();
+   if(updateError||!updated)return Response.json({error:'Unable to update test price.'},{status:503});
+   return Response.json({updated:true});
+  }
   if(body.action==='publish'||body.action==='cancel'){
    const {data:game,error:lookupError}=await access.admin.from('pickup_games')
     .select('id,status,starts_at').eq('id',id).maybeSingle();
