@@ -186,6 +186,30 @@ export default function AdminPage() {
     }catch(error){setRosterMessage(error instanceof Error?error.message:'Action failed.');}
     finally{setPaymentBusy(false);}
   }
+  const [testPriceEditId,setTestPriceEditId]=useState<string|null>(null);
+  const [testPriceValue,setTestPriceValue]=useState('1.00');
+  const [testPriceBusy,setTestPriceBusy]=useState(false);
+  async function saveTestPrice(item:PickupGame){
+   setTestPriceBusy(true);setEditMessage('');
+   try{
+    const amount=Number(testPriceValue);
+    if(!Number.isFinite(amount)||amount<0.5||amount>1000||Math.round(amount*100)!==amount*100)
+     throw new Error('Enter a valid amount from $0.50 to $1,000 with at most two decimal places.');
+    const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if(!url||!key)throw new Error('Authentication unavailable.');
+    const client=createClient(url,key);
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.access_token)throw new Error('Sign in required.');
+    const response=await fetch('/api/admin/games',{method:'PATCH',headers:{
+     Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'
+    },body:JSON.stringify({id:item.id,action:'set_test_price',price_cents:Math.round(amount*100)})});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||'Unable to update test price.');
+    await loadGames(session.access_token);
+    setTestPriceEditId(null);setEditMessage('Test game price updated. Refresh Play to test Stripe Checkout.');
+   }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update test price.');}
+   finally{setTestPriceBusy(false);}
+  }
   function beginEdit(item:PickupGame) {
     const format=(iso:string)=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso));
     const pieces=(iso:string)=>Object.fromEntries(format(iso).map(part=>[part.type,part.value]));
@@ -439,6 +463,23 @@ export default function AdminPage() {
                   </button>
                   <p style={{color:'#b8c1d0',fontSize:13}}>Only use after 10 AM New York time on game day. This does not notify players.</p>
                   <p style={{color:'#b8c1d0',fontSize:13}}>Pending registrations are not paid or confirmed.</p>
+                </div>}
+                {item.is_test && item.status==='published' && <button type="button"
+                  onClick={()=>{setTestPriceEditId(testPriceEditId===item.id?null:item.id);setTestPriceValue((item.price_cents/100).toFixed(2));}}
+                  style={{marginTop:14,marginRight:12,background:'#26384a',color:'#fff',border:'1px solid #95d9ff',borderRadius:9,padding:'10px 18px',fontWeight:700}}>
+                  {testPriceEditId===item.id?'CLOSE PRICE EDIT':'EDIT TEST PRICE'}
+                </button>}
+                {testPriceEditId===item.id && <div style={{marginTop:12,padding:14,border:'1px solid #445063',borderRadius:10}}>
+                  <label style={{display:'grid',gap:8,maxWidth:220}}>Test price per player ($)
+                    <input type="number" min="0.50" max="1000" step="0.01" value={testPriceValue}
+                      onChange={e=>setTestPriceValue(e.target.value)}
+                      style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:8,padding:10}}/>
+                  </label>
+                  <p style={{fontSize:13,color:'#b8c1d0'}}>Preview test games only. Editing is blocked after any payment activity.</p>
+                  <button type="button" disabled={testPriceBusy} onClick={()=>void saveTestPrice(item)}
+                    style={{background:'#95d9ff',color:'#08101a',padding:'10px 18px',border:0,borderRadius:8,fontWeight:800}}>
+                    {testPriceBusy?'SAVING…':'SAVE TEST PRICE'}
+                  </button>
                 </div>}
                 {item.status==='draft' && <button type="button" onClick={()=>beginEdit(item)}
                   style={{marginTop:14,background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'10px 18px',fontWeight:800,cursor:'pointer'}}>EDIT GAME</button>}
