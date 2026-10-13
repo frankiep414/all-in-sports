@@ -42,7 +42,34 @@ export async function POST(request:Request){
    .select('stripe_checkout_session_id,status').eq('registration_id',registration.id)
    .eq('status','open').order('created_at',{ascending:false}).limit(1);
   if(priorError)return Response.json({error:'Checkout history unavailable.'},{status:503});
-  if(prior?.length)return Response.json({error:'A checkout already exists for this registration. Contact an admin before retrying.'},{status:409});
+  if(prior?.length){
+   // Never create a second checkout when a tracked session exists.
+   // Retrieve its current state directly from Stripe before offering a redirect.
+   const existingId=prior[0].stripe_checkout_session_id;
+   if(typeof existingId!=='string'||!/^cs_test_[A-Za-z0-9_]+$/.test(existingId))
+    return Response.json({error:'Existing test checkout could not be verified. Contact an admin.'},{status:409});
+   const existingResponse=await fetch('https://api.stripe.com/v1/checkout/sessions/'+encodeURIComponent(existingId),{
+    headers:{Authorization:'Bearer '+stripeKey},signal:AbortSignal.timeout(12000),cache:'no-store'
+   });
+   const existing=await existingResponse.json().catch(()=>null);
+   if(!existingResponse.ok||!existing)
+    return Response.json({error:'Unable to verify your existing checkout. Please try again later.'},{status:503});
+   const belongsToRegistration=existing.id===existingId&&existing.object==='checkout.session'&&
+    existing.livemode===false&&existing.mode==='payment'&&
+    existing.client_reference_id===registration.id&&
+    existing.metadata?.registration_id===registration.id&&
+    existing.metadata?.game_id===game.id&&
+    existing.currency==='usd'&&existing.amount_total===game.price_cents;
+   if(!belongsToRegistration)
+    return Response.json({error:'Existing checkout details do not match this registration. Contact an admin.'},{status:409});
+   if(existing.status==='open'&&existing.payment_status==='unpaid'&&
+      typeof existing.expires_at==='number'&&existing.expires_at>Math.floor(Date.now()/1000)&&
+      typeof existing.url==='string'&&existing.url.startsWith('https://checkout.stripe.com/'))
+    return Response.json({checkout_url:existing.url,reused:true},{headers:{'Cache-Control':'no-store'}});
+   return Response.json({error:existing.status==='complete'?
+    'Stripe shows this checkout as completed. Payment confirmation may still be processing; check My All In shortly.':
+    'This test checkout has expired or is no longer available. Contact an admin to reset the test checkout safely.'},{status:409});
+  }
   const host=process.env.VERCEL_URL;
   if(!host||!/^[a-z0-9.-]+\.vercel\.app$/i.test(host))
    return Response.json({error:'Preview URL unavailable.'},{status:503});
