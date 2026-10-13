@@ -82,6 +82,7 @@ export async function POST(request:Request){
   }).select('id').single();
   if(claimError||!claim){skipped++;continue;}
   const unsubscribe=site+'/unsubscribe?token='+encodeURIComponent(unsubscribeToken(entry.user_id));
+  const providerUnsubscribe=site+'/api/announcements/one-click?token='+encodeURIComponent(unsubscribeToken(entry.user_id));
   const html=template.html.replace('</main>',
    '<p style="margin:24px 0"><a href="'+link+'" style="display:inline-block;background:#a9dbff;color:#07111d;padding:14px 22px;border-radius:9px;font-weight:bold;text-decoration:none">REGISTER NOW →</a></p>'+
    '<p style="font-size:12px">You subscribed to All In Sports announcements. <a href="'+manage+'">Manage email preferences</a> · <a href="'+unsubscribe+'">Unsubscribe</a>.</p></main>');
@@ -89,7 +90,7 @@ export async function POST(request:Request){
    const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{
     Authorization:'Bearer '+resend,'Content-Type':'application/json','Idempotency-Key':'all-in-game-batch-'+claim.id
    },body:JSON.stringify({from:'All In Sports <noreply@allinsportsnj.com>',to:[email],
-    subject:'[PREVIEW] '+template.subject,html,headers:{'List-Unsubscribe':'<'+unsubscribe+'>'},
+    subject:'[PREVIEW] '+template.subject,html,headers:{'List-Unsubscribe':'<'+providerUnsubscribe+'>','List-Unsubscribe-Post':'List-Unsubscribe=One-Click'},
     text:template.text+'\n\nRegister: '+link+'\nManage email preferences: '+manage+'\nUnsubscribe: '+unsubscribe}),
     signal:AbortSignal.timeout(10000)});
    const result=await response.json().catch(()=>({}));
