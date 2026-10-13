@@ -5007,3 +5007,82 @@ html {
   .homeLaunchpad .launchpadGrid { margin-top: 105px; }
 }
 .launchpadPlayer { pointer-events: auto; }
+
+
+/* Sprint 1: Play for Carmita event information visual refresh */
+.carmitaDetailGridEnhanced { gap: 18px; }
+.carmitaDetailGridEnhanced .carmitaDetailCard {
+  min-height: 238px;
+  padding: 26px 28px;
+  justify-content: flex-start;
+  gap: 30px;
+  background: radial-gradient(circle at 90% 10%, rgba(110,220,255,.13), transparent 55%), linear-gradient(145deg, #111b25, #0a0d13);
+  border-color: rgba(110,220,255,.22);
+}
+.carmitaDetailGridEnhanced .carmitaDetailCard:nth-child(2) {
+  background: radial-gradient(circle at 90% 10%, rgba(255,76,153,.16), transparent 55%), linear-gradient(145deg, #1b1421, #0a0d13);
+  border-color: rgba(255,76,153,.28);
+}
+.carmitaDetailGridEnhanced .carmitaDetailCard:nth-child(3) {
+  background: radial-gradient(circle at 90% 10%, rgba(180,122,255,.17), transparent 55%), linear-gradient(145deg, #171322, #0a0d13);
+  border-color: rgba(180,122,255,.27);
+}
+.carmitaDetailGridEnhanced .carmitaDetailIcon {
+  width: 57px; height: 57px; border-radius: 17px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(110,220,255,.12);
+  border: 1px solid rgba(110,220,255,.25);
+}
+.carmitaDetailGridEnhanced .carmitaDetailCard:nth-child(2) .carmitaDetailIcon { background: rgba(255,76,153,.13); border-color: rgba(255,76,153,.25); }
+.carmitaDetailGridEnhanced .carmitaDetailCard:nth-child(3) .carmitaDetailIcon { background: rgba(180,122,255,.13); border-color: rgba(180,122,255,.25); }
+.carmitaDetailGridEnhanced .carmitaDetailCard > div:last-child { margin-top: auto; }
+.carmitaDetailGridEnhanced .carmitaDetailCard h3 { font-size: clamp(21px, 2vw, 28px); line-height: 1.15; }
+.carmitaDetailGridEnhanced .carmitaDetailHighlight {
+  display: flex; align-items: center; gap: 7px; margin: 8px 0 6px;
+  color: #f4f7fa; font-size: 14px; font-weight: 750;
+}
+.carmitaActivityGridEnhanced {
+  margin-top: 22px; gap: 14px; border: 0; border-radius: 0; overflow: visible;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.carmitaActivityGridEnhanced > div {
+  min-height: 235px; padding: 25px;
+  border: 1px solid rgba(110,220,255,.20);
+  border-radius: 18px;
+  background: linear-gradient(155deg, rgba(110,220,255,.10), rgba(12,17,24,.95) 75%);
+}
+.carmitaActivityGridEnhanced > div:nth-child(2) {
+  border-color: rgba(255,76,153,.32);
+  background: linear-gradient(155deg, rgba(255,76,153,.17), rgba(12,17,24,.95) 75%);
+}
+.carmitaActivityGridEnhanced > div:nth-child(3) {
+  border-color: rgba(180,122,255,.30);
+  background: linear-gradient(155deg, rgba(180,122,255,.15), rgba(12,17,24,.95) 75%);
+}
+.carmitaActivityGridEnhanced > div:nth-child(4) {
+  border-color: rgba(255,174,75,.28);
+  background: linear-gradient(155deg, rgba(255,174,75,.13), rgba(12,17,24,.95) 75%);
+}
+.carmitaActivityGridEnhanced > div:nth-child(5) {
+  border-color: rgba(110,220,255,.26);
+  background: linear-gradient(155deg, rgba(110,220,255,.11), rgba(12,17,24,.95) 75%);
+}
+.carmitaActivityTop { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.carmitaActivityIcon {
+  display: flex; align-items: center; justify-content: center;
+  width: 54px; height: 54px; border-radius: 15px;
+  color: #8cddff; background: rgba(110,220,255,.10);
+}
+.carmitaActivityGridEnhanced > div:nth-child(2) .carmitaActivityIcon { color: #ff6aaa; background: rgba(255,76,153,.12); }
+.carmitaActivityGridEnhanced > div:nth-child(3) .carmitaActivityIcon { color: #c49bff; background: rgba(180,122,255,.12); }
+.carmitaActivityGridEnhanced > div:nth-child(4) .carmitaActivityIcon { color: #ffcb7a; background: rgba(255,174,75,.12); }
+.carmitaActivityGridEnhanced strong { font-size: 15px; color: #fff; letter-spacing: .5px; }
+.carmitaActivityGridEnhanced > div p { color: #bfcbd8; }
+@media (max-width: 950px) {
+  .carmitaActivityGridEnhanced { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .carmitaActivityGridEnhanced { grid-template-columns: 1fr; }
+  .carmitaActivityGridEnhanced > div { min-height: 185px; }
+  .carmitaDetailGridEnhanced .carmitaDetailCard { min-height: 205px; }
+}
