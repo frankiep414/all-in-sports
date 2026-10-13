@@ -149,8 +149,8 @@ const intelligence = [
 ];
 
 export default function Home() {
-  const [showAuthWelcome, setShowAuthWelcome] = useState(true);
-  const [showPlayerSignup, setShowPlayerSignup] = useState(true);
+  const [showAuthWelcome, setShowAuthWelcome] = useState(false);
+  const [showPlayerSignup, setShowPlayerSignup] = useState(false);
   const [playedBefore, setPlayedBefore] = useState(false);
   const [signupComplete, setSignupComplete] = useState(false);
   const [selectedChampion, setSelectedChampion] = useState<(typeof champions)[number] | null>(null);
@@ -173,7 +173,7 @@ export default function Home() {
       setAuthChecking(false);
       localStorage.removeItem('allInPlayerId');
       setCurrentPlayer(null);
-      setShowAuthWelcome(true);
+      setShowAuthWelcome(false);
       return;
     }
     setVerifiedEmail(session.user.email);
@@ -223,22 +223,17 @@ export default function Home() {
       if (event === 'SIGNED_OUT') {
         localStorage.removeItem('allInPlayerId');
         setCurrentPlayer(null);
-        setShowAuthWelcome(true);
+        setShowAuthWelcome(false);
       }
     });
     return () => subscription.unsubscribe();
   }, []);
 
   if (authChecking) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center' }}>Loading All In Sports…</main>;
-  if (playerLoadError) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center' }}><div><h1>YOU’RE VERIFIED.</h1><p>{playerLoadError}</p><button onClick={() => { setAuthChecking(true); void loadVerifiedPlayer(); }} style={{ padding: '12px 24px', cursor: 'pointer' }}>Retry Player ID lookup</button></div></main>;
+  if (playerLoadError && currentPlayer) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center' }}><div><h1>YOU’RE VERIFIED.</h1><p>{playerLoadError}</p><button onClick={() => { setAuthChecking(true); void loadVerifiedPlayer(); }} style={{ padding: '12px 24px', cursor: 'pointer' }}>Retry Player ID lookup</button></div></main>;
   if (showAuthWelcome) {
-  return (
-    <AuthWelcome
-      onEmailSignup={() => { void loadVerifiedPlayer(); }}
-    onLogin={() => { void loadVerifiedPlayer(); }}
-    />
-  );
-}
+    return <div><button type="button" onClick={() => setShowAuthWelcome(false)} style={{position:'fixed',top:16,left:16,zIndex:20,background:'#15243a',color:'#fff',border:'1px solid #4a637c',borderRadius:10,padding:'12px 16px',cursor:'pointer'}}>← Explore All In Sports</button><AuthWelcome onEmailSignup={() => { void loadVerifiedPlayer(); }} onLogin={() => { void loadVerifiedPlayer(); }} /></div>;
+  }
 return (
   <main>
     {showPlayerSignup && (
@@ -532,6 +527,7 @@ setSignupComplete(true);
             <a href="#community">Community</a>
           </div>
 
+     {!currentPlayer && <button type="button" onClick={() => setShowAuthWelcome(true)} style={{background:"transparent",color:"#fff",border:"1px solid #4a637c",borderRadius:10,padding:"9px 12px",cursor:"pointer",fontWeight:700}}>Log In / Sign Up</button>}
      <a href="/my-all-in" className="profileButton">
   <CircleUserRound size={18} />
   {currentPlayer?.full_name
@@ -546,7 +542,7 @@ setSignupComplete(true);
 
     <div className="launchpadIntro">
      <p className="launchpadEyebrow">
-  WELCOME BACK{currentPlayer?.full_name ? `, ${currentPlayer.full_name.split(' ')[0].toUpperCase()}` : ''}.
+  {currentPlayer?.full_name ? `WELCOME BACK, ${currentPlayer.full_name.split(' ')[0].toUpperCase()}.` : 'WELCOME TO ALL IN SPORTS.'}
 </p>
 
       <h1>
@@ -568,7 +564,7 @@ setSignupComplete(true);
 
   <div className="launchpadPlayerInfo">
     <span>MY ALL IN</span>
-    <strong>{currentPlayer?.full_name || 'PLAYER'}</strong>
+    <strong>{currentPlayer?.full_name || 'CLAIM YOUR PLAYER ID'}</strong>
     <small>
       PLAYER ID • #{currentPlayer?.id
         ? String(currentPlayer.id).padStart(4, '0')
@@ -613,7 +609,7 @@ setSignupComplete(true);
     <span className="mobilePlayerLabel">MY ALL IN</span>
 
     <strong>
-      {currentPlayer?.full_name || 'PLAYER'}
+      {currentPlayer?.full_name || 'CLAIM YOUR PLAYER ID'}
     </strong>
 
     <small>
@@ -888,10 +884,10 @@ setSignupComplete(true);
             </p>
           </div>
 
-          <button className="primaryButton">
+          <a href="/my-all-in" className="primaryButton" style={{textDecoration:'none'}}>
             Join All In
             <ArrowRight size={18} />
-          </button>
+          </a>
         </div>
 
         <div className="platformGrid">
