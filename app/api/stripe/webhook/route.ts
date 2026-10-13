@@ -17,7 +17,18 @@ export async function POST(request:Request){
  if(process.env.VERCEL_ENV!=='preview'||process.env.PICKUP_STRIPE_TEST_ENABLED!=='true')
   return Response.json({error:'Disabled'},{status:503});
  const secret=process.env.STRIPE_WEBHOOK_SECRET;
- if(!secret?.startsWith('whsec_'))return Response.json({error:'Not configured'},{status:503});
+ if(!secret?.startsWith('whsec_')){
+  // Safe diagnostics: never include the signing secret or request payload.
+  const diagnostic={
+   error:'Not configured',
+   reason:!secret?'webhook_secret_missing':'webhook_secret_invalid_format',
+   environment:process.env.VERCEL_ENV||'unknown',
+   deployment:process.env.VERCEL_URL||'unknown',
+   commit:(process.env.VERCEL_GIT_COMMIT_SHA||'unknown').slice(0,8)
+  };
+  console.error('Stripe test webhook configuration issue',diagnostic);
+  return Response.json(diagnostic,{status:503});
+ }
  const raw=await request.text();
  if(raw.length>200000)return Response.json({error:'Too large'},{status:413});
  if(!validSignature(raw,request.headers.get('stripe-signature')||'',secret))
