@@ -10,7 +10,7 @@ export async function POST(request:Request){
  // Do not fall back to all opted-in users when the list is empty or malformed.
  const rawAllowlist=process.env.PICKUP_ANNOUNCEMENT_BATCH_ALLOWLIST||'';
  const allowedEmails=rawAllowlist.split(',').map(value=>value.trim().toLowerCase()).filter(Boolean);
- if(!allowedEmails.length||allowedEmails.length>20||allowedEmails.some(email=>!/^\\S+@\\S+\\.\\S+$/.test(email)))
+ if(!allowedEmails.length||allowedEmails.length>20||allowedEmails.some(email=>!/^\S+@\S+\.\S+$/.test(email)))
   return Response.json({error:'Configure 1–20 valid Preview allowlist emails before enabling batches.'},{status:503});
  const allowlist=new Set(allowedEmails);
  const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL;
