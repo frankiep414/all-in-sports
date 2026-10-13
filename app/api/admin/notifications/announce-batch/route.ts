@@ -1,5 +1,6 @@
 import {createClient} from '@supabase/supabase-js';
 import {gamePublishedEmail} from '../../../../../lib/notification-email-templates';
+import {unsubscribeToken} from '../../../../../lib/announcement-unsubscribe';
 export const dynamic='force-dynamic';
 // Preview-only, explicitly enabled, admin-confirmed bounded email batches.
 // No SMS and no automatic publishing hook. Each attempt is durably claimed first.
@@ -57,6 +58,8 @@ export async function POST(request:Request){
  if(!site||!/^https:\/\//.test(site))return Response.json({error:'Set HTTPS NEXT_PUBLIC_SITE_URL for email links.'},{status:503});
  const link=site+'/play?game='+encodeURIComponent(id);
  const manage=site+'/my-all-in';
+ if(!process.env.ANNOUNCEMENT_UNSUBSCRIBE_SECRET||process.env.ANNOUNCEMENT_UNSUBSCRIBE_SECRET.length<32)
+  return Response.json({error:'Set ANNOUNCEMENT_UNSUBSCRIBE_SECRET (32+ characters) before sending.'},{status:503});
  let sent=0,skipped=0,failed=0;
  for(const entry of entries){
   // Re-check consent and current game state immediately before each send.
@@ -78,15 +81,16 @@ export async function POST(request:Request){
    status:'sending',provider:'resend',attempts:1
   }).select('id').single();
   if(claimError||!claim){skipped++;continue;}
+  const unsubscribe=site+'/unsubscribe?token='+encodeURIComponent(unsubscribeToken(entry.user_id));
   const html=template.html.replace('</main>',
    '<p style="margin:24px 0"><a href="'+link+'" style="display:inline-block;background:#a9dbff;color:#07111d;padding:14px 22px;border-radius:9px;font-weight:bold;text-decoration:none">REGISTER NOW →</a></p>'+
-   '<p style="font-size:12px">You subscribed to All In Sports announcements. <a href="'+manage+'">Manage email preferences</a>.</p></main>');
+   '<p style="font-size:12px">You subscribed to All In Sports announcements. <a href="'+manage+'">Manage email preferences</a> · <a href="'+unsubscribe+'">Unsubscribe</a>.</p></main>');
   try{
    const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{
     Authorization:'Bearer '+resend,'Content-Type':'application/json','Idempotency-Key':'all-in-game-batch-'+claim.id
    },body:JSON.stringify({from:'All In Sports <noreply@allinsportsnj.com>',to:[email],
-    subject:'[PREVIEW] '+template.subject,html,
-    text:template.text+'\n\nRegister: '+link+'\nManage email preferences: '+manage}),
+    subject:'[PREVIEW] '+template.subject,html,headers:{'List-Unsubscribe':'<'+unsubscribe+'>','List-Unsubscribe-Post':'List-Unsubscribe=One-Click'},
+    text:template.text+'\n\nRegister: '+link+'\nManage email preferences: '+manage+'\nUnsubscribe: '+unsubscribe}),
     signal:AbortSignal.timeout(10000)});
    const result=await response.json().catch(()=>({}));
    if(!response.ok||typeof result.id!=='string'){
