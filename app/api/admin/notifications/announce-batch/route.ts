@@ -89,7 +89,7 @@ export async function POST(request:Request){
    const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{
     Authorization:'Bearer '+resend,'Content-Type':'application/json','Idempotency-Key':'all-in-game-batch-'+claim.id
    },body:JSON.stringify({from:'All In Sports <noreply@allinsportsnj.com>',to:[email],
-    subject:'[PREVIEW] '+template.subject,html,headers:{'List-Unsubscribe':'<'+unsubscribe+'>','List-Unsubscribe-Post':'List-Unsubscribe=One-Click'},
+    subject:'[PREVIEW] '+template.subject,html,headers:{'List-Unsubscribe':'<'+unsubscribe+'>'},
     text:template.text+'\n\nRegister: '+link+'\nManage email preferences: '+manage+'\nUnsubscribe: '+unsubscribe}),
     signal:AbortSignal.timeout(10000)});
    const result=await response.json().catch(()=>({}));
