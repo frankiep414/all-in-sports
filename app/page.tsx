@@ -193,7 +193,7 @@ export default function Home() {
     } else if (response.status === 404) {
       localStorage.removeItem('allInPlayerId');
       setCurrentPlayer(null);
-      setShowAuthWelcome(false);
+      if (new URLSearchParams(window.location.search).get('auth') !== '1') setShowAuthWelcome(false);
       setShowPlayerSignup(true);
       setAuthChecking(false);
     } else {
