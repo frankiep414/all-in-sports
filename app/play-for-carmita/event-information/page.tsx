@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarDays, Trophy, MapPin, Footprints, Users, PartyPopper, Medal, Clock3, Heart } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Trophy, MapPin, Heart } from 'lucide-react';
 
 export default function CarmitaEventInformationPage() {
   return (
@@ -45,15 +45,14 @@ export default function CarmitaEventInformationPage() {
           </div>
 
 
-          <div className="carmitaDetailGrid carmitaDetailGridEnhanced">
+          <div className="carmitaDetailGrid carmitaDetailGridIllustrated">
 
             <article className="carmitaDetailCard">
               <div className="carmitaDetailIcon"><CalendarDays size={29} /></div>
 
               <div>
                 <span>DATE &amp; TIME</span>
-                <h3>OCTOBER 31</h3><p className="carmitaDetailHighlight"><Clock3 size={15} /> 9 AM – 1 PM</p>
-                <p>Saturday · 9:00 AM – 1:00 PM</p>
+                <h3>OCTOBER 31</h3><p>Saturday · 9:00 AM – 1:00 PM</p>
               </div>
             </article>
 
@@ -63,7 +62,7 @@ export default function CarmitaEventInformationPage() {
 
               <div>
                 <span>TOURNAMENT</span>
-                <h3>COED · 7V7</h3><p className="carmitaDetailHighlight">Soccer • Fun run • Walk</p>
+                <h3>COED · 7V7</h3>
                 <p>$250 team · $25 individual</p>
               </div>
             </article>
@@ -74,8 +73,7 @@ export default function CarmitaEventInformationPage() {
 
               <div>
                 <span>LOCATION</span>
-                <h3>HARRISON HIGH SCHOOL</h3><p className="carmitaDetailHighlight">Harrison, New Jersey</p>
-                <p>Community charity event venue</p>
+                <h3>HARRISON HIGH SCHOOL</h3><p>Harrison, NJ</p>
               </div>
             </article>
 
@@ -83,10 +81,10 @@ export default function CarmitaEventInformationPage() {
 
 
         {/* ACTIVITIES */}
-<div className="carmitaActivityGrid carmitaActivityGridEnhanced">
+<div className="carmitaActivityGrid carmitaActivityGridIllustrated">
 
   <div>
-    <div className="carmitaActivityTop"><span>01</span><div className="carmitaActivityIcon"><Trophy size={30} /></div></div>
+    <div className="carmitaActivityTop"><span>01</span><div className="carmitaActivityIcon" aria-hidden="true"><span className="carmitaSceneMain">⚽</span><span className="carmitaSceneAccent">🥅</span></div></div>
     <strong>CHARITY<br />TOURNAMENT</strong>
     <p>
       Coed 7v7 soccer for competitive and recreational teams.
@@ -96,13 +94,13 @@ export default function CarmitaEventInformationPage() {
   </div>
 
   <div>
-    <div className="carmitaActivityTop"><span>02</span><div className="carmitaActivityIcon"><Footprints size={30} /></div></div>
+    <div className="carmitaActivityTop"><span>02</span><div className="carmitaActivityIcon" aria-hidden="true"><span className="carmitaSceneMain">🏃‍♀️</span><span className="carmitaSceneAccent">🚶‍♂️</span></div></div>
     <strong>2-MILE FUN RUN<br />1-MILE WALK</strong>
     <p>All ages welcome. $25 registration for the run or walk.</p>
   </div>
 
   <div>
-    <div className="carmitaActivityTop"><span>03</span><div className="carmitaActivityIcon"><Users size={30} /></div></div>
+    <div className="carmitaActivityTop"><span>03</span><div className="carmitaActivityIcon" aria-hidden="true"><span className="carmitaSceneMain">🎈</span><span className="carmitaSceneAccent">👨‍👩‍👧‍👦</span></div></div>
     <strong>KIDS + FAMILY<br />ACTIVITIES</strong>
     <p>
       A day for the whole family, featuring games, fun zones,
@@ -111,7 +109,7 @@ export default function CarmitaEventInformationPage() {
   </div>
 
   <div>
-    <div className="carmitaActivityTop"><span>04</span><div className="carmitaActivityIcon"><PartyPopper size={30} /></div></div>
+    <div className="carmitaActivityTop"><span>04</span><div className="carmitaActivityIcon" aria-hidden="true"><span className="carmitaSceneMain">🎃</span><span className="carmitaSceneAccent">👻</span></div></div>
     <strong>HALLOWEEN<br />COSTUME CONTEST</strong>
     <p>
       Keep the Halloween spirit going! Kids and adults are
@@ -120,7 +118,7 @@ export default function CarmitaEventInformationPage() {
   </div>
 
   <div>
-    <div className="carmitaActivityTop"><span>05</span><div className="carmitaActivityIcon"><Medal size={30} /></div></div>
+    <div className="carmitaActivityTop"><span>05</span><div className="carmitaActivityIcon" aria-hidden="true"><span className="carmitaSceneMain">🏆</span><span className="carmitaSceneAccent">🥇</span></div></div>
     <strong>CHAMPIONSHIP<br />PRIZES</strong>
     <p>
       Play for the championship, compete for bragging rights,
