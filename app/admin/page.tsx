@@ -66,6 +66,24 @@ export default function AdminPage() {
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update game.');}
     finally{setDraftActionBusy(false);}
   }
+  const [audienceBusy,setAudienceBusy]=useState(false);
+  async function checkGameAudience(gameId:string){
+    setAudienceBusy(true);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again.');
+      const response=await fetch('/api/admin/notifications/audience-preview',{method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({game_id:gameId})});
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'Unable to check announcement audience.');
+      setEditMessage(`Announcement audience for ${result.game_title}: ${result.email_opted_in_count} email opt-ins; ${result.prior_email_delivery_records} previous email delivery records. AUDIT ONLY — nothing sent.`);
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to check announcement audience.');}
+    finally{setAudienceBusy(false);}
+  }
   const [announceBusy,setAnnounceBusy]=useState(false);
   async function testGameAnnouncement(gameId:string){
    if(!window.confirm('Send ONE new-game announcement email to your own admin inbox for this game? No players will be notified.'))return;
@@ -414,6 +432,11 @@ export default function AdminPage() {
                 <p style={{color:'#b8c1d0'}}>{item.venue} · {new Date(item.starts_at).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'})}</p>
                 {item.series_id && <p style={{color:'#95d9ff',marginBottom:8}}>Weekly series · Game {item.occurrence_index}</p>}
                 <p style={{marginBottom:0}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
+                {item.status==='published' && <button type="button" disabled={audienceBusy}
+                  onClick={()=>void checkGameAudience(item.id)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#273b29',color:'#c7f3d0',border:'1px solid #527b59',fontWeight:800}}>
+                  {audienceBusy?'CHECKING…':'CHECK EMAIL AUDIENCE (NO SEND)'}
+                </button>}
                 {item.status==='published' && <button type="button" disabled={announceBusy}
                   onClick={()=>void testGameAnnouncement(item.id)}
                   style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#193b4c',color:'#bce7ff',border:'1px solid #527c94',fontWeight:800}}>
