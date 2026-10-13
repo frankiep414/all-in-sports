@@ -29,6 +29,18 @@ export async function PUT(request:Request){
   user_id:ctx.user.id,email_opt_in:body.email_opt_in,
   email_updated_at:new Date().toISOString(),updated_at:new Date().toISOString()
  },{onConflict:'user_id'});
- if(error)return Response.json({error:'Unable to save preferences.'},{status:503});
+ if(error){
+  console.error('Announcement preference write failed:',{
+   code:error.code,message:error.message,details:error.details,hint:error.hint
+  });
+  const diagnostic=error.code==='PGRST205'||error.code==='42P01'
+   ?'Preference table not visible to this deployment database.'
+   :error.code==='42501'
+    ?'Database role lacks permission to save preferences.'
+    :error.code==='23503'
+     ?'Account reference does not match the authentication database.'
+     :'Preference save failed in database.';
+  return Response.json({error:diagnostic+' (Code: '+(error.code||'unknown')+')'},{status:503});
+ }
  return Response.json({email_opt_in:body.email_opt_in});
 }
