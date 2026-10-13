@@ -32,7 +32,8 @@ export async function POST(request:Request){
  if(playersError||!players?.length)return Response.json({error:'Pilot recipient has no Player ID.'},{status:409});
  const {data:users,error:usersError}=await db.auth.admin.listUsers({page:1,perPage:1000});
  if(usersError)return Response.json({error:'Unable to validate pilot account.'},{status:503});
- const recipient=users.users.find(u=>u.email?.toLowerCase()===allowed&&!!u.email_confirmed_at);
+ const authUsers: Array<{id:string;email?:string;email_confirmed_at?:string|null}> = users?.users ?? [];
+ const recipient=authUsers.find(u=>u.email?.toLowerCase()===allowed&&!!u.email_confirmed_at);
  if(!recipient)return Response.json({error:'Pilot recipient must have a verified login.'},{status:409});
  const {data:pref,error:prefError}=await db.from('player_announcement_preferences')
   .select('email_opt_in').eq('user_id',recipient.id).maybeSingle();
