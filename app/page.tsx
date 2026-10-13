@@ -233,7 +233,9 @@ export default function Home() {
   if (authChecking) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center' }}>Loading All In Sports…</main>;
   if (playerLoadError && currentPlayer) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center' }}><div><h1>YOU’RE VERIFIED.</h1><p>{playerLoadError}</p><button onClick={() => { setAuthChecking(true); void loadVerifiedPlayer(); }} style={{ padding: '12px 24px', cursor: 'pointer' }}>Retry Player ID lookup</button></div></main>;
   if (showAuthWelcome) {
-    return <div><button type="button" onClick={() => setShowAuthWelcome(false)} style={{position:'fixed',top:16,left:16,zIndex:20,background:'#15243a',color:'#fff',border:'1px solid #4a637c',borderRadius:10,padding:'12px 16px',cursor:'pointer'}}>← Explore All In Sports</button><AuthWelcome onEmailSignup={() => { void loadVerifiedPlayer(); }} onLogin={() => { void loadVerifiedPlayer(); }} /></div>;
+    const requestedReturn = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('returnTo') : null;
+    const returnTo = requestedReturn && requestedReturn.startsWith('/') && !requestedReturn.startsWith('//') && !requestedReturn.includes('\\\\') ? requestedReturn : '/';
+    return <div><button type="button" onClick={() => { if (returnTo !== '/') window.location.assign(returnTo); else setShowAuthWelcome(false); }} style={{position:'fixed',top:16,left:16,zIndex:20,background:'#15243a',color:'#fff',border:'1px solid #4a637c',borderRadius:10,padding:'12px 16px',cursor:'pointer'}}>{returnTo === '/' ? '← Explore All In Sports' : '← Back to previous page'}</button><AuthWelcome onEmailSignup={() => { void loadVerifiedPlayer(); }} onLogin={() => { void loadVerifiedPlayer(); }} /></div>;
   }
 return (
   <main>
