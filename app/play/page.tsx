@@ -12,6 +12,7 @@ export default function PlayPage() {
   const [gamesLoading,setGamesLoading]=useState(true);
   const [registrations,setRegistrations]=useState<Record<string,{id:string;status:string;payment_status:string;payment_reference?:string}>>({});
   const [stripeLoading,setStripeLoading]=useState<string|null>(null);
+  const [checkoutAlert,setCheckoutAlert]=useState<{gameTitle:string;message:string}|null>(null);
   const [reporting,setReporting]=useState<string|null>(null);
   const reportingEnabled=process.env.NEXT_PUBLIC_PICKUP_ZELLE_REPORTING_ENABLED==='true';
   const [registering,setRegistering]=useState<string|null>(null);
@@ -44,7 +45,7 @@ export default function PlayPage() {
   async function openTestStripeCheckout(gameId:string){
     const registration=registrations[gameId];
     if(!registration?.id)return;
-    setStripeLoading(gameId);setRegistrationMessage('');
+    setStripeLoading(gameId);setRegistrationMessage('');setCheckoutAlert(null);
     try{
       const token=await getToken();
       if(!token)throw new Error('Sign in required.');
@@ -57,7 +58,8 @@ export default function PlayPage() {
         throw new Error('Unexpected checkout address.');
       window.location.assign(result.checkout_url);
     }catch(error){
-      setRegistrationMessage(error instanceof Error?error.message:'Unable to start test checkout.');
+      const gameTitle=games.find(game=>game.id===gameId)?.title||'Test game';
+      setCheckoutAlert({gameTitle,message:error instanceof Error?error.message:'Unable to start test checkout.'});
       setStripeLoading(null);
     }
   }
@@ -111,6 +113,14 @@ export default function PlayPage() {
         <Link href="/" style={{color:'#95d9ff',fontWeight:800,textDecoration:'none',letterSpacing:2}}>← ALL IN SPORTS</Link>
         <Link href="/my-all-in" style={{color:'#fff',textDecoration:'none'}}>MY ALL IN →</Link>
       </nav>
+      {checkoutAlert && <div role="presentation" onClick={()=>setCheckoutAlert(null)} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,0.76)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+        <div role="alertdialog" aria-modal="true" aria-labelledby="checkout-alert-title" aria-describedby="checkout-alert-description" onClick={event=>event.stopPropagation()} style={{width:'100%',maxWidth:480,background:'#151d27',border:'1px solid #95d9ff',borderRadius:18,padding:28,boxShadow:'0 24px 70px rgba(0,0,0,0.5)'}}>
+          <h2 id="checkout-alert-title" style={{margin:'0 0 12px',fontSize:25}}>Unable to open test checkout</h2>
+          <p style={{color:'#95d9ff',fontWeight:700,margin:'0 0 12px'}}>{checkoutAlert.gameTitle}</p>
+          <p id="checkout-alert-description" style={{color:'#e4ebf3',lineHeight:1.6}}>{checkoutAlert.message}</p>
+          <button type="button" autoFocus onClick={()=>setCheckoutAlert(null)} style={{marginTop:12,background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'12px 22px',fontWeight:800,cursor:'pointer'}}>Got it</button>
+        </div>
+      </div>}
       <section style={{maxWidth:960,margin:'0 auto'}}>
         <p style={{color:'#95d9ff',letterSpacing:4,fontWeight:800}}>PLAY // PICKUP & OPEN PLAY</p>
         <h1 style={{fontSize:'clamp(42px,8vw,88px)',lineHeight:1.04,margin:'16px 0',fontWeight:900}}>Your next game starts here.</h1>
