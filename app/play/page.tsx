@@ -8,6 +8,8 @@ type Method = 'zelle' | 'card';
 
 export default function PlayPage() {
   const [method, setMethod] = useState<Method>('zelle');
+  const [focusedGameId,setFocusedGameId]=useState<string|null>(null);
+  useEffect(()=>{setFocusedGameId(new URLSearchParams(window.location.search).get('game'));},[]);
   const [games,setGames]=useState<Array<{id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;registered_count:number;waitlist_count:number;spots_remaining:number}>>([]);
   const [gamesLoading,setGamesLoading]=useState(true);
   const [registrations,setRegistrations]=useState<Record<string,{id:string;status:string;payment_status:string;payment_reference?:string}>>({});
@@ -126,11 +128,13 @@ export default function PlayPage() {
         <h1 style={{fontSize:'clamp(42px,8vw,88px)',lineHeight:1.04,margin:'16px 0',fontWeight:900}}>Your next game starts here.</h1>
         <p style={{fontSize:19,color:'#b8c1d0',lineHeight:1.6,maxWidth:730}}>Browse upcoming All In Sports sessions and request your spot. Payments are not open yet.</p>
         <div style={{border:'1px solid #303945',borderRadius:18,padding:28,background:'#111820',marginTop:34}}>
-          <h2 style={{marginTop:0}}>Upcoming games</h2>
+          <h2 style={{marginTop:0}}>{focusedGameId?'Your selected game':'Upcoming games'}</h2>
+        {focusedGameId&&<Link href="/play" style={{display:'inline-block',color:'#95d9ff',marginBottom:16,fontWeight:700}}>← BROWSE ALL GAMES</Link>}
+        {!gamesLoading&&!gamesError&&focusedGameId&&!games.some(game=>game.id===focusedGameId)&&<p role="status">This game is not currently available. Browse all games to find another session.</p>}
           {gamesLoading && <p style={{color:'#b8c1d0'}}>Loading upcoming games…</p>}
           {gamesError && <p role="alert" style={{color:'#ffb7b7'}}>Unable to load games. Please try again later.</p>}
           {!gamesLoading && !gamesError && games.length===0 && <p style={{color:'#b8c1d0'}}>No games are posted yet. Check back soon.</p>}
-          {!gamesError && games.map(item=><article key={item.id} style={{padding:'18px 0',borderTop:'1px solid #303945'}}>
+          {!gamesError && games.filter(item=>!focusedGameId||item.id===focusedGameId).map(item=><article key={item.id} style={{padding:'18px 0',borderTop:'1px solid #303945'}}>
             <h3 style={{margin:'0 0 8px'}}>{item.title}</h3>
             <p style={{color:'#b8c1d0',margin:'0 0 8px'}}>{item.venue} · {new Date(item.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'})}</p>
             <p style={{margin:'0 0 8px'}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
@@ -169,7 +173,7 @@ export default function PlayPage() {
           {registrationMessage && <p role="status" style={{color:'#95d9ff',fontWeight:700}}>{registrationMessage}</p>}
           <p style={{color:'#95d9ff',fontWeight:700}}>Registration requests are open in this preview. Payment collection and automatic waitlist notifications are not enabled. Do not send money.</p>
         </div>
-        <h2 style={{marginTop:52}}>How payment will work</h2>
+        {!focusedGameId&&<><h2 style={{marginTop:52}}>How payment will work</h2>
         <p style={{color:'#b8c1d0'}}>Choose a method to preview the payment instructions. This is informational only — no payment or reservation is being created.</p>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:16,marginTop:20}}>
           <button type="button" onClick={()=>setMethod('zelle')} aria-pressed={method==='zelle'} style={{textAlign:'left',cursor:'pointer',border:method==='zelle'?'2px solid #95d9ff':'1px solid #303945',background:'#111820',color:'#fff',borderRadius:16,padding:24}}>
@@ -197,7 +201,7 @@ export default function PlayPage() {
             </>
           )}
         </div>
-        <p style={{color:'#9aa8ba',fontSize:14,marginTop:25}}>Registration requests are not payment confirmations. Do not send payment until All In Sports provides instructions.</p>
+        <p style={{color:'#9aa8ba',fontSize:14,marginTop:25}}>Registration requests are not payment confirmations. Do not send payment until All In Sports provides instructions.</p></>}
       </section>
     </main>
   );
