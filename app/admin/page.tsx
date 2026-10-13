@@ -86,6 +86,33 @@ export default function AdminPage() {
   }
   const [batchBusy,setBatchBusy]=useState(false);
   const [batchProgress,setBatchProgress]=useState<Record<string,{cursor:string|null;sent:number;skipped:number;failed:number;processed:number;complete:boolean}>>({});
+  useEffect(()=>{
+    if(status!=='authorized')return;
+    let active=true;
+    (async()=>{
+      try{
+        const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+        if(!url||!key)return;
+        const client=createClient(url,key);
+        const {data:{session}}=await client.auth.getSession();
+        if(!session?.access_token)return;
+        const response=await fetch('/api/admin/notifications/batch-progress',{
+          headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+        if(!response.ok)return;
+        const result=await response.json();
+        if(!active||!Array.isArray(result.progress))return;
+        const saved:Record<string,{cursor:string|null;sent:number;skipped:number;failed:number;processed:number;complete:boolean}>={};
+        for(const row of result.progress){
+          if(typeof row.game_id!=='string')continue;
+          saved[row.game_id]={cursor:row.after_user_id||null,sent:row.sent||0,
+            skipped:row.skipped||0,failed:row.failed||0,processed:row.processed||0,
+            complete:row.complete===true};
+        }
+        setBatchProgress(saved);
+      }catch{/* Saved progress is optional to display; sending still checks the server. */}
+    })();
+    return()=>{active=false;};
+  },[status]);
   async function sendAnnouncementBatch(gameId:string,continueBatch=false){
     const previous=batchProgress[gameId];
     if(continueBatch&&(!previous?.cursor||previous.complete))return;
@@ -106,12 +133,12 @@ export default function AdminPage() {
           ...(continueBatch&&previous?.cursor?{after_user_id:previous.cursor}:{})})});
       const result=await response.json();
       if(!response.ok)throw Error(result.error||'Announcement batch was not sent.');
-      const base=continueBatch&&previous?previous:{sent:0,skipped:0,failed:0,processed:0};
+      const saved=result.progress;
       const next={
-        cursor:typeof result.next_cursor==='string'?result.next_cursor:null,
-        sent:base.sent+Number(result.sent||0),skipped:base.skipped+Number(result.skipped||0),
-        failed:base.failed+Number(result.failed||0),processed:base.processed+Number(result.processed||0),
-        complete:result.complete===true
+        cursor:result.complete?null:(saved?.after_user_id||null),
+        sent:Number(saved?.sent||0),skipped:Number(saved?.skipped||0),
+        failed:Number(saved?.failed||0),processed:Number(saved?.processed||0),
+        complete:saved?.complete===true
       };
       setBatchProgress(current=>({...current,[gameId]:next}));
       setEditMessage(`Preview batch: ${result.sent} sent, ${result.skipped} skipped, ${result.failed} failed. Session totals: ${next.sent} sent, ${next.skipped} skipped, ${next.failed} failed across ${next.processed} candidates. ${next.complete?'All candidates checked.':'More candidates may remain. Continue manually below.'}`);
@@ -501,7 +528,7 @@ export default function AdminPage() {
                   {batchBusy?'PROCESSING…':'CONTINUE NEXT EMAIL BATCH (PREVIEW)'}
                 </button>}
                 {item.status==='published' && batchProgress[item.id] && <p style={{color:'#b8cde0',fontSize:13,marginTop:8}}>
-                  Current admin session: {batchProgress[item.id].processed} candidates checked · {batchProgress[item.id].sent} sent · {batchProgress[item.id].skipped} skipped · {batchProgress[item.id].failed} failed
+                  Saved progress: {batchProgress[item.id].processed} candidates checked · {batchProgress[item.id].sent} sent · {batchProgress[item.id].skipped} skipped · {batchProgress[item.id].failed} failed
                   {batchProgress[item.id].complete?' · Complete':' · More may remain'}
                 </p>}
                 {item.status==='published' && <button type="button" disabled={pilotBusy}
