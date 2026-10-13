@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export default function MyAllInPage() {
-  const [upcoming,setUpcoming]=useState<Array<{id:string;title:string;venue:string;starts_at:string;status:string;payment_status:string;payment_reference:string|null}>>([]);
+  const [upcoming,setUpcoming]=useState<Array<{id:string;title:string;venue:string;starts_at:string;status:string;payment_status:string;payment_reference:string|null;game_id:string}>>([]);
   const [upcomingLoading,setUpcomingLoading]=useState(true);
   const [upcomingError,setUpcomingError]=useState(false);
   const [player, setPlayer] = useState<{
@@ -65,7 +65,7 @@ export default function MyAllInPage() {
             const upcomingGames=registrations.filter(reg=>!['cancelled','expired'].includes(reg.status))
               .map(reg=>({ ...reg,game:gameMap.get(reg.game_id) }))
               .filter(entry=>entry.game && new Date(entry.game.starts_at)>new Date())
-              .map(entry=>({...entry.game!,id:entry.id,status:entry.status,payment_status:entry.payment_status,payment_reference:entry.payment_reference}))
+              .map(entry=>({...entry.game!,id:entry.id,game_id:entry.game_id,status:entry.status,payment_status:entry.payment_status,payment_reference:entry.payment_reference}))
               .sort((a,b)=>new Date(a.starts_at).getTime()-new Date(b.starts_at).getTime());
             if(active)setUpcoming(upcomingGames);
           }
@@ -177,7 +177,7 @@ export default function MyAllInPage() {
                         <p style={{margin:'0 0 8px'}}>📍 {game.venue}</p>
                         <p style={{margin:'0 0 8px'}}>{game.status==='waitlisted'?'Waitlisted — no spot reserved':game.payment_status==='pending_verification'?'Zelle reported — awaiting verification':game.status==='confirmed'?'Payment verified — reservation confirmed':'Payment due — reservation not yet confirmed'}</p>
                         {game.payment_reference&&<p style={{margin:'0 0 12px'}}>Payment reference: <strong>{game.payment_reference}</strong></p>}
-                        {bucket.label==='PENDING PAYMENT'&&<a href="/play" style={{color:'#95d9ff',fontWeight:700,textDecoration:'none'}}>VIEW PAYMENT OPTIONS →</a>}
+                        {bucket.label==='PENDING PAYMENT'&&<a href={`/play?game=${encodeURIComponent(game.game_id)}`} style={{color:'#95d9ff',fontWeight:700,textDecoration:'none'}}>VIEW PAYMENT OPTIONS →</a>}
                       </div>
                     </details>)}
                 </section>)}
