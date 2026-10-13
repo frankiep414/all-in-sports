@@ -85,8 +85,14 @@ export default function AdminPage() {
     finally{setAudienceBusy(false);}
   }
   const [batchBusy,setBatchBusy]=useState(false);
-  async function sendAnnouncementBatch(gameId:string){
-    if(!window.confirm('Send up to 20 announcement emails to opted-in players in Preview? This is a REAL email send. Continue only with approved test recipients.'))return;
+  const [batchProgress,setBatchProgress]=useState<Record<string,{cursor:string|null;sent:number;skipped:number;failed:number;processed:number;complete:boolean}>>({});
+  async function sendAnnouncementBatch(gameId:string,continueBatch=false){
+    const previous=batchProgress[gameId];
+    if(continueBatch&&(!previous?.cursor||previous.complete))return;
+    const prompt=continueBatch
+      ?'Continue the next Preview batch of up to 20 opted-in candidates? This sends REAL emails only to allowlisted recipients.'
+      :'Start a Preview announcement batch of up to 20 opted-in candidates? This sends REAL emails only to allowlisted recipients.';
+    if(!window.confirm(prompt))return;
     setBatchBusy(true);setEditMessage('');
     try{
       const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -96,10 +102,19 @@ export default function AdminPage() {
       if(!session?.access_token)throw Error('Please sign in again.');
       const response=await fetch('/api/admin/notifications/announce-batch',{method:'POST',
         headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
-        body:JSON.stringify({game_id:gameId,confirm:'SEND_OPTED_IN_EMAIL_BATCH'})});
+        body:JSON.stringify({game_id:gameId,confirm:'SEND_OPTED_IN_EMAIL_BATCH',
+          ...(continueBatch&&previous?.cursor?{after_user_id:previous.cursor}:{})})});
       const result=await response.json();
       if(!response.ok)throw Error(result.error||'Announcement batch was not sent.');
-      setEditMessage(`Preview email batch: ${result.sent} sent, ${result.skipped} skipped, ${result.failed} failed. ${result.complete?'Batch complete.':'More recipients remain; no further batches sent automatically.'}`);
+      const base=continueBatch&&previous?previous:{sent:0,skipped:0,failed:0,processed:0};
+      const next={
+        cursor:typeof result.next_cursor==='string'?result.next_cursor:null,
+        sent:base.sent+Number(result.sent||0),skipped:base.skipped+Number(result.skipped||0),
+        failed:base.failed+Number(result.failed||0),processed:base.processed+Number(result.processed||0),
+        complete:result.complete===true
+      };
+      setBatchProgress(current=>({...current,[gameId]:next}));
+      setEditMessage(`Preview batch: ${result.sent} sent, ${result.skipped} skipped, ${result.failed} failed. Session totals: ${next.sent} sent, ${next.skipped} skipped, ${next.failed} failed across ${next.processed} candidates. ${next.complete?'All candidates checked.':'More candidates may remain. Continue manually below.'}`);
     }catch(error){setEditMessage(error instanceof Error?error.message:'Announcement batch failed.');}
     finally{setBatchBusy(false);}
   }
@@ -480,6 +495,15 @@ export default function AdminPage() {
                   style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#4b3029',color:'#ffd5c2',border:'1px solid #9c6350',fontWeight:800}}>
                   {batchBusy?'SENDING BATCH…':'SEND OPTED-IN EMAIL BATCH (PREVIEW)'}
                 </button>}
+                {item.status==='published' && batchProgress[item.id]?.cursor && !batchProgress[item.id]?.complete && <button type="button" disabled={batchBusy}
+                  onClick={()=>void sendAnnouncementBatch(item.id,true)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#244238',color:'#d3f8e5',border:'1px solid #4b8e77',fontWeight:800}}>
+                  {batchBusy?'PROCESSING…':'CONTINUE NEXT EMAIL BATCH (PREVIEW)'}
+                </button>}
+                {item.status==='published' && batchProgress[item.id] && <p style={{color:'#b8cde0',fontSize:13,marginTop:8}}>
+                  Current admin session: {batchProgress[item.id].processed} candidates checked · {batchProgress[item.id].sent} sent · {batchProgress[item.id].skipped} skipped · {batchProgress[item.id].failed} failed
+                  {batchProgress[item.id].complete?' · Complete':' · More may remain'}
+                </p>}
                 {item.status==='published' && <button type="button" disabled={pilotBusy}
                   onClick={()=>void sendPilotAnnouncement(item.id)}
                   style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#3b2b17',color:'#ffe0ad',border:'1px solid #92703e',fontWeight:800}}>
