@@ -11,7 +11,7 @@ function shell(heading:string,body:string):string{
  '<body style="font-family:Arial,sans-serif;background:#0b1018;color:#f4f7fb;padding:24px">'+
  '<main style="max-width:560px;margin:auto"><h1 style="color:#a9dbff">ALL IN SPORTS</h1>'+
  '<h2>'+escapeHtml(heading)+'</h2>'+body+
- '<p style="color:#a7b4c4;font-size:13px">All In Sports NJ · This is an automated service message. Never send money based only on an email.</p></main></body></html>';
+ '<p style="color:#a7b4c4;font-size:13px">All In Sports NJ · This is an automated message. Never send money based only on an email.</p></main></body></html>';
 }
 export function registrationEmail(input:{
  playerName:string;gameTitle:string;venue:string;startsAt:string;
