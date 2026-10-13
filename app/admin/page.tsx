@@ -84,6 +84,25 @@ export default function AdminPage() {
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to check announcement audience.');}
     finally{setAudienceBusy(false);}
   }
+  const [pilotBusy,setPilotBusy]=useState(false);
+  async function sendPilotAnnouncement(gameId:string){
+    if(!window.confirm('Send ONE preview-only announcement to the explicitly configured, opted-in pilot email? No other players will be emailed.'))return;
+    setPilotBusy(true);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again.');
+      const response=await fetch('/api/admin/notifications/announce-pilot',{method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({game_id:gameId})});
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'Pilot email not sent.');
+      setEditMessage(`ONE preview pilot announcement sent to ${result.recipient}. No other players notified.`);
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Pilot email not sent.');}
+    finally{setPilotBusy(false);}
+  }
   const [announceBusy,setAnnounceBusy]=useState(false);
   async function testGameAnnouncement(gameId:string){
    if(!window.confirm('Send ONE new-game announcement email to your own admin inbox for this game? No players will be notified.'))return;
@@ -436,6 +455,11 @@ export default function AdminPage() {
                   onClick={()=>void checkGameAudience(item.id)}
                   style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#273b29',color:'#c7f3d0',border:'1px solid #527b59',fontWeight:800}}>
                   {audienceBusy?'CHECKING…':'CHECK EMAIL AUDIENCE (NO SEND)'}
+                </button>}
+                {item.status==='published' && <button type="button" disabled={pilotBusy}
+                  onClick={()=>void sendPilotAnnouncement(item.id)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#3b2b17',color:'#ffe0ad',border:'1px solid #92703e',fontWeight:800}}>
+                  {pilotBusy?'SENDING PILOT…':'SEND 1 OPTED-IN PILOT EMAIL'}
                 </button>}
                 {item.status==='published' && <button type="button" disabled={announceBusy}
                   onClick={()=>void testGameAnnouncement(item.id)}
