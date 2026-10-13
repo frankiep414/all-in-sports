@@ -24,6 +24,7 @@ export async function POST(request: Request) {
       teamName,
       divisions,
       smsConsent,
+      emailConsent,
     } = body;
 
     if (!fullName || !phone || !email || typeof fullName !== 'string' || typeof phone !== 'string' || typeof email !== 'string' || email.trim().toLowerCase() !== user.email.toLowerCase()) {
@@ -72,6 +73,18 @@ export async function POST(request: Request) {
         { error: 'Unable to save signup.' },
         { status: 500 }
       );
+    }
+
+    // Record optional email announcement consent only after Player ID creation.
+    // If preference storage is not installed, do not infer consent from signup.
+    if (emailConsent === true) {
+      const { error: preferenceError } = await supabase.from('player_announcement_preferences').upsert({
+        user_id: user.id,
+        email_opt_in: true,
+        email_updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+      if (preferenceError) console.error('Email consent preference save failed', preferenceError.code);
     }
 
         if (smsConsent) {
