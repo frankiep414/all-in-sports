@@ -23,8 +23,15 @@ export async function POST(request:Request){
  const {data:game,error:gameError}=await db.from('pickup_games').select('id,title,venue,starts_at,status').eq('id',id).maybeSingle();
  if(gameError||!game||game.status!=='published'||new Date(game.starts_at)<=new Date())return Response.json({error:'Choose an upcoming published game.'},{status:409});
  const eventKey='game_published:'+id;
+ // Older published games may predate notification event recording.
+ // Ensure the event exists, but never send to players from this test endpoint.
+ const {error:recordError}=await db.from('notification_events').upsert({
+  event_key:eventKey,event_type:'game_published',game_id:id,
+  payload:{source:'admin_announcement_preview_test'}
+ },{onConflict:'event_key',ignoreDuplicates:true});
+ if(recordError)return Response.json({error:'Unable to record game publication event.'},{status:503});
  const {data:event,error:eventError}=await db.from('notification_events').select('id').eq('event_key',eventKey).maybeSingle();
- if(eventError||!event)return Response.json({error:'Game publication event missing.'},{status:409});
+ if(eventError||!event)return Response.json({error:'Game publication event unavailable.'},{status:503});
  // One admin test email per game and admin account; claim before sending to prevent repeats.
  const {data:claim,error:claimError}=await db.from('notification_deliveries').insert({
   event_id:event.id,recipient_user_id:user.id,channel:'email',destination:user.email,
