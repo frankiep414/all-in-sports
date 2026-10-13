@@ -84,6 +84,25 @@ export default function AdminPage() {
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to check announcement audience.');}
     finally{setAudienceBusy(false);}
   }
+  const [batchBusy,setBatchBusy]=useState(false);
+  async function sendAnnouncementBatch(gameId:string){
+    if(!window.confirm('Send up to 20 announcement emails to opted-in players in Preview? This is a REAL email send. Continue only with approved test recipients.'))return;
+    setBatchBusy(true);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again.');
+      const response=await fetch('/api/admin/notifications/announce-batch',{method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({game_id:gameId,confirm:'SEND_OPTED_IN_EMAIL_BATCH'})});
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'Announcement batch was not sent.');
+      setEditMessage(`Preview email batch: ${result.sent} sent, ${result.skipped} skipped, ${result.failed} failed. ${result.complete?'Batch complete.':'More recipients remain; no further batches sent automatically.'}`);
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Announcement batch failed.');}
+    finally{setBatchBusy(false);}
+  }
   const [pilotBusy,setPilotBusy]=useState(false);
   async function sendPilotAnnouncement(gameId:string){
     if(!window.confirm('Send ONE preview-only announcement to the explicitly configured, opted-in pilot email? No other players will be emailed.'))return;
@@ -455,6 +474,11 @@ export default function AdminPage() {
                   onClick={()=>void checkGameAudience(item.id)}
                   style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#273b29',color:'#c7f3d0',border:'1px solid #527b59',fontWeight:800}}>
                   {audienceBusy?'CHECKING…':'CHECK EMAIL AUDIENCE (NO SEND)'}
+                </button>}
+                {item.status==='published' && <button type="button" disabled={batchBusy}
+                  onClick={()=>void sendAnnouncementBatch(item.id)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#4b3029',color:'#ffd5c2',border:'1px solid #9c6350',fontWeight:800}}>
+                  {batchBusy?'SENDING BATCH…':'SEND OPTED-IN EMAIL BATCH (PREVIEW)'}
                 </button>}
                 {item.status==='published' && <button type="button" disabled={pilotBusy}
                   onClick={()=>void sendPilotAnnouncement(item.id)}
