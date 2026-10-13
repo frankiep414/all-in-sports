@@ -33,13 +33,13 @@ export default function MyAllInPage() {
       const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
       if (!url || !key) {
         console.error('Supabase public configuration is missing.');
-        if (active) window.location.replace('/');
+        if (active) window.location.replace('/?auth=1');
         return;
       }
       const supabase = createClient(url, key);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        if (active) window.location.replace('/');
+        if (active) window.location.replace('/?auth=1');
         return;
       }
       const response = await fetch('/api/player', {
@@ -72,7 +72,7 @@ export default function MyAllInPage() {
         }catch{if(active)setUpcomingError(true);}
         finally{if(active)setUpcomingLoading(false);}
       } else if (active) {
-        window.location.replace('/');
+        window.location.replace('/?auth=1');
       }
     }
     void loadPlayer();
