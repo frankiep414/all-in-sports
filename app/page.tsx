@@ -280,6 +280,7 @@ return (
     teamName: formData.get('teamName'),
     divisions: formData.getAll('division'),
     smsConsent: formData.get('smsConsent') === 'on',
+    emailConsent: formData.get('emailConsent') === 'on',
   };
 
   try {
@@ -402,6 +403,11 @@ setSignupComplete(true);
                 </label>
               </div>
             </div>
+
+            <label className="smsConsent">
+              <input type="checkbox" name="emailConsent" />
+              <span>Yes, email me about new pickup games, leagues, events, and All In Sports updates. I can unsubscribe anytime. This is optional.</span>
+            </label>
 
             <label className="smsConsent">
               <input type="checkbox" name="smsConsent" />
