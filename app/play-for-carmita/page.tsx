@@ -281,7 +281,7 @@ export default function PlayForCarmitaPage() {
 
           <div className="carmitaRegisterGrid">
 
-            <a href="/?auth=1" className="carmitaRegisterCard" style={{textDecoration:"none",color:"inherit"}}>
+            <a href="/?auth=1&amp;returnTo=%2Fplay-for-carmita%23register" className="carmitaRegisterCard" style={{textDecoration:"none",color:"inherit"}}>
               <div className="carmitaRegisterNumber">01</div>
 
               <div>
@@ -297,7 +297,7 @@ export default function PlayForCarmitaPage() {
             </a>
 
 
-            <a href="/?auth=1" className="carmitaRegisterCard" style={{textDecoration:"none",color:"inherit"}}>
+            <a href="/?auth=1&amp;returnTo=%2Fplay-for-carmita%23register" className="carmitaRegisterCard" style={{textDecoration:"none",color:"inherit"}}>
               <div className="carmitaRegisterNumber">02</div>
 
               <div>
