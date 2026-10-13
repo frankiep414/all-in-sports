@@ -9,6 +9,7 @@ import {
   BarChart3,
   CalendarDays,
   Camera,
+  LogOut,
   Lock,
   Shield,
   Sparkles,
@@ -18,6 +19,24 @@ import {
 } from 'lucide-react';
 
 export default function MyAllInPage() {
+  const [signingOut, setSigningOut] = useState(false);
+  async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if (!url || !key) { setSigningOut(false); window.alert('Sign out is temporarily unavailable.'); return; }
+    try {
+      const supabase = createClient(url, key);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      localStorage.removeItem('allInPlayerId');
+      window.location.replace('/?auth=1');
+    } catch {
+      window.alert('Unable to sign out. Please try again.');
+      setSigningOut(false);
+    }
+  }
   const [upcoming,setUpcoming]=useState<Array<{id:string;title:string;venue:string;starts_at:string;status:string;payment_status:string;payment_reference:string|null;game_id:string}>>([]);
   const [upcomingLoading,setUpcomingLoading]=useState(true);
   const [upcomingError,setUpcomingError]=useState(false);
@@ -86,6 +105,7 @@ export default function MyAllInPage() {
          <img src="/all-in-sports-future.png" alt="All In Sports" />
         </a>
 
+        <button type="button" onClick={() => { void handleSignOut(); }} disabled={signingOut} style={{marginLeft:'auto',marginRight:12,display:'inline-flex',alignItems:'center',gap:8,padding:'10px 13px',background:'#192331',color:'#fff',border:'1px solid #41546a',borderRadius:9,fontWeight:700,cursor:'pointer'}}><LogOut size={16}/>{signingOut?'SIGNING OUT…':'LOG OUT'}</button>
         <a href="/" className="backHome">
           <ArrowLeft size={17} />
           BACK TO ALL IN
