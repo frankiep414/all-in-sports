@@ -56,9 +56,9 @@ export async function POST(request:Request){
    },{onConflict:'event_key',ignoreDuplicates:true});
    if(eventError)console.error('Registration notification event failed',{code:eventError.code});
   }
-  // Only admin-owned test games can send; explicit Preview-only env flag required.
-  // Send only after event exists, with a unique delivery claim preventing repeat emails.
-  if(game.is_test && row?.registration_id && referenceRow?.payment_reference){
+  // Preview-only opt-in: deliver registration receipt for test and regular games.
+  // Unique notification delivery claim prevents repeat emails.
+  if(row?.registration_id && ['pending_payment','waitlisted','offered'].includes(row.registration_status) && referenceRow?.payment_reference){
    const {data:playerName}=await access.db.from('players').select('full_name').eq('id',player.id).maybeSingle();
    try{
     await sendAutomatedTestRegistrationEmail({
