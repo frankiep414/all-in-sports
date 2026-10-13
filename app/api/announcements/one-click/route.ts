@@ -1,5 +1,5 @@
 import {createClient} from '@supabase/supabase-js';
-import {verifyUnsubscribeToken} from '../../../../../lib/announcement-unsubscribe';
+import {verifyUnsubscribeToken} from '../../../../lib/announcement-unsubscribe';
 export const dynamic='force-dynamic';
 // RFC 8058: GET must never change consent; only a signed, explicit POST may do so.
 export async function POST(request:Request){
