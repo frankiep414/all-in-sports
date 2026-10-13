@@ -1,7 +1,7 @@
 'use client';
-import {useState} from 'react';
+import {Suspense,useState} from 'react';
 import {useSearchParams} from 'next/navigation';
-export default function UnsubscribePage(){
+function UnsubscribeContent(){
  const params=useSearchParams(),token=params.get('token')||'';
  const [busy,setBusy]=useState(false),[done,setDone]=useState(false),[error,setError]=useState('');
  async function unsubscribe(){
@@ -27,4 +27,8 @@ export default function UnsubscribePage(){
    <p style={{marginTop:32}}><a style={{color:'#b9dcff'}} href="/my-all-in">Manage preferences in My All In</a></p>
   </section>
  </main>;
+}
+
+export default function UnsubscribePage(){
+ return <Suspense fallback={<main style={{padding:'80px 20px'}}>Loading email preferences…</main>}><UnsubscribeContent/></Suspense>;
 }
