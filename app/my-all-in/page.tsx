@@ -32,9 +32,9 @@ export default function MyAllInPage() {
       const {data:{session}}=await client.auth.getSession();
       if(!session?.access_token)throw Error('Sign in required.');
       const response=await fetch('/api/announcement-preferences',{method:'PUT',headers:{Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({email_opt_in:next})});
-      if(!response.ok)throw Error('Unable to save preference.');
+      if(!response.ok){const result=await response.json().catch(()=>({}));throw Error(result.error||'Unable to save preference.');}
       setEmailAnnouncements(next);setPreferencesMessage(next?'Email game alerts enabled.':'Email game alerts disabled.');
-    }catch{setPreferencesMessage('Could not save your preference. Please try again.');}
+    }catch(error){setPreferencesMessage(error instanceof Error?error.message:'Could not save your preference. Please try again.');}
     finally{setPreferencesSaving(false);}
   }
   const [signingOut, setSigningOut] = useState(false);
@@ -190,7 +190,7 @@ export default function MyAllInPage() {
           <h3>GAME ANNOUNCEMENTS</h3>
           <p>Get an email when All In Sports announces a new pickup game. Optional — you can turn it off anytime.</p>
           <label style={{display:'flex',alignItems:'center',gap:12,cursor:'pointer',fontWeight:700}}>
-            <input type="checkbox" checked={emailAnnouncements} disabled={preferencesLoading||preferencesSaving||!!(preferencesMessage==='Email preferences are not available yet.')} onChange={event=>void saveEmailAnnouncements(event.target.checked)} />
+            <input type="checkbox" checked={emailAnnouncements} disabled={preferencesLoading||preferencesSaving} onChange={event=>void saveEmailAnnouncements(event.target.checked)} />
             Email me about new games
           </label>
           <p role="status" style={{fontSize:13,color:'#a9dbff'}}>{preferencesLoading?'Loading preferences…':preferencesMessage}</p>
