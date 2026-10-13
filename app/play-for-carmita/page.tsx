@@ -94,12 +94,12 @@ export default function PlayForCarmitaPage() {
             </p>
 
             <div className="carmitaHeroActions">
-              <a href="/?auth=1&amp;returnTo=%2Fplay-for-carmita%23register" className="primaryButton">
+              <a href="/?auth=1&returnTo=%2Fplay-for-carmita%23register" className="primaryButton">
                 REGISTER TEAM
                 <ArrowRight size={17} />
               </a>
 
-              <a href="/?auth=1&amp;returnTo=%2Fplay-for-carmita%23register" className="ghostButton">
+              <a href="/?auth=1&returnTo=%2Fplay-for-carmita%23register" className="ghostButton">
                 REGISTER INDIVIDUALLY · $25
               </a>
             </div>
@@ -179,7 +179,7 @@ export default function PlayForCarmitaPage() {
 
           <div className="carmitaRegisterGrid">
 
-            <a href="/?auth=1&amp;returnTo=%2Fplay-for-carmita%23register" className="carmitaRegisterCard">
+            <a href="/?auth=1&returnTo=%2Fplay-for-carmita%23register" className="carmitaRegisterCard">
               <div className="carmitaRegisterNumber">01</div>
 
               <div>
@@ -195,7 +195,7 @@ export default function PlayForCarmitaPage() {
             </a>
 
 
-            <a href="/?auth=1&amp;returnTo=%2Fplay-for-carmita%23register" className="carmitaRegisterCard">
+            <a href="/?auth=1&returnTo=%2Fplay-for-carmita%23register" className="carmitaRegisterCard">
               <div className="carmitaRegisterNumber">02</div>
               <div>
                 <span>INDIVIDUAL REGISTRATION</span>
