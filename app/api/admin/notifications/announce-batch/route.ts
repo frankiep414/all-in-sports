@@ -34,16 +34,28 @@ export async function POST(request:Request){
   .select('id,title,venue,starts_at,status').eq('id',id).maybeSingle();
  if(gameError||!game||game.status!=='published'||new Date(game.starts_at)<=new Date())
   return Response.json({error:'Choose an upcoming published game.'},{status:409});
+ // The server owns the cursor. Never trust a client-supplied continuation offset.
+ const {data:checkpoint,error:checkpointError}=await db.from('announcement_batch_progress')
+  .select('after_user_id,processed,sent,skipped,failed,complete').eq('game_id',id).maybeSingle();
+ if(checkpointError)return Response.json({error:'Unable to load saved batch progress.'},{status:503});
+ if(checkpoint?.complete)return Response.json({sent:0,skipped:0,failed:0,processed:0,
+  next_cursor:null,complete:true,progress:checkpoint,mode:'manual_preview_batch'});
  // Limit each invocation to 20 candidates; page using cursor, not unbounded loops.
- const cursor=typeof body.after_user_id==='string'&&/^[0-9a-f-]{36}$/i.test(body.after_user_id)
-  ?body.after_user_id:null;
+ const cursor=checkpoint?.after_user_id||null;
  let query=db.from('player_announcement_preferences').select('user_id')
   .eq('email_opt_in',true).order('user_id',{ascending:true}).limit(20);
  if(cursor)query=query.gt('user_id',cursor);
  const {data:preferences,error:prefError}=await query;
  if(prefError)return Response.json({error:'Unable to read consent records.'},{status:503});
  const entries=preferences||[];
- if(!entries.length)return Response.json({sent:0,skipped:0,failed:0,processed:0,next_cursor:null,complete:true});
+ if(!entries.length){
+  const progress={game_id:id,after_user_id:cursor,processed:checkpoint?.processed||0,
+   sent:checkpoint?.sent||0,skipped:checkpoint?.skipped||0,failed:checkpoint?.failed||0,
+   complete:true,updated_at:new Date().toISOString(),updated_by:user.id};
+  const {error}=await db.from('announcement_batch_progress').upsert(progress,{onConflict:'game_id'});
+  if(error)return Response.json({error:'Unable to save completion checkpoint.'},{status:503});
+  return Response.json({sent:0,skipped:0,failed:0,processed:0,next_cursor:null,complete:true,progress});
+ }
  const eventKey='game_published:'+id;
  const {error:upsertError}=await db.from('notification_events').upsert({
   event_key:eventKey,event_type:'game_published',game_id:id,payload:{source:'admin_email_batch'}
@@ -117,7 +129,15 @@ export async function POST(request:Request){
    console.error('Batch email outcome uncertain for claim',claim.id);
   }
  }
+ const complete=entries.length<20;
+ const nextCursor=entries[entries.length-1].user_id;
+ const progress={game_id:id,after_user_id:nextCursor,
+  processed:(checkpoint?.processed||0)+entries.length,
+  sent:(checkpoint?.sent||0)+sent,skipped:(checkpoint?.skipped||0)+skipped,
+  failed:(checkpoint?.failed||0)+failed,complete,
+  updated_at:new Date().toISOString(),updated_by:user.id};
+ const {error:saveError}=await db.from('announcement_batch_progress').upsert(progress,{onConflict:'game_id'});
+ if(saveError)return Response.json({error:'Emails processed but checkpoint could not be saved. Do not retry until progress is reviewed.'},{status:503});
  return Response.json({sent,skipped,failed,processed:entries.length,
-  next_cursor:entries.length===20?entries[entries.length-1].user_id:null,
-  complete:entries.length<20,mode:'manual_preview_batch'});
+  next_cursor:complete?null:nextCursor,complete,progress,mode:'manual_preview_batch'});
 }
