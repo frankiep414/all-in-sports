@@ -5156,3 +5156,29 @@ html {
   .carmitaActivityGridIllustrated > div { min-height: 0; padding: 20px; }
   .carmitaActivityGridIllustrated .carmitaActivityIcon { height: 125px; }
 }
+
+
+/* Carmita flyer-inspired graphic strip: bold, large, consistent activity artwork */
+.carmitaActivityGridIllustrated .carmitaActivityIcon {
+  height: 128px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #f4f7fb;
+}
+.carmitaActivityGridIllustrated .carmitaActivityIcon > svg,
+.carmitaActivityGridIllustrated .carmitaRunSymbols svg {
+  width: 70px; height: 70px;
+  stroke-width: 1.6;
+  filter: drop-shadow(0 5px 13px rgba(0,0,0,.45));
+}
+.carmitaActivityGridIllustrated > div:nth-child(2) .carmitaActivityIcon { color: #ff7db5; }
+.carmitaActivityGridIllustrated > div:nth-child(3) .carmitaActivityIcon { color: #f6f3ff; }
+.carmitaActivityGridIllustrated > div:nth-child(4) .carmitaActivityIcon { color: #ffa84d; }
+.carmitaActivityGridIllustrated > div:nth-child(5) .carmitaActivityIcon { color: #ffd780; }
+.carmitaRunSymbols { display: flex; align-items: center; justify-content: center; gap: 2px; }
+.carmitaActivityGridIllustrated .carmitaActivityTop { gap: 4px; }
+.carmitaActivityGridIllustrated > div { text-align: center; align-items: center; }
+.carmitaActivityGridIllustrated .carmitaActivityTop > span { align-self: flex-start; }
+.carmitaActivityGridIllustrated strong { font-size: 14px; }
+.carmitaActivityGridIllustrated > div p { font-size: 12px; }
