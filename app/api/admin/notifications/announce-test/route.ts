@@ -1,5 +1,5 @@
 import {createClient} from '@supabase/supabase-js';
-import {gamePublishedEmail} from '@/lib/notification-email-templates';
+import {gamePublishedEmail} from '../../../../../lib/notification-email-templates';
 export const dynamic='force-dynamic';
 // Preview-only admin self-test. Never broadcasts to players.
 export async function POST(request:Request){
