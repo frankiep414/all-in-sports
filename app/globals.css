@@ -5182,3 +5182,10 @@ html {
 .carmitaActivityGridIllustrated .carmitaActivityTop > span { align-self: flex-start; }
 .carmitaActivityGridIllustrated strong { font-size: 14px; }
 .carmitaActivityGridIllustrated > div p { font-size: 12px; }
+
+/* Sprint 1 mobile: reserve arrow space so card descriptions never collide */
+@media (max-width: 600px) {
+  .launchCardContent { padding-right: 28px; }
+  .launchCardContent p { overflow-wrap: anywhere; }
+  .launchArrow { right: 13px; bottom: 14px; width: 19px; height: 19px; }
+}
