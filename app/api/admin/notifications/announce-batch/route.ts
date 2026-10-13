@@ -6,6 +6,13 @@ export const dynamic='force-dynamic';
 export async function POST(request:Request){
  if(process.env.VERCEL_ENV!=='preview'||process.env.PICKUP_ANNOUNCEMENT_BATCH_ENABLED!=='true')
   return Response.json({error:'Bulk announcements disabled.'},{status:403});
+ // Fail closed: every Preview recipient must be on an explicit, server-side allowlist.
+ // Do not fall back to all opted-in users when the list is empty or malformed.
+ const rawAllowlist=process.env.PICKUP_ANNOUNCEMENT_BATCH_ALLOWLIST||'';
+ const allowedEmails=rawAllowlist.split(',').map(value=>value.trim().toLowerCase()).filter(Boolean);
+ if(!allowedEmails.length||allowedEmails.length>20||allowedEmails.some(email=>!/^\\S+@\\S+\\.\\S+$/.test(email)))
+  return Response.json({error:'Configure 1–20 valid Preview allowlist emails before enabling batches.'},{status:503});
+ const allowlist=new Set(allowedEmails);
  const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL;
  const key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
  const secret=process.env.SUPABASE_SECRET_KEY,resend=process.env.RESEND_API_KEY;
@@ -62,6 +69,7 @@ export async function POST(request:Request){
   const {data:{user:recipient},error:recipientError}=await db.auth.admin.getUserById(entry.user_id);
   const email=recipient?.email?.trim().toLowerCase();
   if(recipientError||!recipient?.email_confirmed_at||!email){skipped++;continue;}
+  if(!allowlist.has(email)){skipped++;continue;}
   const {data:player,error:playerError}=await db.from('players').select('id').ilike('email',email).limit(1);
   if(playerError){failed++;continue;}
   if(!player?.length){skipped++;continue;}
