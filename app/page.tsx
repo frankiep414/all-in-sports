@@ -280,7 +280,7 @@ return (
     teamName: formData.get('teamName'),
     divisions: formData.getAll('division'),
     smsConsent: formData.get('smsConsent') === 'on',
-    emailConsent: formData.get('emailConsent') === 'on',
+    emailConsent: formData.get('smsConsent') === 'on',
   };
 
   try {
@@ -405,19 +405,9 @@ setSignupComplete(true);
             </div>
 
             <label className="smsConsent">
-              <input type="checkbox" name="emailConsent" />
-              <span>Yes, email me about new pickup games, leagues, events, and All In Sports updates. I can unsubscribe anytime. This is optional.</span>
-            </label>
-
-            <label className="smsConsent">
               <input type="checkbox" name="smsConsent" />
               <span>
-                Yes, keep me All In. I agree to receive recurring automated
-                texts from All In Sports about upcoming games, leagues,
-                tournaments, events, Player ID updates and other All In Sports
-                news. Message frequency varies. Message &amp; data rates may
-                apply. Reply STOP to opt out. Consent is not a condition of
-                participation.
+                Yes, keep me All In. I agree to receive promotional emails and recurring automated text messages from All In Sports about upcoming games, leagues, tournaments, events, Player ID updates and other All In Sports news. Message frequency varies. Message &amp; data rates may apply. I can unsubscribe from emails using the unsubscribe link and reply STOP to opt out of texts. Consent is optional and not a condition of participation.
               </span>
             </label>
 
