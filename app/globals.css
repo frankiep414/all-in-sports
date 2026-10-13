@@ -5001,3 +5001,9 @@ html {
 .carmitaStandalonePage .carmitaStory {
   padding-top: 60px;
 }
+
+/* Sprint 1: keep the desktop player profile clear of the action cards. */
+@media (min-width: 1101px) {
+  .homeLaunchpad .launchpadGrid { margin-top: 105px; }
+}
+.launchpadPlayer { pointer-events: auto; }
