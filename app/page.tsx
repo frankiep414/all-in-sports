@@ -173,7 +173,7 @@ export default function Home() {
       setAuthChecking(false);
       localStorage.removeItem('allInPlayerId');
       setCurrentPlayer(null);
-      setShowAuthWelcome(false);
+      if (new URLSearchParams(window.location.search).get('auth') !== '1') setShowAuthWelcome(false);
       return;
     }
     setVerifiedEmail(session.user.email);
@@ -211,6 +211,7 @@ export default function Home() {
   }
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('auth') === '1') setShowAuthWelcome(true);
     void loadVerifiedPlayer();
     const supabase = getSupabaseClient();
     if (!supabase) return;
@@ -522,8 +523,8 @@ setSignupComplete(true);
 
           <div className="navLinks">
             <a href="/play">Play</a>
-            <a href="#leagues">Leagues</a>
-            <a href="#tournaments">Tournaments</a>
+            <a href="/compete">Leagues</a>
+            <a href="/compete">Tournaments</a>
             <a href="#community">Community</a>
           </div>
 
