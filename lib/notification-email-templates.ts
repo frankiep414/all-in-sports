@@ -24,13 +24,18 @@ export function registrationEmail(input:{
  const note=waiting
   ?'You are on the waitlist. A spot is not guaranteed.'
   :'Your registration has been received. Your spot is not confirmed as paid. Payment collection is not enabled in this test.';
- const text=`Hi ${name},\n\n${note}\n\n${details}\n\nAll In Sports NJ`;
+ const profileUrl='https://allinsportsnj.com/my-all-in';
+ const text=`Hi ${name},\n\n${note}\n\n${details}\n\nView your registration: ${profileUrl}\n\nAll In Sports NJ`;
  const html=shell(subject,
-  '<p>Hi '+escapeHtml(name)+',</p><p>'+escapeHtml(note)+'</p>'+
-  '<p><strong>Game:</strong> '+escapeHtml(input.gameTitle)+'<br>'+
+  '<p style="font-size:17px;line-height:1.6">Hi '+escapeHtml(name)+',</p>'+
+  '<p style="font-size:17px;line-height:1.6">'+escapeHtml(note)+'</p>'+
+  '<section style="padding:20px;background:#172434;border:1px solid #34485d;border-radius:12px;margin:22px 0">'+
+  '<h3 style="margin:0 0 14px;color:#a9dbff;font-size:20px">YOUR GAME DETAILS</h3>'+
+  '<p style="font-size:16px;line-height:1.9;margin:0"><strong>Game:</strong> '+escapeHtml(input.gameTitle)+'<br>'+
   '<strong>Venue:</strong> '+escapeHtml(input.venue)+'<br>'+
   '<strong>Start:</strong> '+escapeHtml(input.startsAt)+'<br>'+
-  '<strong>Reference:</strong> '+escapeHtml(input.paymentReference)+'</p>');
+  '<strong>Reference:</strong> '+escapeHtml(input.paymentReference)+'</p></section>'+
+  '<p style="margin:26px 0"><a href="'+profileUrl+'" style="display:inline-block;background:#a9dbff;color:#07111d;text-decoration:none;padding:15px 24px;border-radius:10px;font-size:17px;font-weight:700">VIEW MY REGISTRATION →</a></p>');
  return {subject,html,text};
 }
 export function gamePublishedEmail(input:{title:string;venue:string;startsAt:string}):EmailTemplate{
