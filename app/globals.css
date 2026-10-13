@@ -5086,3 +5086,73 @@ html {
   .carmitaActivityGridEnhanced > div { min-height: 185px; }
   .carmitaDetailGridEnhanced .carmitaDetailCard { min-height: 205px; }
 }
+
+
+/* Play for Carmita: original information layout with illustrated activity panels */
+.carmitaDetailGridIllustrated .carmitaDetailCard {
+  min-height: 225px;
+  background: linear-gradient(145deg, rgba(110,220,255,.055), rgba(255,255,255,.018) 65%);
+  border-color: rgba(255,255,255,.15);
+}
+.carmitaDetailGridIllustrated .carmitaDetailCard:nth-child(2) { background: linear-gradient(145deg, rgba(255,76,153,.065), rgba(255,255,255,.018) 65%); }
+.carmitaDetailGridIllustrated .carmitaDetailCard:nth-child(3) { background: linear-gradient(145deg, rgba(180,122,255,.075), rgba(255,255,255,.018) 65%); }
+.carmitaDetailGridIllustrated .carmitaDetailIcon {
+  display: flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 14px;
+  background: rgba(110,220,255,.09);
+}
+.carmitaDetailGridIllustrated .carmitaDetailCard:nth-child(2) .carmitaDetailIcon { background: rgba(255,76,153,.10); }
+.carmitaDetailGridIllustrated .carmitaDetailCard:nth-child(3) .carmitaDetailIcon { background: rgba(180,122,255,.11); }
+.carmitaDetailGridIllustrated .carmitaDetailCard h3 { line-height: 1.16; font-size: clamp(20px, 2vw, 28px); }
+.carmitaActivityGridIllustrated {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.11);
+  border-radius: 20px;
+}
+.carmitaActivityGridIllustrated > div {
+  min-width: 0;
+  min-height: 340px;
+  padding: 21px 17px 23px;
+  gap: 13px;
+  border-right: 1px solid rgba(255,255,255,.11);
+  background: linear-gradient(180deg, rgba(110,220,255,.08), rgba(255,255,255,.018) 55%);
+}
+.carmitaActivityGridIllustrated > div:nth-child(2) { background: linear-gradient(180deg, rgba(255,76,153,.14), rgba(255,255,255,.018) 55%); }
+.carmitaActivityGridIllustrated > div:nth-child(3) { background: linear-gradient(180deg, rgba(180,122,255,.13), rgba(255,255,255,.018) 55%); }
+.carmitaActivityGridIllustrated > div:nth-child(4) { background: linear-gradient(180deg, rgba(255,163,57,.14), rgba(255,255,255,.018) 55%); }
+.carmitaActivityGridIllustrated > div:nth-child(5) { background: linear-gradient(180deg, rgba(110,220,255,.10), rgba(255,255,255,.018) 55%); }
+.carmitaActivityGridIllustrated .carmitaActivityTop {
+  display: flex; flex-direction: column; align-items: stretch; gap: 10px;
+}
+.carmitaActivityGridIllustrated .carmitaActivityIcon {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 112px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 13px;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,.09), rgba(255,255,255,.015) 72%);
+}
+.carmitaActivityGridIllustrated .carmitaSceneMain {
+  font-size: clamp(38px, 3.7vw, 60px);
+  line-height: 1;
+  filter: drop-shadow(0 7px 10px rgba(0,0,0,.3));
+}
+.carmitaActivityGridIllustrated .carmitaSceneAccent {
+  position: absolute; right: 9px; bottom: 8px;
+  font-size: 29px; line-height: 1;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,.35));
+}
+.carmitaActivityGridIllustrated strong { color: #fff; font-size: 13px; line-height: 1.35; letter-spacing: .4px; }
+.carmitaActivityGridIllustrated > div p { color: #b8c4d1; font-size: 12px; line-height: 1.6; }
+@media (max-width: 1050px) {
+  .carmitaActivityGridIllustrated { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .carmitaActivityGridIllustrated > div { min-height: 300px; border-bottom: 1px solid rgba(255,255,255,.1); }
+}
+@media (max-width: 650px) {
+  .carmitaActivityGridIllustrated { grid-template-columns: 1fr; }
+  .carmitaActivityGridIllustrated > div { min-height: 0; padding: 20px; }
+  .carmitaActivityGridIllustrated .carmitaActivityIcon { height: 125px; }
+}
