@@ -1,13 +1,13 @@
 import {createClient} from '@supabase/supabase-js';
 import {registrationEmail} from './notification-email-templates';
 
-// Automated email is deliberately limited to admin-owned test-game registrations.
-// A separate rollout is required for real players and notification preferences.
+// Preview-only rollout: registration emails for real players are explicitly opt-in.
+// Never send from Production without a separate reviewed rollout.
 export async function sendAutomatedTestRegistrationEmail(input:{
  registrationId:string;gameId:string;
  userId:string;email:string;playerName:string;status:string;reference:string;
 }):Promise<void>{
- if(process.env.PICKUP_AUTO_TEST_EMAIL_ENABLED!=='true')return;
+ if(process.env.VERCEL_ENV!=='preview'||process.env.PICKUP_AUTO_REGISTRATION_EMAIL_ENABLED!=='true')return;
  const key=process.env.RESEND_API_KEY;
  if(!key)return;
  const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -16,10 +16,8 @@ export async function sendAutomatedTestRegistrationEmail(input:{
  const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
  const {data:game,error:gameError}=await db.from('pickup_games')
   .select('id,title,venue,starts_at,is_test').eq('id',input.gameId).maybeSingle();
- if(gameError||!game?.is_test)return;
- const {data:admin,error:adminError}=await db.from('admin_users')
-  .select('user_id').eq('user_id',input.userId).maybeSingle();
- if(adminError||!admin)return;
+ if(gameError||!game)return;
+
  const {data:registration,error:registrationError}=await db.from('pickup_registrations')
   .select('user_id,game_id').eq('id',input.registrationId).maybeSingle();
  if(registrationError||registration?.user_id!==input.userId||registration.game_id!==input.gameId)return;
@@ -42,7 +40,7 @@ export async function sendAutomatedTestRegistrationEmail(input:{
  try{
   const response=await fetch('https://api.resend.com/emails',{
    method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json',
-    'Idempotency-Key':`all-in-auto-test-${claim.id}`},
+    'Idempotency-Key':`all-in-registration-preview-${claim.id}`},
    body:JSON.stringify({from:'All In Sports <noreply@allinsportsnj.com>',
     to:[input.email],subject:template.subject,html:template.html,text:template.text}),
    signal:AbortSignal.timeout(12000)
