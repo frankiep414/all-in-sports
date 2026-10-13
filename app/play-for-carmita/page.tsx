@@ -21,9 +21,9 @@ export default function PlayForCarmitaPage() {
           </a>
 
           <div className="navLinks">
-            <a href="/#play">Play</a>
-            <a href="/#leagues">Leagues</a>
-            <a href="/#tournaments">Tournaments</a>
+            <a href="/play">Play</a>
+            <a href="/compete">Leagues</a>
+            <a href="/compete">Tournaments</a>
             <a href="/#community">Community</a>
           </div>
 
@@ -89,20 +89,21 @@ export default function PlayForCarmitaPage() {
             </h1>
 
             <p className="carmitaHeroText">
-              A charity soccer tournament bringing family, friends and
-              community together for a purpose bigger than the game.
+              A charity soccer tournament, fun run and walk bringing family,
+              friends and community together for a purpose bigger than the game.
             </p>
 
             <div className="carmitaHeroActions">
-              <a href="#register" className="primaryButton">
+              <a href="/?auth=1&amp;returnTo=%2Fplay-for-carmita%23register" className="primaryButton">
                 REGISTER TEAM
                 <ArrowRight size={17} />
               </a>
 
-              <a href="#register" className="ghostButton">
-                REGISTER PLAYER
+              <a href="/?auth=1&amp;returnTo=%2Fplay-for-carmita%23register" className="ghostButton">
+                REGISTER INDIVIDUALLY · $25
               </a>
             </div>
+            <p style={{ marginTop: 16, fontSize: 15, lineHeight: 1.6, opacity: 0.9 }}>Individual registration is $25 total and covers soccer, the fun run/walk, or both. Team registration is $250.</p>
 
             <div className="carmitaHeroMeta">
               <div>
@@ -116,7 +117,7 @@ export default function PlayForCarmitaPage() {
               <div>
                 <Clock3 size={17} />
                 <span>
-                  <strong>9AM–2PM</strong>
+                  <strong>9AM–1PM</strong>
                   EVENT TIME
                 </span>
               </div>
@@ -154,109 +155,7 @@ export default function PlayForCarmitaPage() {
 
 
      
-      {/* EVENT DETAILS */}
-      <section id="event-information" className="carmitaDetailsSection">
-        <div className="carmitaContent">
-
-          <div className="carmitaDetailsHeader">
-            <div>
-              <p className="eyebrow">THE EVENT</p>
-              <h2>
-                COME PLAY.
-                <br />
-                <span>COME TOGETHER.</span>
-              </h2>
-            </div>
-
-            <p>
-              Soccer, family and community coming together for one
-              unforgettable day.
-            </p>
-          </div>
-
-
-          <div className="carmitaDetailGrid">
-
-            <article className="carmitaDetailCard">
-              <CalendarDays size={25} />
-
-              <div>
-                <span>DATE &amp; TIME</span>
-                <h3>OCTOBER 31</h3>
-                <p>Saturday · 9:00 AM – 2:00 PM</p>
-              </div>
-            </article>
-
-
-            <article className="carmitaDetailCard">
-              <Trophy size={25} />
-
-              <div>
-                <span>TOURNAMENT</span>
-                <h3>COED · 7V7</h3>
-                <p>$250 team · $25 individual</p>
-              </div>
-            </article>
-
-
-            <article className="carmitaDetailCard">
-              <MapPin size={25} />
-
-              <div>
-                <span>LOCATION</span>
-                <h3>HARRISON HIGH SCHOOL</h3>
-                <p>Harrison, NJ</p>
-              </div>
-            </article>
-
-          </div>
-
-
-        {/* ACTIVITIES */}
-<div className="carmitaActivityGrid">
-
-  <div>
-    <span>01</span>
-    <strong>CHARITY<br />TOURNAMENT</strong>
-    <p>
-      Coed 7v7 soccer for competitive and recreational teams.
-      Register your team for $250 or join individually for $25.
-      Individual players will be assigned to teams.
-    </p>
-  </div>
-
-  <div>
-    <span>02</span>
-    <strong>KIDS + FAMILY<br />ACTIVITIES</strong>
-    <p>
-      A day for the whole family, featuring games, fun zones,
-      and activities for kids throughout the event.
-    </p>
-  </div>
-
-  <div>
-    <span>03</span>
-    <strong>HALLOWEEN<br />COSTUME CONTEST</strong>
-    <p>
-      Keep the Halloween spirit going! Kids and adults are
-      invited to dress up and join the costume contest.
-    </p>
-  </div>
-
-  <div>
-    <span>04</span>
-    <strong>CHAMPIONSHIP<br />PRIZES</strong>
-    <p>
-      Play for the championship, compete for bragging rights,
-      and celebrate with awards for the winning teams.
-    </p>
-  </div>
-
-</div>
-
-        </div>
-      </section>
-
+     
 
       {/* REGISTER */}
       <section className="carmitaRegister" id="register">
@@ -274,14 +173,13 @@ export default function PlayForCarmitaPage() {
           </h2>
 
           <p className="carmitaRegisterLead">
-            Bring your squad or come on your own. Individual players
-            will be placed on a team.
+            One $25 individual registration covers soccer, the 2-mile fun run / 1-mile walk, or both. Soccer players must be 16+ and solo players will be placed on a team. Full soccer teams register for $250.
           </p>
 
 
           <div className="carmitaRegisterGrid">
 
-            <a href="/?auth=1&amp;returnTo=%2Fplay-for-carmita%23register" className="carmitaRegisterCard" style={{textDecoration:"none",color:"inherit"}}>
+            <a href="/?auth=1&amp;returnTo=%2Fplay-for-carmita%23register" className="carmitaRegisterCard">
               <div className="carmitaRegisterNumber">01</div>
 
               <div>
@@ -297,25 +195,22 @@ export default function PlayForCarmitaPage() {
             </a>
 
 
-            <a href="/?auth=1&amp;returnTo=%2Fplay-for-carmita%23register" className="carmitaRegisterCard" style={{textDecoration:"none",color:"inherit"}}>
+            <a href="/?auth=1&amp;returnTo=%2Fplay-for-carmita%23register" className="carmitaRegisterCard">
               <div className="carmitaRegisterNumber">02</div>
-
               <div>
                 <span>INDIVIDUAL REGISTRATION</span>
                 <h3>$25</h3>
-                <p>
-                  Sign up individually and we&apos;ll place you on a team.
-                </p>
+                <p>One registration covers coed 7v7 soccer, the 2-mile fun run / 1-mile walk, or both. Soccer ages 16+.</p>
               </div>
-
-              <div className="carmitaRegisterLink">
-                REGISTER PLAYER
-                <ArrowRight size={19} />
-              </div>
+              <div className="carmitaRegisterLink">CHOOSE YOUR ACTIVITIES <ArrowRight size={19} /></div>
             </a>
-
           </div>
 
+          <p style={{ marginTop: 24, lineHeight: 1.7, opacity: 0.85 }}>
+            Saturday, October 31, 2026 · 9:00 AM–1:00 PM · Harrison High School, Harrison, NJ.
+            Join the Halloween costume contest for kids and adults.
+            Proceeds will be donated to the Brain Aneurysm Foundation.
+          </p>
 
           <div className="carmitaClosing">
             <span>SAME GAME.</span>
