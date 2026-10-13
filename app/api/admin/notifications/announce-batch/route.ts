@@ -80,7 +80,17 @@ export async function POST(request:Request){
    event_id:event.id,recipient_user_id:entry.user_id,channel:'email',destination:email,
    status:'sending',provider:'resend',attempts:1
   }).select('id').single();
-  if(claimError||!claim){skipped++;continue;}
+  if(claimError){
+   // Unique-constraint conflicts mean this player/game/channel was already claimed.
+   // Other database failures must not be mislabeled as duplicate skips.
+   if(claimError.code==='23505')skipped++;
+   else{
+    failed++;
+    console.error('Unable to claim announcement delivery',claimError.code);
+   }
+   continue;
+  }
+  if(!claim){failed++;continue;}
   const unsubscribe=site+'/unsubscribe?token='+encodeURIComponent(unsubscribeToken(entry.user_id));
   const providerUnsubscribe=site+'/api/announcements/one-click?token='+encodeURIComponent(unsubscribeToken(entry.user_id));
   const html=template.html.replace('</main>',
