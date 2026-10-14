@@ -43,12 +43,18 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Payment mismatch' }, { status: 400 });
   if (reg.payment_status !== 'paid' && reg.payment_status !== 'pending') return Response.json({ error: 'Invalid payment state' }, { status: 409 });
   if (reg.payment_status === 'pending') {
-  const { error: updateError } = await db.from('carmita_registrations').update({
+  const { data: updatedRegistration, error: updateError } = await db.from('carmita_registrations').update({
     payment_status: 'paid',
     stripe_payment_intent_id: typeof session.payment_intent === 'string' ? session.payment_intent : null,
     paid_at: new Date().toISOString()
-  }).eq('id', reg.id).eq('payment_status', 'pending');
+  }).eq('id', reg.id).eq('payment_status', 'pending')
+    .select('id').maybeSingle();
   if (updateError) { console.error('Carmita payment update failed', { code: updateError.code }); return Response.json({ error: 'Retry later' }, { status: 503 }); }
+  if (!updatedRegistration) {
+    // Another delivery may have processed this registration concurrently.
+    // Retry so the next delivery re-reads the persisted payment state.
+    return Response.json({ error: 'Payment state changed; retry' }, { status: 503 });
+  }
   }
   const emailKey = process.env.CARMITA_RESEND_API_KEY;
   // Do not silently acknowledge a paid registration without attempting its confirmation email.
