@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
-  if (process.env.VERCEL_ENV !== 'preview') return NextResponse.json({ error: 'Unavailable' }, { status: 404 });
+  if (!['preview', 'production'].includes(process.env.VERCEL_ENV || '')) return NextResponse.json({ error: 'Unavailable' }, { status: 404 });
   const sessionId = req.nextUrl.searchParams.get('session_id');
-  if (!sessionId || !/^cs_test_[A-Za-z0-9_]{10,}$/.test(sessionId)) return NextResponse.json({ error: 'Invalid session' }, { status: 400 });
+  if (!sessionId || !/^cs_(?:test_|live_)?[A-Za-z0-9_]{10,}$/.test(sessionId)) return NextResponse.json({ error: 'Invalid session' }, { status: 400 });
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SECRET_KEY;
   if (!url || !key) return NextResponse.json({ error: 'Unavailable' }, { status: 503 });
