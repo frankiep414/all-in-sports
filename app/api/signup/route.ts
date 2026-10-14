@@ -84,7 +84,18 @@ export async function POST(request: Request) {
         email_updated_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
-      if (preferenceError) console.error('Email consent preference save failed', preferenceError.code);
+      if (preferenceError) {
+        console.error('Email consent preference save failed', preferenceError.code);
+        // Player ID exists, but marketing consent was NOT reliably saved.
+        // Do not report a fully successful signup or send an opt-in confirmation.
+        return Response.json({
+          success: false,
+          playerId: newPlayer.id,
+          signupSaved: true,
+          announcementPreferenceSaved: false,
+          error: 'Your Player ID was created, but we could not save your email announcement preference. Please open My All In to confirm your preference.',
+        }, { status: 503 });
+      }
     }
 
         if (smsConsent) {
