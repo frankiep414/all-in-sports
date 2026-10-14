@@ -49,5 +49,6 @@ export async function POST(request: Request) {
     paid_at: new Date().toISOString()
   }).eq('id', reg.id).eq('payment_status', 'pending');
   if (updateError) { console.error('Carmita payment update failed', { code: updateError.code }); return Response.json({ error: 'Retry later' }, { status: 503 }); }
+  // Email delivery is handled separately so email-provider outages never cause duplicate payment processing.
   return Response.json({ received: true });
 }
