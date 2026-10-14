@@ -377,7 +377,7 @@ export default function AuthWelcome({
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: 'https://allinsportsnj.com',
+      redirectTo: window.location.origin,
     },
   });
 

@@ -145,8 +145,8 @@ const intelligence = [
 ];
 
 export default function Home() {
-  const [showAuthWelcome, setShowAuthWelcome] = useState(true);
-  const [showPlayerSignup, setShowPlayerSignup] = useState(true);
+  const [showAuthWelcome, setShowAuthWelcome] = useState(false);
+  const [showPlayerSignup, setShowPlayerSignup] = useState(false);
   const [playedBefore, setPlayedBefore] = useState(false);
   const [signupComplete, setSignupComplete] = useState(false);
   const [selectedChampion, setSelectedChampion] = useState<(typeof champions)[number] | null>(null);
@@ -155,81 +155,75 @@ export default function Home() {
   full_name: string;
 } | null>(null);
   const [verifiedEmail, setVerifiedEmail] = useState('');
-  useEffect(() => {
-  const savedPlayerId = localStorage.getItem('allInPlayerId');
+  const [authChecking, setAuthChecking] = useState(true);
+  const [playerLoadError, setPlayerLoadError] = useState('');
 
-  if (savedPlayerId) {
-    setShowPlayerSignup(false);
-    setShowAuthWelcome(false);
-
-    fetch(`/api/player?id=${savedPlayerId}`)
-      .then((response) => response.json())
-      .then((player) => {
-        if (player?.id) {
-          setCurrentPlayer(player);
-        }
-      })
-      .catch((error) => {
-        console.error('Unable to load player:', error);
-      });
-  }
-}, []);
-
-useEffect(() => {
-  async function checkSupabaseUser() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user?.email) {
+  async function loadVerifiedPlayer() {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session?.user?.email) {
+      localStorage.removeItem('allInPlayerId');
+      setCurrentPlayer(null);
+      setAuthChecking(false);
       return;
     }
 
-    const email = user.email;
+    const email = session.user.email;
     setVerifiedEmail(email);
-
+    setPlayerLoadError('');
     try {
-      const response = await fetch(
-        `/api/player?email=${encodeURIComponent(email)}`
-      );
-
+      const response = await fetch(`/api/player?email=${encodeURIComponent(email)}`, { cache: 'no-store' });
       if (response.ok) {
         const player = await response.json();
-
         if (player?.id) {
           localStorage.setItem('allInPlayerId', String(player.id));
           setCurrentPlayer(player);
-          setShowAuthWelcome(false);
           setShowPlayerSignup(false);
-          return;
+          setShowAuthWelcome(false);
         }
+      } else if (response.status === 404) {
+        localStorage.removeItem('allInPlayerId');
+        setCurrentPlayer(null);
+        setShowPlayerSignup(true);
+        setShowAuthWelcome(false);
+      } else {
+        setPlayerLoadError('Your sign-in succeeded, but we could not load your Player ID. Please try again.');
       }
-
-      // Authenticated, but no existing player uses this email.
-      // Send them through the Player ID setup flow.
-      setShowAuthWelcome(false);
-      setShowPlayerSignup(true);
     } catch (error) {
-      console.error('Unable to look up player by email:', error);
-      setShowAuthWelcome(false);
-      setShowPlayerSignup(true);
+      console.error('Unable to load player:', error);
+      setPlayerLoadError('Your sign-in succeeded, but we could not load your Player ID. Please try again.');
+    } finally {
+      setAuthChecking(false);
     }
   }
 
-  checkSupabaseUser();
-}, []);
+  useEffect(() => {
+    void loadVerifiedPlayer();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+        window.setTimeout(() => { void loadVerifiedPlayer(); }, 0);
+      } else if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('allInPlayerId');
+        setCurrentPlayer(null);
+        setVerifiedEmail('');
+        setShowPlayerSignup(false);
+        setShowAuthWelcome(false);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (authChecking) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center' }}>Loading All In Sports…</main>;
+  if (playerLoadError) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center' }}><div><h1>PLAYER PROFILE UNAVAILABLE</h1><p>{playerLoadError}</p><button type="button" onClick={() => { setAuthChecking(true); void loadVerifiedPlayer(); }} style={{ padding: '12px 24px', cursor: 'pointer' }}>Retry Player ID lookup</button></div></main>;
   if (showAuthWelcome) {
   return (
-    <AuthWelcome
+    <div><button type="button" onClick={() => setShowAuthWelcome(false)} style={{position:'fixed',top:16,left:16,zIndex:20,padding:'12px 16px',background:'#172337',color:'#fff',border:'1px solid #456',borderRadius:8,cursor:'pointer'}}>← Explore All In Sports</button><AuthWelcome
       onEmailSignup={() => {
-        setShowAuthWelcome(false);
-        setShowPlayerSignup(true);
+        void loadVerifiedPlayer();
       }}
     onLogin={() => {
-  setShowAuthWelcome(false);
-  setShowPlayerSignup(false);
+  void loadVerifiedPlayer();
 }}
-    />
+    /></div>
   );
 }
 return (
@@ -520,12 +514,7 @@ setSignupComplete(true);
             <a href="#community">Community</a>
           </div>
 
-     <a href="/my-all-in" className="profileButton">
-  <CircleUserRound size={18} />
-  {currentPlayer?.full_name
-    ? currentPlayer.full_name.split(' ')[0]
-    : 'My All In'}
-</a>
+     {currentPlayer ? <a href="/my-all-in" className="profileButton"><CircleUserRound size={18} />{currentPlayer.full_name.split(' ')[0]}</a> : <button type="button" className="profileButton" onClick={() => setShowAuthWelcome(true)} style={{cursor:'pointer',font:'inherit'}}><CircleUserRound size={18} />Log In / Sign Up</button>}
         </div>
       </nav>
 
