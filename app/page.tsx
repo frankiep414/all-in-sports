@@ -145,8 +145,8 @@ const intelligence = [
 ];
 
 export default function Home() {
-  const [showAuthWelcome, setShowAuthWelcome] = useState(true);
-  const [showPlayerSignup, setShowPlayerSignup] = useState(true);
+  const [showAuthWelcome, setShowAuthWelcome] = useState(false);
+  const [showPlayerSignup, setShowPlayerSignup] = useState(false);
   const [playedBefore, setPlayedBefore] = useState(false);
   const [signupComplete, setSignupComplete] = useState(false);
   const [selectedChampion, setSelectedChampion] = useState<(typeof champions)[number] | null>(null);
@@ -212,7 +212,7 @@ useEffect(() => {
     } catch (error) {
       console.error('Unable to look up player by email:', error);
       setShowAuthWelcome(false);
-      setShowPlayerSignup(true);
+      setShowPlayerSignup(false);
     }
   }
 
@@ -220,7 +220,7 @@ useEffect(() => {
 }, []);
   if (showAuthWelcome) {
   return (
-    <AuthWelcome
+    <div><button type="button" onClick={() => setShowAuthWelcome(false)} style={{position:'fixed',top:16,left:16,zIndex:20,padding:'12px 16px',background:'#172337',color:'#fff',border:'1px solid #456',borderRadius:8,cursor:'pointer'}}>← Explore All In Sports</button><AuthWelcome
       onEmailSignup={() => {
         setShowAuthWelcome(false);
         setShowPlayerSignup(true);
@@ -229,7 +229,7 @@ useEffect(() => {
   setShowAuthWelcome(false);
   setShowPlayerSignup(false);
 }}
-    />
+    /></div>
   );
 }
 return (
@@ -520,12 +520,7 @@ setSignupComplete(true);
             <a href="#community">Community</a>
           </div>
 
-     <a href="/my-all-in" className="profileButton">
-  <CircleUserRound size={18} />
-  {currentPlayer?.full_name
-    ? currentPlayer.full_name.split(' ')[0]
-    : 'My All In'}
-</a>
+     {currentPlayer ? <a href="/my-all-in" className="profileButton"><CircleUserRound size={18} />{currentPlayer.full_name.split(' ')[0]}</a> : <button type="button" className="profileButton" onClick={() => setShowAuthWelcome(true)} style={{cursor:'pointer',font:'inherit'}}><CircleUserRound size={18} />Log In / Sign Up</button>}
         </div>
       </nav>
 
