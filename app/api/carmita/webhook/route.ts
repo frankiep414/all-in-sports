@@ -51,15 +51,15 @@ export async function POST(request: Request) {
   if (updateError) { console.error('Carmita payment update failed', { code: updateError.code }); return Response.json({ error: 'Retry later' }, { status: 503 }); }
   }
   const emailKey = process.env.CARMITA_RESEND_API_KEY;
-  const from = process.env.CARMITA_FROM_EMAIL;
-  if (emailKey && from) {
+  const from = 'All In Sports | Play for Carmita <events@allinsportsnj.com>';
+  if (emailKey) {
     const { data: details, error: detailsError } = await db.from('carmita_registrations')
       .select('contact_name,contact_email,registration_type,team_name,activities,amount_cents').eq('id', reg.id).single();
     if (detailsError || !details) return Response.json({ error: 'Email details unavailable' }, { status: 503 });
     const escape = (v: string) => v.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c] || c));
     const activities = (details.activities || []).map((a: string) => a === 'run_walk' ? 'Run / Walk' : 'Soccer').join(' + ');
     const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto"><h1>Thank you for playing for Carmita! ❤️⚽</h1><p>Hi ${escape(details.contact_name)},</p><p><strong>Your registration and payment are confirmed.</strong> Thank you for supporting brain aneurysm awareness.</p><p><strong>Registration:</strong> ${details.registration_type === 'team' ? 'Full soccer team' : 'Individual'}<br>${details.team_name ? `<strong>Team:</strong> ${escape(details.team_name)}<br>` : ''}<strong>Activities:</strong> ${escape(activities)}<br><strong>Amount:</strong> ${(details.amount_cents / 100).toFixed(2)}</p><p><strong>Saturday, October 31, 2026 · 9 AM–1 PM</strong><br>Harrison High School, Harrison, NJ</p><p>We look forward to seeing you!</p><p>All In Sports</p></div>`;
-    const mail = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${emailKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': `carmita-${reg.id}` }, body: JSON.stringify({ from, to: [details.contact_email], subject: 'Play for Carmita — Registration Confirmed', html }), cache: 'no-store' });
+    const mail = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${emailKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': `carmita-${reg.id}` }, body: JSON.stringify({ from, to: [details.contact_email], reply_to: 'allinsports.imom@gmail.com', subject: 'Play for Carmita — Registration Confirmed', html }), cache: 'no-store' });
     if (!mail.ok) { console.error('Carmita email delivery failed', { status: mail.status }); return Response.json({ error: 'Email delivery retry' }, { status: 503 }); }
   }
   return Response.json({ received: true });
