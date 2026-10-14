@@ -1,59 +1,86 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'node:crypto';
 
-const prices = {
-  team: { id: 'price_1UOrKSQRD8Z9J4PooOWS4ZAJ', amount: 25000 },
-  individual: { id: 'price_1UOrKUQRD8Z9J4Po6RDEIfu3', amount: 2500 },
-  run_walk: { id: 'price_1UOrKVQRD8Z9J4PolGLBJ9ef', amount: 2500 },
-} as const;
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
-  if (process.env.STRIPE_REGISTRATION_ENABLED !== 'true') {
-    return NextResponse.json({ error: 'Online registration is not open yet.' }, { status: 503 });
-  }
-  const secret = process.env.STRIPE_SECRET_KEY;
-  if (!secret) return NextResponse.json({ error: 'Checkout is not configured.' }, { status: 503 });
+function response(error: string, status: number) { return NextResponse.json({ error }, { status }); }
+function clean(v: unknown, max: number) { return typeof v === 'string' ? v.trim().slice(0, max) : ''; }
+
+export async function POST(req: NextRequest) {
+  // Checkout is intentionally disabled until Stripe live-mode configuration and webhook QA.
+  if (!['preview', 'production'].includes(process.env.VERCEL_ENV || '') || process.env.CARMITA_CHECKOUT_ENABLED !== 'true') return response('Registration payments are not enabled yet.', 503);
+  const live = process.env.VERCEL_ENV === 'production';
+  const stripeKey = process.env.CARMITA_STRIPE_SECRET_KEY || (!live ? process.env.STRIPE_SECRET_KEY : undefined);
+  const dbUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const dbKey = process.env.SUPABASE_SECRET_KEY;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!(live ? /^(sk_live_|rk_live_)/.test(stripeKey || '') : /^(sk_test_|rk_test_)/.test(stripeKey || '')) || !dbUrl || !dbKey || !siteUrl || !/^https:\/\//.test(siteUrl) || (live && new URL(siteUrl).hostname !== 'allinsportsnj.com' && live && new URL(siteUrl).hostname !== 'www.allinsportsnj.com')) return response('Checkout is not configured.', 503);
+  let body: Record<string, unknown>;
+  try { body = await req.json(); } catch { return response('Invalid request.', 400); }
+  const type = body.registrationType;
+  if (type !== 'team' && type !== 'individual') return response('Choose a registration type.', 400);
+  const name = clean(body.contactName, 120), email = clean(body.contactEmail, 254).toLowerCase();
+  const phone = clean(body.contactPhone, 40), teamName = clean(body.teamName, 120);
+  const activities = type === 'team' ? ['soccer'] : Array.isArray(body.activities) ?
+    [...new Set(body.activities.filter((a): a is string => a === 'soccer' || a === 'run_walk'))] : [];
+  if (name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+      (type === 'team' && !teamName) || (type === 'individual' && activities.length === 0))
+    return response('Please complete all required fields.', 400);
+  const amount = type === 'team' ? 25000 : 2500;
+  const db = createClient(dbUrl, dbKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const id = randomUUID();
+  const { error: insertError } = await db.from('carmita_registrations').insert({
+    id, registration_type: type, contact_name: name, contact_email: email,
+    contact_phone: phone || null, team_name: type === 'team' ? teamName : null,
+    activities, amount_cents: amount, payment_status: 'pending'
+  });
+  if (insertError) { console.error('Carmita registration insert failed', { code: insertError.code }); return response('Unable to start registration.', 503); }
   try {
-    const body = await request.json();
-    const kind = String(body.kind || '');
-    if (!(kind in prices)) return NextResponse.json({ error: 'Invalid registration type.' }, { status: 400 });
-    const fullName = String(body.fullName || '').trim();
-    const email = String(body.email || '').trim();
-    const phone = String(body.phone || '').trim();
-    const teamName = String(body.teamName || '').trim();
-    const activity = String(body.activity || '').trim();
-    if (fullName.length < 2 || fullName.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || phone.length < 7 || phone.length > 30) {
-      return NextResponse.json({ error: 'Please enter a valid name, email and phone.' }, { status: 400 });
-    }
-    if (kind === 'team' && (!teamName || teamName.length > 100)) return NextResponse.json({ error: 'Team name is required.' }, { status: 400 });
-    if (kind === 'run_walk' && !['run', 'walk'].includes(activity)) return NextResponse.json({ error: 'Choose run or walk.' }, { status: 400 });
-    const price = prices[kind as keyof typeof prices];
-    // Prevent accidentally using a live price with a test key, or vice versa.
-    const expectedMode = process.env.STRIPE_CHECKOUT_MODE;
-    if (!['test', 'live'].includes(expectedMode || '') || !secret.startsWith(expectedMode === 'live' ? 'sk_live_' : 'sk_test_')) {
-      return NextResponse.json({ error: 'Checkout mode is not configured.' }, { status: 503 });
-    }
-    const configuredPrice = expectedMode === 'test' ? process.env['STRIPE_TEST_PRICE_' + kind.toUpperCase()] : price.id;
-    if (!configuredPrice) return NextResponse.json({ error: 'Test price not configured.' }, { status: 503 });
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
-    const data = new URLSearchParams();
-    data.set('mode', 'payment');
-    data.set('line_items[0][price]', configuredPrice);
-    data.set('line_items[0][quantity]', '1');
-    data.set('customer_email', email);
-    data.set('success_url', origin + '/play-for-carmita/registration/success?session_id={CHECKOUT_SESSION_ID}');
-    data.set('cancel_url', origin + '/play-for-carmita/registration?type=' + encodeURIComponent(kind) + '&cancelled=1');
-    const metadata: Record<string, string> = { event: 'play_for_carmita_2026', kind, fullName, email, phone, teamName: kind === 'team' ? teamName : '', activity: kind === 'run_walk' ? activity : '' };
-    for (const [key, value] of Object.entries(metadata)) data.set('metadata[' + key + ']', value);
-    const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-      method: 'POST', headers: { Authorization: 'Bearer ' + secret, 'Content-Type': 'application/x-www-form-urlencoded' }, body: data.toString(), cache: 'no-store',
+    const params = new URLSearchParams({
+      mode: 'payment',
+      success_url: `${siteUrl.replace(/\/$/, '')}/play-for-carmita/thank-you?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl.replace(/\/$/, '')}/play-for-carmita?payment=cancelled`,
+      customer_email: email,
+      'line_items[0][price_data][currency]': 'usd',
+      'line_items[0][price_data][unit_amount]': String(amount),
+      'line_items[0][price_data][product_data][name]': type === 'team' ? 'Play for Carmita — Team Registration' : 'Play for Carmita — Individual Registration',
+      'line_items[0][quantity]': '1',
+      'metadata[registration_id]': id,
+      'payment_intent_data[metadata][registration_id]': id
     });
-    const session = await response.json();
-    if (!response.ok || !session.url) {
-      console.error('Stripe Checkout error', session.error?.message || response.status);
-      return NextResponse.json({ error: 'Could not start checkout. Please try again.' }, { status: 502 });
+    const r = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST', headers: {
+        Authorization: `Bearer ${stripeKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Idempotency-Key': `carmita-registration-${id}`
+      }, body: params.toString(), cache: 'no-store'
+    });
+    const session = await r.json() as { id?: string; url?: string; error?: { message?: string } };
+    if (!r.ok || !session.id || !session.url || !session.url.startsWith('https://checkout.stripe.com/'))
+      throw new Error('Stripe checkout session creation failed');
+    const { data: linkedRegistration, error: saveError } = await db.from('carmita_registrations')
+      .update({ stripe_checkout_session_id: session.id })
+      .eq('id', id).eq('payment_status', 'pending')
+      .select('id').maybeSingle();
+    if (saveError || !linkedRegistration) {
+      console.error('Carmita session link failed', { code: saveError?.code || 'NO_ROW_UPDATED' });
+      // Never return a checkout URL that is not linked to a registration.
+      // Expire the orphaned Stripe session as a best-effort cleanup.
+      try {
+        const expired = await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(session.id)}/expire`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${stripeKey}` },
+          cache: 'no-store'
+        });
+        if (!expired.ok) console.error('Carmita orphaned session expiration failed', { status: expired.status });
+      } catch { console.error('Carmita orphaned session expiration request failed'); }
+      return response('Unable to finish checkout setup.', 503);
     }
-    return NextResponse.json({ url: session.url });
-  } catch {
-    return NextResponse.json({ error: 'Unable to start checkout.' }, { status: 400 });
+    return NextResponse.json({ checkoutUrl: session.url });
+  } catch (e) {
+    console.error('Carmita checkout creation failed', e instanceof Error ? e.message : 'Unknown error');
+    return response('Unable to open secure checkout. Please try again.', 503);
   }
 }
