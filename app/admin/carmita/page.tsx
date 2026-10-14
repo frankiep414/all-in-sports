@@ -81,7 +81,7 @@ export default function CarmitaAdminPage() {
   return <main style={{ minHeight: '100vh', background: '#0c1018', color: '#fff', padding: '30px max(20px, 4vw)' }}>
     <Link href="/play-for-carmita" style={{ color: '#e2b8ff' }}>← Back to Carmita</Link>
     <h1>Play for Carmita · Registrations</h1>
-    <p>Private admin view. Only Stripe-confirmed payments count as paid. This report includes only {process.env.NEXT_PUBLIC_VERCEL_ENV === 'production' ? 'live' : 'test'} Stripe registrations.</p>
+    <p>Private admin view. Only Stripe-confirmed payments count as paid. Records are separated by Stripe payment mode (live in Production, test in Preview).</p>
     {!signedIn && <section style={{ maxWidth: 430, padding: 24, margin: '22px 0', border: '1px solid #394357', borderRadius: 14, background: '#141c29' }}>
       <h2 style={{ marginTop: 0 }}>Admin sign in</h2>
       <p>Use the email associated with your authorized All In Sports admin account.</p>
