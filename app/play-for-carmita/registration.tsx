@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
 type Kind = 'team' | 'individual';
 
@@ -14,6 +14,16 @@ export default function CarmitaRegistration() {
   const [walk, setWalk] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    function syncSelection() {
+      const selected = new URLSearchParams(window.location.hash.split('?')[1] || '').get('type');
+      if (selected === 'team' || selected === 'individual') setKind(selected);
+    }
+    syncSelection();
+    window.addEventListener('hashchange', syncSelection);
+    return () => window.removeEventListener('hashchange', syncSelection);
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
