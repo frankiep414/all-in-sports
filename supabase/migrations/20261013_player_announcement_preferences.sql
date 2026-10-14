@@ -13,3 +13,6 @@ revoke all on public.player_announcement_preferences from anon, authenticated;
 -- Access only through authenticated server routes using the service role.
 -- SMS sending additionally requires documented express consent, phone verification,
 -- STOP handling, and an approved SMS provider; this table alone is not sufficient.
+
+-- Permit trusted server-side routes to persist and read announcement preferences.
+grant select, insert, update on table public.player_announcement_preferences to service_role;
