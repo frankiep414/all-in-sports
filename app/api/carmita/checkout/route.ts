@@ -10,12 +10,12 @@ function clean(v: unknown, max: number) { return typeof v === 'string' ? v.trim(
 
 export async function POST(req: NextRequest) {
   // Checkout is intentionally disabled until Stripe live-mode configuration and webhook QA.
-  if (process.env.CARMITA_CHECKOUT_ENABLED !== 'true') return response('Registration payments are not enabled yet.', 503);
+  if (process.env.VERCEL_ENV !== 'preview' || process.env.CARMITA_CHECKOUT_ENABLED !== 'true') return response('Registration payments are not enabled yet.', 503);
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   const dbUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const dbKey = process.env.SUPABASE_SECRET_KEY;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!stripeKey || !dbUrl || !dbKey || !siteUrl || !/^https:\/\//.test(siteUrl)) return response('Checkout is not configured.', 503);
+  if (!stripeKey?.startsWith('sk_test_') || !dbUrl || !dbKey || !siteUrl || !/^https:\/\//.test(siteUrl)) return response('Checkout is not configured.', 503);
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return response('Invalid request.', 400); }
   const type = body.registrationType;
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   try {
     const params = new URLSearchParams({
       mode: 'payment',
-      success_url: `${siteUrl.replace(/\/$/, '')}/play-for-carmita?payment=success`,
+      success_url: `${siteUrl.replace(/\/$/, '')}/play-for-carmita?payment=processing`,
       cancel_url: `${siteUrl.replace(/\/$/, '')}/play-for-carmita?payment=cancelled`,
       customer_email: email,
       'line_items[0][price_data][currency]': 'usd',
