@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     return Response.json({ received: true });
   const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: reg, error } = await db.from('carmita_registrations')
-    .select('id,amount_cents,currency,payment_status,stripe_checkout_session_id')
+    .select('id,amount_cents,currency,payment_status,stripe_checkout_session_id,confirmation_email_status')
     .eq('id', session.metadata.registration_id).maybeSingle();
   if (error) return Response.json({ error: 'Database unavailable' }, { status: 503 });
   if (!reg || reg.stripe_checkout_session_id !== session.id || reg.amount_cents !== session.amount_total ||
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Payment state changed; retry' }, { status: 503 });
   }
   }
+  if (reg.confirmation_email_status === 'sent') return Response.json({ received: true });
   const emailKey = process.env.CARMITA_RESEND_API_KEY;
   // Do not silently acknowledge a paid registration without attempting its confirmation email.
   // Returning 503 allows Stripe to retry delivery after the missing configuration is restored.
@@ -71,8 +72,33 @@ export async function POST(request: Request) {
     const escape = (v: string) => v.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c] || c));
     const activities = (details.activities || []).map((a: string) => a === 'run_walk' ? 'Run / Walk' : 'Soccer').join(' + ');
     const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto"><h1>Thank you for playing for Carmita! ❤️⚽</h1><p>Hi ${escape(details.contact_name)},</p><p><strong>Your registration and payment are confirmed.</strong> Thank you for supporting brain aneurysm awareness.</p><p><strong>Registration:</strong> ${details.registration_type === 'team' ? 'Full soccer team' : 'Individual'}<br>${details.team_name ? `<strong>Team:</strong> ${escape(details.team_name)}<br>` : ''}<strong>Activities:</strong> ${escape(activities)}<br><strong>Amount:</strong> ${(details.amount_cents / 100).toFixed(2)}</p><p><strong>Saturday, October 31, 2026 · 9 AM–1 PM</strong><br>Harrison High School, Harrison, NJ</p><p>We look forward to seeing you!</p><p>All In Sports</p></div>`;
-    const mail = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${emailKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': `carmita-${reg.id}` }, body: JSON.stringify({ from, to: [details.contact_email], reply_to: 'allinsports.imom@gmail.com', subject: 'Play for Carmita — Registration Confirmed', html }), cache: 'no-store' });
-    if (!mail.ok) { console.error('Carmita email delivery failed', { status: mail.status }); return Response.json({ error: 'Email delivery retry' }, { status: 503 }); }
+    let mail: Response;
+    try {
+      mail = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${emailKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': `carmita-${reg.id}` }, body: JSON.stringify({ from, to: [details.contact_email], reply_to: 'allinsports.imom@gmail.com', subject: 'Play for Carmita — Registration Confirmed', html }), cache: 'no-store' });
+    } catch {
+      console.error('Carmita confirmation email request failed');
+      return Response.json({ error: 'Email delivery retry' }, { status: 503 });
+    }
+    if (!mail.ok) {
+      console.error('Carmita email delivery failed', { status: mail.status });
+      await db.from('carmita_registrations').update({ confirmation_email_status: 'failed' })
+        .eq('id', reg.id).neq('confirmation_email_status', 'sent');
+      return Response.json({ error: 'Email delivery retry' }, { status: 503 });
+    }
+    let emailId: string | null = null;
+    try {
+      const receipt = await mail.json();
+      emailId = typeof receipt?.id === 'string' ? receipt.id : null;
+    } catch { /* Resend accepted the request, but its response was not parseable. */ }
+    const { error: emailUpdateError } = await db.from('carmita_registrations').update({
+      confirmation_email_status: 'sent',
+      confirmation_email_sent_at: new Date().toISOString(),
+      confirmation_email_id: emailId
+    }).eq('id', reg.id).neq('confirmation_email_status', 'sent');
+    if (emailUpdateError) {
+      console.error('Carmita email tracking update failed', { code: emailUpdateError.code });
+      return Response.json({ error: 'Email tracking retry' }, { status: 503 });
+    }
   }
   return Response.json({ received: true });
 }
