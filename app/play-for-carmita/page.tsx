@@ -1,3 +1,5 @@
+import CarmitaRegistration from './registration';
+
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,7 +25,7 @@ export default function PlayForCarmitaPage() {
           <div className="navLinks">
             <a href="/#play">Play</a>
             <a href="/#leagues">Leagues</a>
-            <a href="/#tournaments">Tournaments</a>
+            <a href="/#leagues">Tournaments</a>
             <a href="/#community">Community</a>
           </div>
 
@@ -55,7 +57,7 @@ export default function PlayForCarmitaPage() {
       <span className="carmitaQuickArrow">↗</span>
     </a>
 
-    <a href="/play-for-carmita/register">
+    <a href="#register">
       <span>04</span>
       <strong>REGISTRATION</strong>
       <span className="carmitaQuickArrow">↗</span>
@@ -94,12 +96,12 @@ export default function PlayForCarmitaPage() {
             </p>
 
             <div className="carmitaHeroActions">
-              <a href="/play-for-carmita/register?type=team" className="primaryButton">
+              <a href="?type=team#register" className="primaryButton">
                 REGISTER TEAM
                 <ArrowRight size={17} />
               </a>
 
-              <a href="/play-for-carmita/register?type=individual" className="ghostButton">
+              <a href="?type=individual#register" className="ghostButton">
                 REGISTER INDIVIDUALLY · $25
               </a>
             </div>
@@ -141,7 +143,7 @@ export default function PlayForCarmitaPage() {
 
   <div className="carmitaArtworkFrame">
     <img
-      src="/play_for_carmita_original_photo_preserved%20(1).png"
+      src="https://raw.githubusercontent.com/frankiep414/all-in-sports/main/public/play_for_carmita_original_photo_preserved%20%281%29.png"
       alt="Play for Carmita charity soccer tournament"
     />
 
@@ -177,34 +179,7 @@ export default function PlayForCarmitaPage() {
           </p>
 
 
-          <div className="carmitaRegisterGrid">
-
-            <a href="/play-for-carmita/register?type=team" className="carmitaRegisterCard">
-              <div className="carmitaRegisterNumber">01</div>
-
-              <div>
-                <span>TEAM REGISTRATION</span>
-                <h3>$250</h3>
-                <p>Register your full team for the tournament.</p>
-              </div>
-
-              <div className="carmitaRegisterLink">
-                REGISTER TEAM
-                <ArrowRight size={19} />
-              </div>
-            </a>
-
-
-            <a href="/play-for-carmita/register?type=individual" className="carmitaRegisterCard">
-              <div className="carmitaRegisterNumber">02</div>
-              <div>
-                <span>INDIVIDUAL REGISTRATION</span>
-                <h3>$25</h3>
-                <p>One registration covers coed 7v7 soccer, the 2-mile fun run / 1-mile walk, or both. Soccer ages 16+.</p>
-              </div>
-              <div className="carmitaRegisterLink">CHOOSE YOUR ACTIVITIES <ArrowRight size={19} /></div>
-            </a>
-          </div>
+          <CarmitaRegistration />
 
           <p style={{ marginTop: 24, lineHeight: 1.7, opacity: 0.85 }}>
             Saturday, October 31, 2026 · 9:00 AM–1:00 PM · Harrison High School, Harrison, NJ.
