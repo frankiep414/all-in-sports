@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const { error: insertError } = await db.from('carmita_registrations').insert({
     id, registration_type: type, contact_name: name, contact_email: email,
     contact_phone: phone || null, team_name: type === 'team' ? teamName : null,
-    activities, amount_cents: amount, payment_status: 'pending'
+    activities, amount_cents: amount, payment_status: 'pending', stripe_livemode: live
   });
   if (insertError) { console.error('Carmita registration insert failed', { code: insertError.code }); return response('Unable to start registration.', 503); }
   try {

@@ -46,6 +46,7 @@ export async function POST(request: Request) {
   const { data: updatedRegistration, error: updateError } = await db.from('carmita_registrations').update({
     payment_status: 'paid',
     stripe_payment_intent_id: typeof session.payment_intent === 'string' ? session.payment_intent : null,
+    stripe_livemode: event.livemode,
     paid_at: new Date().toISOString()
   }).eq('id', reg.id).eq('payment_status', 'pending')
     .select('id').maybeSingle();
