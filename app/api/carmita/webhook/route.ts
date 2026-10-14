@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
@@ -57,32 +57,60 @@ export async function POST(request: Request) {
   }
   }
   if (reg.confirmation_email_status === 'sent') return Response.json({ received: true });
+  // Atomically lease this paid registration before any email attempt.
+  // A competing webhook must retry rather than send a second email.
+  const leaseOwner = randomUUID();
+  const { data: claimed, error: claimError } = await db.rpc('carmita_claim_confirmation_email', {
+    p_registration_id: reg.id,
+    p_owner: leaseOwner
+  });
+  if (claimError) {
+    console.error('Carmita email lease claim failed', { code: claimError.code });
+    return Response.json({ error: 'Email claim retry' }, { status: 503 });
+  }
+  if (claimed !== true) {
+    // Another delivery may be sending, or may have finished since our first read.
+    // Retry later to re-read the final email status.
+    return Response.json({ error: 'Email claim busy; retry' }, { status: 503 });
+  }
+  async function releaseLease(status?: 'failed') {
+    const changes: Record<string, string | null> = {
+      confirmation_email_lease_owner: null,
+      confirmation_email_lease_expires_at: null
+    };
+    if (status) changes.confirmation_email_status = status;
+    const { error: releaseError } = await db.from('carmita_registrations').update(changes)
+      .eq('id', reg.id).eq('confirmation_email_lease_owner', leaseOwner)
+      .neq('confirmation_email_status', 'sent');
+    if (releaseError) console.error('Carmita email lease release failed', { code: releaseError.code });
+  }
   const emailKey = process.env.CARMITA_RESEND_API_KEY;
   // Do not silently acknowledge a paid registration without attempting its confirmation email.
   // Returning 503 allows Stripe to retry delivery after the missing configuration is restored.
   if (!emailKey) {
     console.error('Carmita confirmation email is not configured');
+    await releaseLease('failed');
     return Response.json({ error: 'Confirmation email not configured' }, { status: 503 });
   }
   const from = 'All In Sports | Play for Carmita <events@allinsportsnj.com>';
   {
     const { data: details, error: detailsError } = await db.from('carmita_registrations')
       .select('contact_name,contact_email,registration_type,team_name,activities,amount_cents').eq('id', reg.id).single();
-    if (detailsError || !details) return Response.json({ error: 'Email details unavailable' }, { status: 503 });
+    if (detailsError || !details) { await releaseLease('failed'); return Response.json({ error: 'Email details unavailable' }, { status: 503 }); }
     const escape = (v: string) => v.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c] || c));
     const activities = (details.activities || []).map((a: string) => a === 'run_walk' ? 'Run / Walk' : 'Soccer').join(' + ');
     const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto"><h1>Thank you for playing for Carmita! ❤️⚽</h1><p>Hi ${escape(details.contact_name)},</p><p><strong>Your registration and payment are confirmed.</strong> Thank you for supporting brain aneurysm awareness.</p><p><strong>Registration:</strong> ${details.registration_type === 'team' ? 'Full soccer team' : 'Individual'}<br>${details.team_name ? `<strong>Team:</strong> ${escape(details.team_name)}<br>` : ''}<strong>Activities:</strong> ${escape(activities)}<br><strong>Amount:</strong> ${(details.amount_cents / 100).toFixed(2)}</p><p><strong>Saturday, October 31, 2026 · 9 AM–1 PM</strong><br>Harrison High School, Harrison, NJ</p><p>We look forward to seeing you!</p><p>All In Sports</p></div>`;
     let mail: Response;
     try {
-      mail = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${emailKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': `carmita-${reg.id}` }, body: JSON.stringify({ from, to: [details.contact_email], reply_to: 'allinsports.imom@gmail.com', subject: 'Play for Carmita — Registration Confirmed', html }), cache: 'no-store' });
+      mail = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${emailKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': `carmita-${reg.id}` }, body: JSON.stringify({ from, to: [details.contact_email], reply_to: 'allinsports.imom@gmail.com', subject: 'Play for Carmita — Registration Confirmed', html }), cache: 'no-store', signal: AbortSignal.timeout(20000) });
     } catch {
       console.error('Carmita confirmation email request failed');
+      await releaseLease('failed');
       return Response.json({ error: 'Email delivery retry' }, { status: 503 });
     }
     if (!mail.ok) {
       console.error('Carmita email delivery failed', { status: mail.status });
-      await db.from('carmita_registrations').update({ confirmation_email_status: 'failed' })
-        .eq('id', reg.id).neq('confirmation_email_status', 'sent');
+      await releaseLease('failed');
       return Response.json({ error: 'Email delivery retry' }, { status: 503 });
     }
     let emailId: string | null = null;
@@ -90,13 +118,17 @@ export async function POST(request: Request) {
       const receipt = await mail.json();
       emailId = typeof receipt?.id === 'string' ? receipt.id : null;
     } catch { /* Resend accepted the request, but its response was not parseable. */ }
-    const { error: emailUpdateError } = await db.from('carmita_registrations').update({
+    const { data: markedSent, error: emailUpdateError } = await db.from('carmita_registrations').update({
       confirmation_email_status: 'sent',
       confirmation_email_sent_at: new Date().toISOString(),
-      confirmation_email_id: emailId
-    }).eq('id', reg.id).neq('confirmation_email_status', 'sent');
-    if (emailUpdateError) {
-      console.error('Carmita email tracking update failed', { code: emailUpdateError.code });
+      confirmation_email_id: emailId,
+      confirmation_email_lease_owner: null,
+      confirmation_email_lease_expires_at: null
+    }).eq('id', reg.id).eq('confirmation_email_lease_owner', leaseOwner)
+      .neq('confirmation_email_status', 'sent').select('id').maybeSingle();
+    if (emailUpdateError || !markedSent) {
+      console.error('Carmita email tracking update failed', { code: emailUpdateError?.code || 'NO_ROW_UPDATED' });
+      // Resend may have accepted the email. Keep the same idempotency key on retry.
       return Response.json({ error: 'Email tracking retry' }, { status: 503 });
     }
   }
