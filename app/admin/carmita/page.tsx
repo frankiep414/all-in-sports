@@ -12,14 +12,49 @@ export default function CarmitaAdminPage() {
   const [report, setReport] = useState<Report | null>(null);
   const [message, setMessage] = useState('Loading registrations…');
   const [busy, setBusy] = useState(false);
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authNotice, setAuthNotice] = useState('');
+  const [signedIn, setSignedIn] = useState(false);
+  function client() {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if (!url || !key) throw new Error('Authentication unavailable.');
+    return createClient(url, key);
+  }
+  async function sendCode() {
+    setAuthBusy(true); setAuthNotice('');
+    try {
+      const { error } = await client().auth.signInWithOtp({
+        email: email.trim(), options: { shouldCreateUser: false }
+      });
+      if (error) throw error;
+      setCodeSent(true); setAuthNotice('Check your email for a verification code.');
+    } catch (e) { setAuthNotice(e instanceof Error ? e.message : 'Unable to send code.'); }
+    finally { setAuthBusy(false); }
+  }
+  async function verifyCode() {
+    setAuthBusy(true); setAuthNotice('');
+    try {
+      const { error } = await client().auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'email' });
+      if (error) throw error;
+      setSignedIn(true);
+      await refresh();
+    } catch (e) { setAuthNotice(e instanceof Error ? e.message : 'Unable to verify code.'); }
+    finally { setAuthBusy(false); }
+  }
+  async function signOut() {
+    await client().auth.signOut();
+    setReport(null); setSignedIn(false); setCodeSent(false); setCode(''); setMessage('Please sign in with your admin account.');
+  }
   async function refresh() {
     setBusy(true); setMessage('Loading registrations…');
     try {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-      if (!url || !key) throw new Error('Authentication unavailable.');
-      const auth = createClient(url, key);
+      const auth = client();
       const { data: { session } } = await auth.auth.getSession();
-      if (!session?.access_token) throw new Error('Please sign in with your admin account.');
+      if (!session?.access_token) { setSignedIn(false); throw new Error('Please sign in with your admin account.'); }
+      setSignedIn(true);
       const response = await fetch('/api/admin/carmita', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Unable to load registrations.');
@@ -47,7 +82,20 @@ export default function CarmitaAdminPage() {
     <Link href="/play-for-carmita" style={{ color: '#e2b8ff' }}>← Back to Carmita</Link>
     <h1>Play for Carmita · Registrations</h1>
     <p>Private admin view. Only Stripe-confirmed payments count as paid.</p>
-    <button type="button" onClick={() => void refresh()} disabled={busy} style={{ padding: 12, marginRight: 12 }}>Refresh</button>
+    {!signedIn && <section style={{ maxWidth: 430, padding: 24, margin: '22px 0', border: '1px solid #394357', borderRadius: 14, background: '#141c29' }}>
+      <h2 style={{ marginTop: 0 }}>Admin sign in</h2>
+      <p>Use the email associated with your authorized All In Sports admin account.</p>
+      <form onSubmit={e => { e.preventDefault(); void (codeSent ? verifyCode() : sendCode()); }} style={{ display: 'grid', gap: 12 }}>
+        <label htmlFor="carmita-admin-email">Email address</label>
+        <input id="carmita-admin-email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} disabled={codeSent || authBusy} style={{ padding: 12, fontSize: 16, borderRadius: 8 }} />
+        {codeSent && <><label htmlFor="carmita-admin-code">Email verification code</label><input id="carmita-admin-code" type="text" inputMode="numeric" autoComplete="one-time-code" required value={code} onChange={e => setCode(e.target.value)} style={{ padding: 12, fontSize: 16, borderRadius: 8 }} /></>}
+        <button type="submit" disabled={authBusy} style={{ padding: 12, cursor: 'pointer' }}>{authBusy ? 'Please wait…' : codeSent ? 'Verify and open dashboard' : 'Send verification code'}</button>
+        {codeSent && <button type="button" onClick={() => { setCodeSent(false); setCode(''); setAuthNotice(''); }} style={{ padding: 10 }}>Use a different email</button>}
+        {authNotice && <p role="status">{authNotice}</p>}
+      </form>
+    </section>}
+    {signedIn && <button type="button" onClick={() => void signOut()} style={{ padding: 12, marginRight: 12 }}>Sign out</button>}
+    <button type="button" onClick={() => void refresh()} disabled={busy || !signedIn} style={{ padding: 12, marginRight: 12 }}>Refresh</button>
     <button type="button" onClick={downloadCsv} disabled={!report} style={{ padding: 12 }}>Export CSV</button>
     {message && <p role="status">{message}</p>}
     {report && <>
