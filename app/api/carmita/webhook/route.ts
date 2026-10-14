@@ -14,11 +14,13 @@ function validSignature(payload: string, header: string, secret: string) {
 }
 
 export async function POST(request: Request) {
-  if (process.env.VERCEL_ENV !== 'preview' || process.env.CARMITA_CHECKOUT_ENABLED !== 'true') return Response.json({ error: 'Disabled' }, { status: 503 });
+  if (!['preview', 'production'].includes(process.env.VERCEL_ENV || '') || process.env.CARMITA_CHECKOUT_ENABLED !== 'true') return Response.json({ error: 'Disabled' }, { status: 503 });
   const secret = process.env.CARMITA_STRIPE_WEBHOOK_SECRET;
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SECRET_KEY;
-  if (!secret?.startsWith('whsec_') || !url || !key || !process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')) return Response.json({ error: 'Not configured' }, { status: 503 });
+  const live = process.env.VERCEL_ENV === 'production';
+  const stripeKey = process.env.CARMITA_STRIPE_SECRET_KEY || (!live ? process.env.STRIPE_SECRET_KEY : undefined);
+  if (!secret?.startsWith('whsec_') || !url || !key || !stripeKey?.startsWith(live ? 'sk_live_' : 'sk_test_')) return Response.json({ error: 'Not configured' }, { status: 503 });
   const raw = await request.text();
   if (raw.length > 200000 || !validSignature(raw, request.headers.get('stripe-signature') || '', secret))
     return Response.json({ error: 'Invalid signature' }, { status: 400 });
@@ -37,7 +39,7 @@ export async function POST(request: Request) {
     .eq('id', session.metadata.registration_id).maybeSingle();
   if (error) return Response.json({ error: 'Database unavailable' }, { status: 503 });
   if (!reg || reg.stripe_checkout_session_id !== session.id || reg.amount_cents !== session.amount_total ||
-      reg.currency !== session.currency || event.livemode !== false)
+      reg.currency !== session.currency || event.livemode !== live)
     return Response.json({ error: 'Payment mismatch' }, { status: 400 });
   if (reg.payment_status === 'paid') return Response.json({ received: true });
   if (reg.payment_status !== 'pending') return Response.json({ error: 'Invalid payment state' }, { status: 409 });
