@@ -35,7 +35,7 @@ export default function CarmitaThankYou() {
           <p><strong>Registration:</strong> {result.registrationType === 'team' ? 'Full soccer team' : 'Individual'}</p>
           {result.teamName && <p><strong>Team:</strong> {result.teamName}</p>}
           <p><strong>Activities:</strong> {(result.activities || []).map(a => a === 'run_walk' ? 'Run / Walk' : 'Soccer').join(' + ')}</p>
-          <p><strong>Amount paid:</strong> ${((result.amountCents || 0) / 100).toFixed(2)} (Stripe test payment)</p>
+          <p><strong>Amount paid:</strong> ${((result.amountCents || 0) / 100).toFixed(2)}{process.env.NEXT_PUBLIC_VERCEL_ENV === 'production' ? '' : ' (Stripe test payment)'}</p>
         </div>
       </> : error ? <p role="alert">{error} Please check with the organizers before trying another payment.</p> :
         result?.status === 'not_confirmed' ? <p role="status">Your payment is not confirmed. Please contact the organizers before attempting another payment.</p> :
