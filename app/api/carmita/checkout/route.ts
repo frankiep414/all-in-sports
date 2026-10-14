@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   try {
     const params = new URLSearchParams({
       mode: 'payment',
-      success_url: `${siteUrl.replace(/\/$/, '')}/play-for-carmita?payment=processing`,
+      success_url: `${siteUrl.replace(/\/$/, '')}/play-for-carmita/thank-you?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl.replace(/\/$/, '')}/play-for-carmita?payment=cancelled`,
       customer_email: email,
       'line_items[0][price_data][currency]': 'usd',
