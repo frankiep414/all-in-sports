@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const dbUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const dbKey = process.env.SUPABASE_SECRET_KEY;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!stripeKey?.startsWith(live ? 'sk_live_' : 'sk_test_') || !dbUrl || !dbKey || !siteUrl || !/^https:\/\//.test(siteUrl) || (live && new URL(siteUrl).hostname !== 'allinsportsnj.com' && live && new URL(siteUrl).hostname !== 'www.allinsportsnj.com')) return response('Checkout is not configured.', 503);
+  if (!(live ? /^(sk_live_|rk_live_)/.test(stripeKey || '') : /^(sk_test_|rk_test_)/.test(stripeKey || '')) || !dbUrl || !dbKey || !siteUrl || !/^https:\/\//.test(siteUrl) || (live && new URL(siteUrl).hostname !== 'allinsportsnj.com' && live && new URL(siteUrl).hostname !== 'www.allinsportsnj.com')) return response('Checkout is not configured.', 503);
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return response('Invalid request.', 400); }
   const type = body.registrationType;
