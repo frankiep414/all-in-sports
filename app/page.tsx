@@ -508,9 +508,9 @@ setSignupComplete(true);
           </a>
 
           <div className="navLinks">
-            <a href="#play">Play</a>
-            <a href="#leagues">Leagues</a>
-            <a href="#tournaments">Tournaments</a>
+            <a href="/play">Play</a>
+            <a href="/compete">Leagues</a>
+            <a href="/compete">Tournaments</a>
             <a href="#community">Community</a>
           </div>
 
@@ -624,7 +624,7 @@ setSignupComplete(true);
 </div>
     <div className="launchpadGrid">
 
-      <a href="#play" className="launchCard">
+      <a href="/play" className="launchCard">
         <div className="launchIcon">
           <Play size={28} />
         </div>
@@ -638,7 +638,7 @@ setSignupComplete(true);
         <ArrowRight className="launchArrow" size={24} />
       </a>
 
-      <a href="#compete" className="launchCard">
+      <a href="/compete" className="launchCard">
         <div className="launchIcon">
           <Trophy size={28} />
         </div>
