@@ -51,8 +51,14 @@ export async function POST(request: Request) {
   if (updateError) { console.error('Carmita payment update failed', { code: updateError.code }); return Response.json({ error: 'Retry later' }, { status: 503 }); }
   }
   const emailKey = process.env.CARMITA_RESEND_API_KEY;
+  // Do not silently acknowledge a paid registration without attempting its confirmation email.
+  // Returning 503 allows Stripe to retry delivery after the missing configuration is restored.
+  if (!emailKey) {
+    console.error('Carmita confirmation email is not configured');
+    return Response.json({ error: 'Confirmation email not configured' }, { status: 503 });
+  }
   const from = 'All In Sports | Play for Carmita <events@allinsportsnj.com>';
-  if (emailKey) {
+  {
     const { data: details, error: detailsError } = await db.from('carmita_registrations')
       .select('contact_name,contact_email,registration_type,team_name,activities,amount_cents').eq('id', reg.id).single();
     if (detailsError || !details) return Response.json({ error: 'Email details unavailable' }, { status: 503 });
