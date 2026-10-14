@@ -17,12 +17,11 @@ export default function CarmitaRegistration() {
 
   useEffect(() => {
     function syncSelection() {
-      const selected = new URLSearchParams(window.location.hash.split('?')[1] || '').get('type');
+      const selected = new URLSearchParams(window.location.search).get('type');
       if (selected === 'team' || selected === 'individual') setKind(selected);
     }
     syncSelection();
-    window.addEventListener('hashchange', syncSelection);
-    return () => window.removeEventListener('hashchange', syncSelection);
+
   }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
