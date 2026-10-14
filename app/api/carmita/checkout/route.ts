@@ -60,9 +60,24 @@ export async function POST(req: NextRequest) {
     const session = await r.json() as { id?: string; url?: string; error?: { message?: string } };
     if (!r.ok || !session.id || !session.url || !session.url.startsWith('https://checkout.stripe.com/'))
       throw new Error('Stripe checkout session creation failed');
-    const { error: saveError } = await db.from('carmita_registrations')
-      .update({ stripe_checkout_session_id: session.id }).eq('id', id).eq('payment_status', 'pending');
-    if (saveError) { console.error('Carmita session link failed', { code: saveError.code }); return response('Unable to finish checkout setup.', 503); }
+    const { data: linkedRegistration, error: saveError } = await db.from('carmita_registrations')
+      .update({ stripe_checkout_session_id: session.id })
+      .eq('id', id).eq('payment_status', 'pending')
+      .select('id').maybeSingle();
+    if (saveError || !linkedRegistration) {
+      console.error('Carmita session link failed', { code: saveError?.code || 'NO_ROW_UPDATED' });
+      // Never return a checkout URL that is not linked to a registration.
+      // Expire the orphaned Stripe session as a best-effort cleanup.
+      try {
+        const expired = await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(session.id)}/expire`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${stripeKey}` },
+          cache: 'no-store'
+        });
+        if (!expired.ok) console.error('Carmita orphaned session expiration failed', { status: expired.status });
+      } catch { console.error('Carmita orphaned session expiration request failed'); }
+      return response('Unable to finish checkout setup.', 503);
+    }
     return NextResponse.json({ checkoutUrl: session.url });
   } catch (e) {
     console.error('Carmita checkout creation failed', e instanceof Error ? e.message : 'Unknown error');
