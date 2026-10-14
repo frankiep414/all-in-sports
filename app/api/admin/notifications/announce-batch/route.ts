@@ -34,6 +34,11 @@ export async function POST(request:Request){
   .select('id,title,venue,starts_at,status').eq('id',id).maybeSingle();
  if(gameError||!game||game.status!=='published'||new Date(game.starts_at)<=new Date())
   return Response.json({error:'Choose an upcoming published game.'},{status:409});
+ // Atomically acquire the per-game lease before reading or sending anything.
+ const {data:locked,error:lockError}=await db.rpc('claim_announcement_batch',{p_game_id:id,p_admin_id:user.id});
+ if(lockError)return Response.json({error:'Unable to acquire announcement batch lock.'},{status:503});
+ if(locked!==true)return Response.json({error:'This game batch is already running or complete. Refresh saved progress.'},{status:409});
+ try{
  // The server owns the cursor. Never trust a client-supplied continuation offset.
  const {data:checkpoint,error:checkpointError}=await db.from('announcement_batch_progress')
   .select('after_user_id,processed,sent,skipped,failed,complete').eq('game_id',id).maybeSingle();
@@ -49,11 +54,12 @@ export async function POST(request:Request){
  if(prefError)return Response.json({error:'Unable to read consent records.'},{status:503});
  const entries=preferences||[];
  if(!entries.length){
-  const progress={game_id:id,after_user_id:cursor,processed:checkpoint?.processed||0,
-   sent:checkpoint?.sent||0,skipped:checkpoint?.skipped||0,failed:checkpoint?.failed||0,
-   complete:true,updated_at:new Date().toISOString(),updated_by:user.id};
-  const {error}=await db.from('announcement_batch_progress').upsert(progress,{onConflict:'game_id'});
-  if(error)return Response.json({error:'Unable to save completion checkpoint.'},{status:503});
+  const {data:saved,error:saveError}=await db.rpc('finish_announcement_batch',{
+   p_game_id:id,p_admin_id:user.id,p_after_user_id:cursor,
+   p_processed:0,p_sent:0,p_skipped:0,p_failed:0,p_complete:true});
+  if(saveError||saved!==true)return Response.json({error:'Unable to save completion checkpoint.'},{status:503});
+  const {data:progress}=await db.from('announcement_batch_progress')
+   .select('after_user_id,processed,sent,skipped,failed,complete').eq('game_id',id).single();
   return Response.json({sent:0,skipped:0,failed:0,processed:0,next_cursor:null,complete:true,progress});
  }
  const eventKey='game_published:'+id;
@@ -131,13 +137,19 @@ export async function POST(request:Request){
  }
  const complete=entries.length<20;
  const nextCursor=entries[entries.length-1].user_id;
- const progress={game_id:id,after_user_id:nextCursor,
-  processed:(checkpoint?.processed||0)+entries.length,
-  sent:(checkpoint?.sent||0)+sent,skipped:(checkpoint?.skipped||0)+skipped,
-  failed:(checkpoint?.failed||0)+failed,complete,
-  updated_at:new Date().toISOString(),updated_by:user.id};
- const {error:saveError}=await db.from('announcement_batch_progress').upsert(progress,{onConflict:'game_id'});
- if(saveError)return Response.json({error:'Emails processed but checkpoint could not be saved. Do not retry until progress is reviewed.'},{status:503});
+ const {data:saved,error:saveError}=await db.rpc('finish_announcement_batch',{
+  p_game_id:id,p_admin_id:user.id,p_after_user_id:nextCursor,
+  p_processed:entries.length,p_sent:sent,p_skipped:skipped,p_failed:failed,p_complete:complete});
+ if(saveError||saved!==true)return Response.json({error:'Emails processed but checkpoint could not be saved. Do not retry until progress is reviewed.'},{status:503});
+ const {data:progress,error:readError}=await db.from('announcement_batch_progress')
+  .select('after_user_id,processed,sent,skipped,failed,complete').eq('game_id',id).single();
+ if(readError||!progress)return Response.json({error:'Checkpoint saved but progress could not be read. Refresh dashboard.'},{status:503});
  return Response.json({sent,skipped,failed,processed:entries.length,
   next_cursor:complete?null:nextCursor,complete,progress,mode:'manual_preview_batch'});
+ }finally{
+  // If an early validation error or exception occurs, release the lease.
+  // A completed batch has already cleared its lease atomically.
+  const {error:releaseError}=await db.rpc('release_announcement_batch',{p_game_id:id,p_admin_id:user.id});
+  if(releaseError)console.error('Unable to release announcement batch lock',releaseError.code);
+ }
 }
