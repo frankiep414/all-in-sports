@@ -1,3 +1,5 @@
+import CarmitaRegistration from './registration';
+
 import {
   ArrowLeft,
   ArrowRight,
@@ -94,12 +96,12 @@ export default function PlayForCarmitaPage() {
             </p>
 
             <div className="carmitaHeroActions">
-              <a href="/?auth=1&returnTo=%2Fplay-for-carmita%23register" className="primaryButton">
+              <a href="#register" className="primaryButton">
                 REGISTER TEAM
                 <ArrowRight size={17} />
               </a>
 
-              <a href="/?auth=1&returnTo=%2Fplay-for-carmita%23register" className="ghostButton">
+              <a href="#register" className="ghostButton">
                 REGISTER INDIVIDUALLY · $25
               </a>
             </div>
@@ -177,34 +179,7 @@ export default function PlayForCarmitaPage() {
           </p>
 
 
-          <div className="carmitaRegisterGrid">
-
-            <a href="/?auth=1&returnTo=%2Fplay-for-carmita%23register" className="carmitaRegisterCard">
-              <div className="carmitaRegisterNumber">01</div>
-
-              <div>
-                <span>TEAM REGISTRATION</span>
-                <h3>$250</h3>
-                <p>Register your full team for the tournament.</p>
-              </div>
-
-              <div className="carmitaRegisterLink">
-                REGISTER TEAM
-                <ArrowRight size={19} />
-              </div>
-            </a>
-
-
-            <a href="/?auth=1&returnTo=%2Fplay-for-carmita%23register" className="carmitaRegisterCard">
-              <div className="carmitaRegisterNumber">02</div>
-              <div>
-                <span>INDIVIDUAL REGISTRATION</span>
-                <h3>$25</h3>
-                <p>One registration covers coed 7v7 soccer, the 2-mile fun run / 1-mile walk, or both. Soccer ages 16+.</p>
-              </div>
-              <div className="carmitaRegisterLink">CHOOSE YOUR ACTIVITIES <ArrowRight size={19} /></div>
-            </a>
-          </div>
+          <CarmitaRegistration />
 
           <p style={{ marginTop: 24, lineHeight: 1.7, opacity: 0.85 }}>
             Saturday, October 31, 2026 · 9:00 AM–1:00 PM · Harrison High School, Harrison, NJ.
