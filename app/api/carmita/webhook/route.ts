@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   const key = process.env.SUPABASE_SECRET_KEY;
   const live = process.env.VERCEL_ENV === 'production';
   const stripeKey = process.env.CARMITA_STRIPE_SECRET_KEY || (!live ? process.env.STRIPE_SECRET_KEY : undefined);
-  if (!secret?.startsWith('whsec_') || !url || !key || !stripeKey?.startsWith(live ? 'sk_live_' : 'sk_test_')) return Response.json({ error: 'Not configured' }, { status: 503 });
+  if (!secret?.startsWith('whsec_') || !url || !key || !(live ? /^(sk_live_|rk_live_)/.test(stripeKey || '') : /^(sk_test_|rk_test_)/.test(stripeKey || ''))) return Response.json({ error: 'Not configured' }, { status: 503 });
   const raw = await request.text();
   if (raw.length > 200000 || !validSignature(raw, request.headers.get('stripe-signature') || '', secret))
     return Response.json({ error: 'Invalid signature' }, { status: 400 });
