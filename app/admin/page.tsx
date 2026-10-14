@@ -8,6 +8,7 @@ type PickupGame = {id:string;title:string;venue:string;starts_at:string;ends_at:
 type Status = 'loading' | 'authorized' | 'denied' | 'error';
 
 export default function AdminPage() {
+  // Carmita event reporting lives on a separate admin-only route.
   const [status, setStatus] = useState<Status>('loading');
   const [saving,setSaving] = useState(false);
   const [repeatWeekly,setRepeatWeekly]=useState(false);
@@ -425,7 +426,9 @@ export default function AdminPage() {
       }
     }
     void checkAccess();
-    return () => { active = false; };
+    return (
+    <>
+      <div style={{padding:'12px 20px',background:'#22152b',borderBottom:'1px solid #674477'}}><Link href="/admin/carmita" style={{color:'#e2b8ff',fontWeight:800}}>❤️ Play for Carmita — registrations & payments →</Link></div>) => { active = false; };
   }, []);
 
   return (
@@ -682,5 +685,6 @@ export default function AdminPage() {
         </>}
       </section>
     </main>
+    </>
   );
 }
