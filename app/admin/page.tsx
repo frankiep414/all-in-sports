@@ -426,13 +426,12 @@ export default function AdminPage() {
       }
     }
     void checkAccess();
-    return (
-    <>
-      <div style={{padding:'12px 20px',background:'#22152b',borderBottom:'1px solid #674477'}}><Link href="/admin/carmita" style={{color:'#e2b8ff',fontWeight:800}}>❤️ Play for Carmita — registrations & payments →</Link></div>) => { active = false; };
+    return () => { active = false; };
   }, []);
 
   return (
     <main style={{minHeight:'100vh',background:'#080b10',color:'#f6f8fb',padding:'clamp(24px,5vw,72px)'}}>
+      <div style={{padding:'12px 20px',background:'#22152b',borderBottom:'1px solid #674477',marginBottom:20}}><Link href="/admin/carmita" style={{color:'#e2b8ff',fontWeight:800}}>❤️ Play for Carmita — registrations & payments →</Link></div>
       <nav style={{display:'flex',justifyContent:'space-between',gap:16,marginBottom:64,flexWrap:'wrap'}}>
         <Link href="/" style={{color:'#95d9ff',fontWeight:800,textDecoration:'none'}}>← ALL IN SPORTS</Link>
         <Link href="/play" style={{color:'#fff',textDecoration:'none'}}>VIEW PLAY PAGE →</Link>
@@ -685,6 +684,5 @@ export default function AdminPage() {
         </>}
       </section>
     </main>
-    </>
   );
 }
