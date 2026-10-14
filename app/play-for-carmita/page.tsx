@@ -96,12 +96,12 @@ export default function PlayForCarmitaPage() {
             </p>
 
             <div className="carmitaHeroActions">
-              <a href="#register" className="primaryButton">
+              <a href="?type=team#register" className="primaryButton">
                 REGISTER TEAM
                 <ArrowRight size={17} />
               </a>
 
-              <a href="#register" className="ghostButton">
+              <a href="?type=individual#register" className="ghostButton">
                 REGISTER INDIVIDUALLY · $25
               </a>
             </div>
