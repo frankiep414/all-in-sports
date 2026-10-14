@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   const { data: admin, error: adminError } = await db.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle();
   if (adminError || !admin) return Response.json({ error: 'Admin only.' }, { status: 403 });
   const { data, error, count } = await db.from('carmita_registrations')
-    .select('id,registration_type,contact_name,contact_email,contact_phone,team_name,activities,amount_cents,payment_status,created_at,paid_at', { count: 'exact' })
+    .select('id,registration_type,contact_name,contact_email,contact_phone,team_name,activities,amount_cents,payment_status,created_at,paid_at,confirmation_email_status,confirmation_email_sent_at,confirmation_email_id', { count: 'exact' })
     .order('created_at', { ascending: false }).limit(1000);
   if (error) return Response.json({ error: 'Unable to load registrations.' }, { status: 503 });
   const rows = data || [];
