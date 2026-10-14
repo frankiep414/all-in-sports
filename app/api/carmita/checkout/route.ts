@@ -10,12 +10,13 @@ function clean(v: unknown, max: number) { return typeof v === 'string' ? v.trim(
 
 export async function POST(req: NextRequest) {
   // Checkout is intentionally disabled until Stripe live-mode configuration and webhook QA.
-  if (process.env.VERCEL_ENV !== 'preview' || process.env.CARMITA_CHECKOUT_ENABLED !== 'true') return response('Registration payments are not enabled yet.', 503);
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  if (!['preview', 'production'].includes(process.env.VERCEL_ENV || '') || process.env.CARMITA_CHECKOUT_ENABLED !== 'true') return response('Registration payments are not enabled yet.', 503);
+  const live = process.env.VERCEL_ENV === 'production';
+  const stripeKey = process.env.CARMITA_STRIPE_SECRET_KEY || (!live ? process.env.STRIPE_SECRET_KEY : undefined);
   const dbUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const dbKey = process.env.SUPABASE_SECRET_KEY;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!stripeKey?.startsWith('sk_test_') || !dbUrl || !dbKey || !siteUrl || !/^https:\/\//.test(siteUrl)) return response('Checkout is not configured.', 503);
+  if (!stripeKey?.startsWith(live ? 'sk_live_' : 'sk_test_') || !dbUrl || !dbKey || !siteUrl || !/^https:\/\//.test(siteUrl) || (live && new URL(siteUrl).hostname !== 'allinsportsnj.com' && live && new URL(siteUrl).hostname !== 'www.allinsportsnj.com')) return response('Checkout is not configured.', 503);
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return response('Invalid request.', 400); }
   const type = body.registrationType;
