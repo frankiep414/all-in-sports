@@ -74,7 +74,7 @@ export async function POST(request:Request){
   startsAt:new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'})});
  // Only trusted configured site origin may appear in email links.
  const site=(process.env.NEXT_PUBLIC_SITE_URL||'').replace(/\/$/,'');
- if(!site||!/^https:\/\//.test(site))return Response.json({error:'Set HTTPS NEXT_PUBLIC_SITE_URL for email links.'},{status:503});
+ if(!site||!/^https:\/\//.test(site)||(live&&site!=='https://allinsportsnj.com'))return Response.json({error:'Set HTTPS NEXT_PUBLIC_SITE_URL for email links.'},{status:503});
  const link=site+'/play?game='+encodeURIComponent(id);
  const manage=site+'/my-all-in';
  if(!process.env.ANNOUNCEMENT_UNSUBSCRIBE_SECRET||process.env.ANNOUNCEMENT_UNSUBSCRIBE_SECRET.length<32)
