@@ -535,9 +535,9 @@ setSignupComplete(true);
 
           <div className="navLinks">
             <a href="/play">Play</a>
-            <a href="/compete">Leagues</a>
-            <a href="/compete">Tournaments</a>
-            <a href="#community">Community</a>
+            <a href="/compete">Compete</a>
+            <a href="/events">Events</a>
+            <a href="#history">History</a>
           </div>
 
      {currentPlayer ? (
