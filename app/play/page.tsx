@@ -185,10 +185,10 @@ export default function PlayPage() {
             {!signedIn && <p style={{color:'#b8c1d0',fontSize:14}}><Link href="/?auth=1&returnTo=%2Fplay" style={{color:'#95d9ff'}}>Sign in or create your Player ID</Link> before registering.</p>}
           </article>)}
           {registrationMessage && <p role="status" style={{color:'#95d9ff',fontWeight:700}}>{registrationMessage}</p>}
-          <p style={{color:'#95d9ff',fontWeight:700}}>Registration requests are open in this preview. Payment collection and automatic waitlist notifications are not enabled. Do not send money.</p>
+          <p style={{color:'#95d9ff',fontWeight:700}}>Request a spot to register. Your spot is provisional until payment is verified. Follow the payment instructions shown for your registration; do not send money before you receive them.</p>
         </div>
         {!focusedGameId&&<><h2 style={{marginTop:52}}>How payment will work</h2>
-        <p style={{color:'#b8c1d0'}}>Choose a method to preview the payment instructions. This is informational only — no payment or reservation is being created.</p>
+        <p style={{color:'#b8c1d0'}}>Learn about payment methods below. Actual payment instructions are provided after your registration request.</p>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:16,marginTop:20}}>
           <button type="button" onClick={()=>setMethod('zelle')} aria-pressed={method==='zelle'} style={{textAlign:'left',cursor:'pointer',border:method==='zelle'?'2px solid #95d9ff':'1px solid #303945',background:'#111820',color:'#fff',borderRadius:16,padding:24}}>
             <strong style={{fontSize:21}}>Zelle</strong><p style={{color:'#9ee6bb'}}>No added checkout fee</p><span style={{color:'#b8c1d0'}}>Payment confirmed manually by our team.</span>
