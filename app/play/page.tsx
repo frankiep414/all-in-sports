@@ -130,7 +130,7 @@ export default function PlayPage() {
         <p style={{fontSize:19,color:'#b8c1d0',lineHeight:1.6,maxWidth:730}}>Browse upcoming All In Sports sessions and request your spot. Payment options appear once your registration is eligible.</p>
         <div style={{border:'1px solid #303945',borderRadius:18,padding:28,background:'#111820',marginTop:34}}>
           <h2 style={{marginTop:0}}>{focusedGameId?'Your selected game':'Upcoming games'}</h2>
-        {focusedGameId&&<Link href="/play" style={{display:'inline-block',color:'#95d9ff',marginBottom:16,fontWeight:700}}>← BROWSE ALL GAMES</Link>}
+        {focusedGameId&&<button type="button" onClick={()=>{setFocusedGameId(null);window.history.replaceState(null,'','/play');}} style={{display:'inline-block',background:'none',border:0,padding:0,cursor:'pointer',color:'#95d9ff',marginBottom:16,fontWeight:700,fontSize:'inherit'}}>← BROWSE ALL GAMES</button>}
         {!gamesLoading&&!gamesError&&focusedGameId&&!games.some(game=>game.id===focusedGameId)&&<p role="status">This game is not currently available. Browse all games to find another session.</p>}
           {gamesLoading && <p style={{color:'#b8c1d0'}}>Loading upcoming games…</p>}
           {gamesError && <p role="alert" style={{color:'#ffb7b7'}}>Unable to load games. Please try again later.</p>}
