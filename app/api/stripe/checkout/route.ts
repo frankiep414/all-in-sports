@@ -7,8 +7,8 @@ export async function POST(request:Request){
  try{
   if(!((process.env.VERCEL_ENV==='preview'&&process.env.PICKUP_STRIPE_TEST_ENABLED==='true')||(process.env.VERCEL_ENV==='production'&&process.env.PICKUP_STRIPE_LIVE_ENABLED==='true')))
    return Response.json({error:'Stripe test checkout is not enabled.'},{status:503});
-  const stripeKey=process.env.STRIPE_SECRET_KEY;
   const live=process.env.VERCEL_ENV==='production';
+  const stripeKey=live?process.env.PICKUP_STRIPE_LIVE_SECRET_KEY:process.env.STRIPE_SECRET_KEY;
   if(!stripeKey?.startsWith(live?'sk_live_':'sk_test_'))
    return Response.json({error:'Stripe test credentials are not configured.'},{status:503});
   const token=request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
