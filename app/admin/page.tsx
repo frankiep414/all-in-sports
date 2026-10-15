@@ -445,19 +445,21 @@ export default function AdminPage() {
           <h1 style={{fontSize:'clamp(38px,7vw,72px)',margin:'12px 0'}}>Command Center</h1>
           <p style={{color:'#b8c1d0',fontSize:18}}>Manage your games, registrations, and payments in one place.</p>
           <Link href="/admin/members" style={{display:'inline-block',marginTop:12,padding:'13px 20px',borderRadius:10,background:'#95d9ff',color:'#07111d',fontWeight:800,textDecoration:'none'}}>VIEW WEBSITE MEMBERS & OPT-INS →</Link>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',gap:16,marginTop:40}}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',gap:16,marginTop:30}}>
             {[
-              ['Games','Create sessions, set pricing and player limits.','DRAFT CREATION READY'],
-              ['Registrations','View player registrations and pending payment status.','ROSTER VIEW READY'],
-              ['Zelle payments','Verify bank receipts before confirming spots.','IN DEVELOPMENT'],
-              ['Stripe payments','Track confirmed checkout payments and refunds.','NOT CONNECTED'],
-            ].map(([title,description,tag])=><div key={title} style={{background:'#111820',border:'1px solid #303945',borderRadius:16,padding:24}}>
-              <strong style={{fontSize:21}}>{title}</strong><p style={{color:'#b8c1d0',lineHeight:1.6}}>{description}</p><small style={{color:'#95d9ff',fontWeight:800,letterSpacing:1}}>{tag}</small>
-            </div>)}
+              {title:'Website Members',description:'See every website signup and filter email or text announcement opt-ins.',href:'/admin/members',tag:'OPEN MEMBERS →'},
+              {title:'Create Games',description:'Create and manage pickup sessions, prices and capacity.',href:'#create-game',tag:'MANAGE GAMES ↓'},
+              {title:'Registrations',description:'Open a saved game below to see its player roster and payment status.',href:'#saved-games',tag:'VIEW ROSTERS ↓'},
+              {title:'Payment Records',description:'Open saved game rosters for player payment status and references.',href:'#saved-games',tag:'VIEW PAYMENT STATUS ↓'},
+            ].map(card=><Link key={card.title} href={card.href} style={{display:'block',background:'#111820',border:'1px solid #303945',borderRadius:16,padding:24,textDecoration:'none',color:'#f6f8fb'}}>
+              <strong style={{fontSize:21}}>{card.title}</strong>
+              <p style={{color:'#b8c1d0',lineHeight:1.6}}>{card.description}</p>
+              <small style={{color:'#95d9ff',fontWeight:800,letterSpacing:1}}>{card.tag}</small>
+            </Link>)}
           </div>
           <section style={{marginTop:30,border:'1px solid #303945',borderRadius:16,padding:22,background:'#111820'}}>
             <h2 style={{marginTop:0}}>Notification Center</h2>
-            <p style={{color:'#b8c1d0'}}>Email and SMS delivery are not connected or enabled. View recorded events only.</p>
+            <p style={{color:'#b8c1d0'}}>Review notification history here. Email announcements and payment confirmations have separate controls; SMS sending is not enabled.</p>
             <button type="button" onClick={()=>void loadNotifications()} style={{padding:'10px 16px',borderRadius:8,background:'#26384a',color:'#fff',border:'1px solid #95d9ff'}}>REFRESH NOTIFICATION HISTORY</button>
             {notificationStatus && <p role="status">{notificationStatus}</p>}
             {notificationRows.map(row=><p key={row.id} style={{borderTop:'1px solid #303945',paddingTop:10}}>{row.event_type.replaceAll('_',' ')} · {new Date(row.created_at).toLocaleString()}</p>)}
@@ -473,8 +475,8 @@ export default function AdminPage() {
             </div>}
           </section>
           <section style={{marginTop:40,background:'#111820',border:'1px solid #303945',borderRadius:18,padding:26}}>
-            <h2 style={{marginTop:0}}>Create a pickup game</h2>
-            <p style={{color:'#b8c1d0'}}>Save a draft first. Publishing and player checkout will be added after testing.</p>
+            <h2 id="create-game" style={{marginTop:0}}>Create a pickup game</h2>
+            <p style={{color:'#b8c1d0'}}>Create a game as a draft, then manage its status and player roster below.</p>
             <form onSubmit={createDraft} style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16}}>
               {([
                 ['title','Game title','text'],['venue','Field / location','text'],
@@ -503,7 +505,7 @@ export default function AdminPage() {
             </form>
           </section>
           <section style={{marginTop:36}}>
-            <h2>Saved games</h2>
+            <h2 id="saved-games">Saved games</h2>
             {gamesError && <p role="alert">{gamesError}</p>}
             {!gamesError && games.length===0 && <p style={{color:'#b8c1d0'}}>No saved games yet. Create your first draft above.</p>}
             {editMessage && <p role="status" style={{color:'#95d9ff'}}>{editMessage}</p>}
