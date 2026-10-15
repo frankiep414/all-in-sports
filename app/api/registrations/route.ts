@@ -84,3 +84,28 @@ export async function GET(request:Request){
   return Response.json({registrations:data},{headers:{'Cache-Control':'no-store'}});
  }catch{return Response.json({error:'Registrations unavailable.'},{status:503});}
 }
+
+export async function DELETE(request:Request){
+ try{
+  const access=await session(request);
+  if(!access)return Response.json({error:'Sign in required.'},{status:401});
+  const body=await request.json().catch(()=>null);
+  if(!body||typeof body.registration_id!=='string'||!uuid.test(body.registration_id))
+   return Response.json({error:'Invalid registration.'},{status:400});
+  const {data:registration,error:lookupError}=await access.db.from('pickup_registrations')
+   .select('id,status,payment_status').eq('id',body.registration_id).eq('user_id',access.user.id).maybeSingle();
+  if(lookupError)return Response.json({error:'Unable to verify registration.'},{status:503});
+  if(!registration)return Response.json({error:'Registration not found.'},{status:404});
+  if(!['pending_payment','offered','confirmed','waitlisted'].includes(registration.status))
+   return Response.json({error:'This registration is no longer active.'},{status:409});
+  // Do not modify payment_status, references, or Stripe records. Withdrawals are not refunds.
+  // Conditional status update prevents a second withdrawal from changing an already cancelled record.
+  const {data:updated,error:updateError}=await access.db.from('pickup_registrations')
+   .update({status:'cancelled'}).eq('id',registration.id).eq('user_id',access.user.id)
+   .eq('status',registration.status).select('id').maybeSingle();
+  if(updateError)return Response.json({error:'Unable to withdraw. Please contact All In Sports.'},{status:503});
+  if(!updated)return Response.json({error:'Registration changed. Refresh and try again.'},{status:409});
+  return Response.json({withdrawn:true,refund_issued:false,contact_management_for_reimbursement:registration.payment_status==='paid'},
+   {headers:{'Cache-Control':'no-store'}});
+ }catch{return Response.json({error:'Unable to withdraw. Please try again.'},{status:503});}
+}
