@@ -25,7 +25,29 @@ export async function GET(request: Request) {
     .select('id,title,venue,starts_at,ends_at,price_cents,capacity,status,created_at,series_id,occurrence_index,is_test')
     .order('starts_at',{ascending:true}).limit(100);
   if(error) return Response.json({error:'Unable to load games.'},{status:500});
-  return Response.json({games:data});
+  const counts=new Map<string,{registered:number;paid:number}>();
+  const ids=(data||[]).map(g=>g.id);
+  if(ids.length){
+   // Paginate all registrations so the quick view cannot silently undercount.
+   for(let offset=0;offset<100000;offset+=500){
+    const {data:registrations,error:registrationError}=await access.admin.from('pickup_registrations')
+     .select('game_id,status,payment_status').in('game_id',ids)
+     .range(offset,offset+499);
+    if(registrationError)return Response.json({error:'Unable to load registration counts.'},{status:503});
+    for(const row of registrations||[]){
+     const count=counts.get(row.game_id)||{registered:0,paid:0};
+     if(['confirmed','pending_payment','offered'].includes(row.status))count.registered++;
+     if(row.payment_status==='paid'&&row.status!=='cancelled')count.paid++;
+     counts.set(row.game_id,count);
+    }
+    if((registrations||[]).length<500)break;
+    if(offset===99500)return Response.json({error:'Registration count limit exceeded.'},{status:503});
+   }
+  }
+  return Response.json({games:(data||[]).map(game=>({...game,
+   registered_count:counts.get(game.id)?.registered||0,
+   paid_count:counts.get(game.id)?.paid||0
+  }))},{headers:{'Cache-Control':'private, no-store'}});
  }catch {return Response.json({error:'Unable to load games.'},{status:500});}
 }
 

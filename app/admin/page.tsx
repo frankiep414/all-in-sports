@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-type PickupGame = {id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;status:string;is_test?:boolean;series_id?:string|null;occurrence_index?:number|null};
+type PickupGame = {id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;registered_count:number;paid_count:number;status:string;is_test?:boolean;series_id?:string|null;occurrence_index?:number|null};
 type Status = 'loading' | 'authorized' | 'denied' | 'error';
 
 export default function AdminPage() {
@@ -514,7 +514,7 @@ export default function AdminPage() {
                 </div>
                 <p style={{color:'#b8c1d0'}}>{item.venue} · {new Date(item.starts_at).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'})}</p>
                 {item.series_id && <p style={{color:'#95d9ff',marginBottom:8}}>Weekly series · Game {item.occurrence_index}</p>}
-                <p style={{marginBottom:0}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
+                <p style={{marginBottom:0}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players · <strong style={{color:'#95d9ff'}}>Registered: {item.registered_count}/{item.capacity}</strong> · <strong style={{color:'#b8f3cf'}}>Paid: {item.paid_count}</strong></p>
                 {item.status==='published' && <button type="button" disabled={audienceBusy}
                   onClick={()=>void checkGameAudience(item.id)}
                   style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#273b29',color:'#c7f3d0',border:'1px solid #527b59',fontWeight:800}}>
