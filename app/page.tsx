@@ -564,6 +564,16 @@ setSignupComplete(true);
         </div>
       </nav>
 
+      <aside className="homeFeaturedStrip" aria-label="Featured upcoming activities">
+        <div className="homeFeaturedStripInner">
+          <strong className="homeFeaturedStripLabel"><Zap size={16}/> WHAT'S NEXT</strong>
+          {featuredGames.slice(0,1).map(game=><a href={`/play?game=${encodeURIComponent(game.id)}`} key={game.id}><Play size={16}/><span>Next Pickup: {game.title}</span><ArrowRight size={15}/></a>)}
+          <a href="/compete"><Trophy size={16}/><span>Men's League · Nov 3</span><ArrowRight size={15}/></a>
+          <a href="/compete"><Trophy size={16}/><span>Coed League · Nov 4</span><ArrowRight size={15}/></a>
+          {charityUpcoming && <a href="/play-for-carmita"><CalendarDays size={16}/><span>Play for Carmita · Oct 31</span><ArrowRight size={15}/></a>}
+        </div>
+      </aside>
+
       <section className="homeLaunchpad">
   <div className="launchpadInner">
 
