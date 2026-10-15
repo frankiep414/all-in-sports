@@ -44,7 +44,7 @@ export default function PaymentConfirmationPage(){
    {state==='confirmed'?<>
     <div style={{fontSize:56,color:'#9ee6bb'}}>✓</div>
     <h1 style={{fontSize:'clamp(30px,5vw,46px)'}}>Payment confirmed!</h1>
-    <p style={{color:'#b8c1d0',lineHeight:1.6}}>Your test payment was verified and your game reservation is confirmed.</p>
+    <p style={{color:'#b8c1d0',lineHeight:1.6}}>Your payment was verified and your game reservation is confirmed.</p>
     {detail&&<p>Reference: <strong>{detail}</strong></p>}
    </>:state==='checking'?<>
     <h1>Verifying your payment…</h1>
