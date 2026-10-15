@@ -4,6 +4,7 @@ export const dynamic='force-dynamic';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export async function POST(request:Request){
  try{
+  if(process.env.VERCEL_ENV!=='preview')return Response.json({error:'Email test sending is Preview only.'},{status:403});
   const token=request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
   if(!token)return Response.json({error:'Sign in required.'},{status:401});
   const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL;
