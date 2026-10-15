@@ -10,6 +10,7 @@ export default function MembersPage(){
  const [error,setError]=useState('');
  const [loading,setLoading]=useState(true);
  const [filter,setFilter]=useState('');
+ const [segment,setSegment]=useState<'all'|'verified'|'email'|'sms'>('all');
  useEffect(()=>{let active=true;(async()=>{
   try{
    const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -24,7 +25,8 @@ export default function MembersPage(){
   }catch(e){if(active)setError(e instanceof Error?e.message:'Unable to load members.');}
   finally{if(active)setLoading(false);}
  })();return()=>{active=false;};},[]);
- const filtered=members.filter(m=>m.email.toLowerCase().includes(filter.toLowerCase()));
+ const filtered=members.filter(m=>m.email.toLowerCase().includes(filter.toLowerCase())&&
+  (segment==='all'||(segment==='verified'&&m.email_confirmed)||(segment==='email'&&m.email_opt_in)||(segment==='sms'&&m.sms_opt_in)));
  return <main style={{background:'#090e15',color:'#f5f8fc',minHeight:'100vh',padding:'clamp(20px,5vw,64px)'}}>
   <div style={{maxWidth:1100,margin:'auto'}}>
    <Link href="/admin" style={{color:'#9dd9ff'}}>← Admin Dashboard</Link>
@@ -34,10 +36,13 @@ export default function MembersPage(){
    {error&&<p role="alert" style={{color:'#ffb8b8'}}>{error}</p>}
    {summary&&<>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))',gap:12,margin:'24px 0'}}>
-     {([['Website signups',summary.total],['Verified emails',summary.email_confirmed],['Email opt-ins',summary.email_opted_in],['Text opt-ins',summary.sms_opted_in]] as const).map(([label,value])=>
-      <div key={label} style={{background:'#17212e',border:'1px solid #34475d',borderRadius:12,padding:20}}>
+     {([['all','Website signups',summary.total],['verified','Verified emails',summary.email_confirmed],['email','Email opt-ins',summary.email_opted_in],['sms','Text opt-ins',summary.sms_opted_in]] as const).map(([key,label,value])=>
+      <button type="button" key={key} onClick={()=>setSegment(key)} aria-pressed={segment===key}
+       style={{background:segment===key?'#223b50':'#17212e',border:segment===key?'2px solid #95d9ff':'1px solid #34475d',
+        borderRadius:12,padding:20,textAlign:'left',color:'#f5f8fc',cursor:'pointer'}}>
        <div style={{fontSize:32,fontWeight:800}}>{value}</div><div style={{color:'#b6c3d3'}}>{label}</div>
-      </div>)}
+       <div style={{color:'#95d9ff',fontSize:12,marginTop:8}}>{segment===key?'Showing below':'Click to view members'}</div>
+      </button>)}
     </div>
     <p style={{color:'#b6c3d3'}}>Text opt-in is a consent record only. SMS delivery is not active. Transactional payment emails are separate from marketing consent.</p>
     <label htmlFor="member-filter">Search member email</label>
@@ -54,7 +59,7 @@ export default function MembersPage(){
       </tr>)}</tbody>
      </table>
     </div>
-    <p style={{color:'#b6c3d3'}}>Showing {filtered.length} of {members.length} website accounts.</p>
+    <p style={{color:'#b6c3d3'}}>Showing {filtered.length} of {members.length} website accounts. {segment!=='all'?'Click Website signups to clear the opt-in filter.':''}</p>
    </>}
   </div>
  </main>;
