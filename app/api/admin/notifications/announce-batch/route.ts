@@ -5,13 +5,14 @@ export const dynamic='force-dynamic';
 // Preview-only, explicitly enabled, admin-confirmed bounded email batches.
 // No SMS and no automatic publishing hook. Each attempt is durably claimed first.
 export async function POST(request:Request){
- if(process.env.VERCEL_ENV!=='preview'||process.env.PICKUP_ANNOUNCEMENT_BATCH_ENABLED!=='true')
+ if(!((process.env.VERCEL_ENV==='preview'&&process.env.PICKUP_ANNOUNCEMENT_BATCH_ENABLED==='true')||(process.env.VERCEL_ENV==='production'&&process.env.PICKUP_ANNOUNCEMENT_LIVE_ENABLED==='true')))
   return Response.json({error:'Bulk announcements disabled.'},{status:403});
  // Fail closed: every Preview recipient must be on an explicit, server-side allowlist.
  // Do not fall back to all opted-in users when the list is empty or malformed.
+ const live=process.env.VERCEL_ENV==='production';
  const rawAllowlist=process.env.PICKUP_ANNOUNCEMENT_BATCH_ALLOWLIST||'';
  const allowedEmails=rawAllowlist.split(',').map(value=>value.trim().toLowerCase()).filter(Boolean);
- if(!allowedEmails.length||allowedEmails.length>20||allowedEmails.some(email=>!/^\S+@\S+\.\S+$/.test(email)))
+ if((!live&&!allowedEmails.length)||allowedEmails.length>20||allowedEmails.some(email=>!/^\S+@\S+\.\S+$/.test(email)))
   return Response.json({error:'Configure 1–20 valid Preview allowlist emails before enabling batches.'},{status:503});
  const allowlist=new Set(allowedEmails);
  const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL;
