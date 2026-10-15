@@ -739,7 +739,7 @@ setSignupComplete(true);
           <div>
             <p className="eyebrow">DON'T MISS OUT</p>
             <h2 id="featured-heading">UPCOMING <span>&amp; FEATURED</span></h2>
-            <p>Next games, special events, and ways to go All In.</p>
+            <p>Pickup games, upcoming leagues, and special events — all in one place.</p>
           </div>
           <a href="/play" className="featuredAllGames">SEE ALL GAMES <ArrowRight size={18}/></a>
         </div>
@@ -753,6 +753,22 @@ setSignupComplete(true);
                 <p><CalendarDays size={17}/>{new Date(game.starts_at).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric',timeZone:'America/New_York'})} · {new Date(game.starts_at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/New_York'})}</p>
                 <p><MapPin size={17}/>{game.venue}</p>
                 <span className="featuredAction">VIEW GAME &amp; REGISTER <ArrowRight size={18}/></span>
+              </div>
+            </a>
+          ))}
+          {[
+            {title:"Men's Tuesday League",start:"Tuesday, November 3",day:"Tuesdays"},
+            {title:"Coed Wednesday League",start:"Wednesday, November 4",day:"Wednesdays"}
+          ].map(league=>(
+            <a className="featuredCard featuredLeague" href="/compete" key={league.title}>
+              <div className="featuredCardVisual"><Trophy size={38}/><span>REGISTRATION OPENING SOON</span></div>
+              <div className="featuredCardBody">
+                <span className="featuredCategory">COMPETE · UPCOMING LEAGUE</span>
+                <h3>{league.title}</h3>
+                <p><CalendarDays size={17}/>{league.start} · 9:30–11 PM</p>
+                <p><MapPin size={17}/>Sofive Carlstadt</p>
+                <p className="featuredLeagueNote">Planned league · {league.day} · Details subject to confirmation</p>
+                <span className="featuredAction">SEE LEAGUE DETAILS <ArrowRight size={18}/></span>
               </div>
             </a>
           ))}
