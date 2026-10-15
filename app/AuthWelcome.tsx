@@ -22,6 +22,7 @@ export default function AuthWelcome({
   const [otpSent, setOtpSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState('');
+  const [oauthError, setOauthError] = useState('');
 
   async function sendEmailCode() {
     if (!email.trim()) {
@@ -377,19 +378,24 @@ export default function AuthWelcome({
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: window.location.origin,
+      redirectTo: window.location.origin + window.location.search,
     },
   });
 
   if (error) {
     console.error('Google sign-in error:', error);
-    alert('Unable to sign in with Google. Please try again.');
+    setOauthError('Google sign-in could not be completed here. Open allinsportsnj.com in Safari or Chrome, then choose Log In with the same Google account.');
   }
 }}
         >
           <span style={{ fontWeight: 900, fontSize: '21px' }}>G</span>
           Continue with Google
         </button>
+
+        {oauthError && <p role="alert" style={{color:'#ffb7b7',lineHeight:1.5}}>{oauthError}</p>}
+        <p style={{color:'#aab1bf',fontSize:14,lineHeight:1.5,marginTop:12}}>
+          Opening this from Instagram or another in-app browser? For the most reliable sign-in, open allinsportsnj.com in Safari or Chrome. If you already started signing up, use the same email or Google account to finish claiming your Player ID.
+        </p>
 
         {/* DIVIDER */}
         <div

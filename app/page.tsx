@@ -213,6 +213,7 @@ export default function Home() {
       } else if (response.status === 404) {
         localStorage.removeItem('allInPlayerId');
         setCurrentPlayer(null);
+        setSignupComplete(false);
         setShowPlayerSignup(true);
         setShowAuthWelcome(false);
       } else {
@@ -319,11 +320,10 @@ return (
       body: JSON.stringify(data),
     });
 
-    if (!response.ok) {
-      throw new Error('Signup failed');
-    }
-
     const result = await response.json();
+    if (!response.ok) {
+      throw new Error(typeof result.error === 'string' ? result.error : 'Unable to create Player ID. Please try again.');
+    }
 
 localStorage.setItem('allInPlayerId', String(result.playerId));
 
@@ -337,7 +337,7 @@ const pickupReturn = getPickupReturnPath();
 if (pickupReturn) window.location.replace(pickupReturn);
   } catch (error) {
     console.error(error);
-    alert('Something went wrong. Please try again.');
+    alert(error instanceof Error ? error.message : 'Unable to finish creating your Player ID. Please try again.');
   }
 }}
           >
