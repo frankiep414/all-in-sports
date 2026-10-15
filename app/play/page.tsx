@@ -29,11 +29,14 @@ export default function PlayPage() {
     const {data:{session}}=await client.auth.getSession();
     return session?.access_token||null;
   }
+  function openSignIn() {
+    window.location.assign('/?auth=1&returnTo='+encodeURIComponent(window.location.pathname+window.location.search));
+  }
   async function register(gameId:string){
     setRegistering(gameId);setRegistrationMessage('');
     try{
       const token=await getToken();
-      if(!token){window.location.assign('/?auth=1&returnTo='+encodeURIComponent(window.location.pathname+window.location.search));return;}
+      if(!token){openSignIn();return;}
       const response=await fetch('/api/registrations',{method:'POST',
         headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
         body:JSON.stringify({game_id:gameId})});
@@ -51,7 +54,7 @@ export default function PlayPage() {
     setStripeLoading(gameId);setRegistrationMessage('');setCheckoutAlert(null);
     try{
       const token=await getToken();
-      if(!token)throw new Error('Sign in required.');
+      if(!token){openSignIn();return;}
       const response=await fetch('/api/stripe/checkout',{method:'POST',headers:{
         Authorization:`Bearer ${token}`,'Content-Type':'application/json'
       },body:JSON.stringify({registration_id:registration.id})});
@@ -114,7 +117,7 @@ export default function PlayPage() {
     <main style={{minHeight:'100vh',background:'#080b10',color:'#f6f8fb',padding:'clamp(24px,5vw,72px)'}}>
       <nav style={{display:'flex',justifyContent:'space-between',gap:16,marginBottom:65,flexWrap:'wrap'}}>
         <Link href="/" style={{color:'#95d9ff',fontWeight:800,textDecoration:'none',letterSpacing:2}}>← ALL IN SPORTS</Link>
-        <Link href="/my-all-in" style={{color:'#fff',textDecoration:'none'}}>MY ALL IN →</Link>
+        <Link href={signedIn?'/my-all-in':'/?auth=1&returnTo=%2Fmy-all-in'} style={{color:'#fff',textDecoration:'none'}}>MY ALL IN →</Link>
       </nav>
       {checkoutAlert && <div role="presentation" onClick={()=>setCheckoutAlert(null)} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,0.76)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
         <div role="alertdialog" aria-modal="true" aria-labelledby="checkout-alert-title" aria-describedby="checkout-alert-description" onClick={event=>event.stopPropagation()} style={{width:'100%',maxWidth:480,background:'#151d27',border:'1px solid #95d9ff',borderRadius:18,padding:28,boxShadow:'0 24px 70px rgba(0,0,0,0.5)'}}>

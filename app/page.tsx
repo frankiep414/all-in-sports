@@ -170,12 +170,21 @@ export default function Home() {
   const [authChecking, setAuthChecking] = useState(true);
   const [playerLoadError, setPlayerLoadError] = useState('');
 
+  function getPickupReturnPath() {
+    const params = new URLSearchParams(window.location.search);
+    const destination = params.get('returnTo') || '';
+    // Only allow known, internal sign-in destinations (never external redirects).
+    if (destination === '/my-all-in' || destination === '/play' || destination.startsWith('/play?')) return destination;
+    return null;
+  }
+
   async function loadVerifiedPlayer() {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !session?.user?.email) {
       localStorage.removeItem('allInPlayerId');
       setCurrentPlayer(null);
       setIsAdmin(false);
+      if (new URLSearchParams(window.location.search).get('auth') === '1') setShowAuthWelcome(true);
       setAuthChecking(false);
       return;
     }
@@ -197,6 +206,8 @@ export default function Home() {
           setCurrentPlayer(player);
           setShowPlayerSignup(false);
           setShowAuthWelcome(false);
+          const pickupReturn = getPickupReturnPath();
+          if (pickupReturn) window.location.replace(pickupReturn);
         }
       } else if (response.status === 404) {
         localStorage.removeItem('allInPlayerId');
@@ -321,6 +332,8 @@ setCurrentPlayer({
 });
 
 setSignupComplete(true);
+const pickupReturn = getPickupReturnPath();
+if (pickupReturn) window.location.replace(pickupReturn);
   } catch (error) {
     console.error(error);
     alert('Something went wrong. Please try again.');
