@@ -1,3 +1,4 @@
+// Trigger fresh Vercel Preview build for Browse All Games fix.
 'use client';
 
 import Link from 'next/link';
