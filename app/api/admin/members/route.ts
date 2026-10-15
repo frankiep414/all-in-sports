@@ -37,14 +37,24 @@ export async function GET(request:Request){
     email_opt_in:row.email_opt_in===true,sms_opt_in:row.sms_opt_in===true
    });
   }
-  const members=users.map(u=>({...u,email_opt_in:preferenceMap.get(u.id)?.email_opt_in===true,
-   sms_opt_in:preferenceMap.get(u.id)?.sms_opt_in===true}));
+  const playerMap=new Map<string,{id:number;full_name:string;sms_consent:boolean|null}>();
+  for(let i=0;i<users.length;i+=100){
+   const emails=users.slice(i,i+100).map(u=>u.email).filter(Boolean);
+   if(!emails.length)continue;
+   const {data,error}=await db.from('players').select('id,full_name,email,sms_consent').in('email',emails);
+   if(error)throw Error('Unable to read Player IDs.');
+   for(const player of data||[])if(typeof player.email==='string'){
+    playerMap.set(player.email.toLowerCase(),{id:player.id,full_name:player.full_name||'',sms_consent:typeof player.sms_consent==='boolean'?player.sms_consent:null});
+   }
+  }
+  const members=users.map(u=>({...u,player_id:playerMap.get(u.email.toLowerCase())?.id??null,player_name:playerMap.get(u.email.toLowerCase())?.full_name??null,email_opt_in:preferenceMap.has(u.id)?preferenceMap.get(u.id)!.email_opt_in:null,
+   sms_opt_in:playerMap.get(u.email.toLowerCase())?.sms_consent??(preferenceMap.has(u.id)?preferenceMap.get(u.id)!.sms_opt_in:null)}));
   members.sort((a,b)=>b.created_at.localeCompare(a.created_at));
   return Response.json({members,summary:{
    total:members.length,email_opted_in:members.filter(m=>m.email_opt_in).length,
    sms_opted_in:members.filter(m=>m.sms_opt_in).length,
    email_confirmed:members.filter(m=>m.email_confirmed).length
-  },note:'Email and SMS counts reflect stored announcement opt-in preferences, not transactional receipts. SMS sending is not enabled.'},
+  },note:'Text consent comes from original player signup records where available; missing consent is not treated as No. Email announcement consent is separate. SMS sending is not enabled.'},
    {headers:{'Cache-Control':'private, no-store'}});
  }catch(error){
   console.error('Member report failed',{message:error instanceof Error?error.message:'unknown'});

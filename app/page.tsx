@@ -269,6 +269,7 @@ return (
     teamName: formData.get('teamName'),
     divisions: formData.getAll('divisions'),
     smsConsent: formData.get('smsConsent') === 'on',
+    emailConsent: formData.get('emailConsent') === 'on',
   };
 
   try {
@@ -403,6 +404,15 @@ setSignupComplete(true);
                 news. Message frequency varies. Message &amp; data rates may
                 apply. Reply STOP to opt out. Consent is not a condition of
                 participation.
+              </span>
+            </label>
+
+            <label className="smsConsent">
+              <input type="checkbox" name="emailConsent" />
+              <span>
+                Yes, email me All In Sports announcements about upcoming games,
+                leagues, tournaments and events. I can unsubscribe at any time.
+                This is optional and separate from text-message consent.
               </span>
             </label>
 
