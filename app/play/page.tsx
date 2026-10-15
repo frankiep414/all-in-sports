@@ -17,6 +17,7 @@ export default function PlayPage() {
   const [checkoutAlert,setCheckoutAlert]=useState<{gameTitle:string;message:string}|null>(null);
   const [reporting,setReporting]=useState<string|null>(null);
   const reportingEnabled=process.env.NEXT_PUBLIC_PICKUP_ZELLE_REPORTING_ENABLED==='true';
+  const liveCardEnabled=process.env.NEXT_PUBLIC_PICKUP_STRIPE_LIVE_ENABLED==='true';
   const [registering,setRegistering]=useState<string|null>(null);
   const [registrationMessage,setRegistrationMessage]=useState('');
   const [signedIn,setSignedIn]=useState(false);
@@ -44,7 +45,7 @@ export default function PlayPage() {
     }catch(error){setRegistrationMessage(error instanceof Error?error.message:'Registration failed.');}
     finally{setRegistering(null);}
   }
-  async function openTestStripeCheckout(gameId:string){
+  async function openStripeCheckout(gameId:string){
     const registration=registrations[gameId];
     if(!registration?.id)return;
     setStripeLoading(gameId);setRegistrationMessage('');setCheckoutAlert(null);
@@ -55,13 +56,13 @@ export default function PlayPage() {
         Authorization:`Bearer ${token}`,'Content-Type':'application/json'
       },body:JSON.stringify({registration_id:registration.id})});
       const result=await response.json();
-      if(!response.ok)throw new Error(result.error||'Test checkout unavailable.');
+      if(!response.ok)throw new Error(result.error||'Card checkout unavailable.');
       if(typeof result.checkout_url!=='string'||!result.checkout_url.startsWith('https://checkout.stripe.com/'))
         throw new Error('Unexpected checkout address.');
       window.location.assign(result.checkout_url);
     }catch(error){
-      const gameTitle=games.find(game=>game.id===gameId)?.title||'Test game';
-      setCheckoutAlert({gameTitle,message:error instanceof Error?error.message:'Unable to start test checkout.'});
+      const gameTitle=games.find(game=>game.id===gameId)?.title||'Pickup game';
+      setCheckoutAlert({gameTitle,message:error instanceof Error?error.message:'Unable to start card checkout.'});
       setStripeLoading(null);
     }
   }
@@ -117,7 +118,7 @@ export default function PlayPage() {
       </nav>
       {checkoutAlert && <div role="presentation" onClick={()=>setCheckoutAlert(null)} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,0.76)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
         <div role="alertdialog" aria-modal="true" aria-labelledby="checkout-alert-title" aria-describedby="checkout-alert-description" onClick={event=>event.stopPropagation()} style={{width:'100%',maxWidth:480,background:'#151d27',border:'1px solid #95d9ff',borderRadius:18,padding:28,boxShadow:'0 24px 70px rgba(0,0,0,0.5)'}}>
-          <h2 id="checkout-alert-title" style={{margin:'0 0 12px',fontSize:25}}>Unable to open test checkout</h2>
+          <h2 id="checkout-alert-title" style={{margin:'0 0 12px',fontSize:25}}>Unable to open card checkout</h2>
           <p style={{color:'#95d9ff',fontWeight:700,margin:'0 0 12px'}}>{checkoutAlert.gameTitle}</p>
           <p id="checkout-alert-description" style={{color:'#e4ebf3',lineHeight:1.6}}>{checkoutAlert.message}</p>
           <button type="button" autoFocus onClick={()=>setCheckoutAlert(null)} style={{marginTop:12,background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'12px 22px',fontWeight:800,cursor:'pointer'}}>Got it</button>
@@ -126,7 +127,7 @@ export default function PlayPage() {
       <section style={{maxWidth:960,margin:'0 auto'}}>
         <p style={{color:'#95d9ff',letterSpacing:4,fontWeight:800}}>PLAY // PICKUP & OPEN PLAY</p>
         <h1 style={{fontSize:'clamp(42px,8vw,88px)',lineHeight:1.04,margin:'16px 0',fontWeight:900}}>Your next game starts here.</h1>
-        <p style={{fontSize:19,color:'#b8c1d0',lineHeight:1.6,maxWidth:730}}>Browse upcoming All In Sports sessions and request your spot. Payments are not open yet.</p>
+        <p style={{fontSize:19,color:'#b8c1d0',lineHeight:1.6,maxWidth:730}}>Browse upcoming All In Sports sessions and request your spot. Payment options appear once your registration is eligible.</p>
         <div style={{border:'1px solid #303945',borderRadius:18,padding:28,background:'#111820',marginTop:34}}>
           <h2 style={{marginTop:0}}>{focusedGameId?'Your selected game':'Upcoming games'}</h2>
         {focusedGameId&&<Link href="/play" style={{display:'inline-block',color:'#95d9ff',marginBottom:16,fontWeight:700}}>← BROWSE ALL GAMES</Link>}
@@ -154,13 +155,13 @@ export default function PlayPage() {
                 {registering===item.id?'Registering…':'REQUEST A SPOT'}
               </button>}
             {registrations[item.id]?.payment_reference && <p style={{margin:'12px 0',fontSize:14}}>Zelle memo reference: <strong style={{color:'#95d9ff'}}>{registrations[item.id].payment_reference}</strong> <button type="button" onClick={()=>void navigator.clipboard?.writeText(registrations[item.id].payment_reference||'')} style={{marginLeft:8,padding:'4px 9px',borderRadius:6}}>COPY</button></p>}
-            {item.title.startsWith('TEST') && registrations[item.id] &&
+            {(item.title.startsWith('TEST')||liveCardEnabled) && registrations[item.id] &&
               ['pending_payment','offered'].includes(registrations[item.id].status) &&
               registrations[item.id].payment_status==='unpaid' &&
               <button type="button" disabled={stripeLoading!==null}
-                onClick={()=>void openTestStripeCheckout(item.id)}
+                onClick={()=>void openStripeCheckout(item.id)}
                 style={{display:'block',marginTop:12,padding:'10px 16px',borderRadius:8,border:'1px solid #95d9ff',background:'#26384a',color:'#fff',fontWeight:700}}>
-                {stripeLoading===item.id?'Opening Stripe…':'TEST CARD CHECKOUT — NO REAL CHARGE'}
+                {stripeLoading===item.id?'Opening Stripe…':item.title.startsWith('TEST')?'TEST CARD CHECKOUT — NO REAL CHARGE':'PAY SECURELY BY CARD'}
               </button>}
             {registrations[item.id] && ['pending_payment','offered'].includes(registrations[item.id].status) && registrations[item.id].payment_status==='unpaid' && reportingEnabled &&
               <button type="button" disabled={reporting!==null} onClick={()=>void reportPayment(item.id)}
