@@ -1,0 +1,61 @@
+'use client';
+import Link from 'next/link';
+import {useEffect,useState} from 'react';
+import {createClient} from '@supabase/supabase-js';
+type Member={id:string;email:string;created_at:string;email_confirmed:boolean;email_opt_in:boolean;sms_opt_in:boolean};
+type Summary={total:number;email_opted_in:number;sms_opted_in:number;email_confirmed:number};
+export default function MembersPage(){
+ const [members,setMembers]=useState<Member[]>([]);
+ const [summary,setSummary]=useState<Summary|null>(null);
+ const [error,setError]=useState('');
+ const [loading,setLoading]=useState(true);
+ const [filter,setFilter]=useState('');
+ useEffect(()=>{let active=true;(async()=>{
+  try{
+   const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+   if(!url||!key)throw Error('Authentication configuration unavailable.');
+   const client=createClient(url,key);
+   const {data:{session}}=await client.auth.getSession();
+   if(!session?.access_token)throw Error('Sign in with your admin account.');
+   const response=await fetch('/api/admin/members',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.error||'Unable to load members.');
+   if(active){setMembers(data.members);setSummary(data.summary);}
+  }catch(e){if(active)setError(e instanceof Error?e.message:'Unable to load members.');}
+  finally{if(active)setLoading(false);}
+ })();return()=>{active=false;};},[]);
+ const filtered=members.filter(m=>m.email.toLowerCase().includes(filter.toLowerCase()));
+ return <main style={{background:'#090e15',color:'#f5f8fc',minHeight:'100vh',padding:'clamp(20px,5vw,64px)'}}>
+  <div style={{maxWidth:1100,margin:'auto'}}>
+   <Link href="/admin" style={{color:'#9dd9ff'}}>← Admin Dashboard</Link>
+   <h1 style={{fontSize:'clamp(30px,5vw,46px)'}}>Website Members</h1>
+   <p style={{color:'#b6c3d3'}}>Every website account, including members who have not joined a game. Announcement opt-ins are shown separately.</p>
+   {loading&&<p>Loading website members…</p>}
+   {error&&<p role="alert" style={{color:'#ffb8b8'}}>{error}</p>}
+   {summary&&<>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))',gap:12,margin:'24px 0'}}>
+     {([['Website signups',summary.total],['Verified emails',summary.email_confirmed],['Email opt-ins',summary.email_opted_in],['Text opt-ins',summary.sms_opted_in]] as const).map(([label,value])=>
+      <div key={label} style={{background:'#17212e',border:'1px solid #34475d',borderRadius:12,padding:20}}>
+       <div style={{fontSize:32,fontWeight:800}}>{value}</div><div style={{color:'#b6c3d3'}}>{label}</div>
+      </div>)}
+    </div>
+    <p style={{color:'#b6c3d3'}}>Text opt-in is a consent record only. SMS delivery is not active. Transactional payment emails are separate from marketing consent.</p>
+    <label htmlFor="member-filter">Search member email</label>
+    <input id="member-filter" value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Search by email" style={{display:'block',width:'100%',maxWidth:430,padding:12,margin:'10px 0 20px',borderRadius:8,border:'1px solid #53657a',background:'#14202c',color:'white'}}/>
+    <div style={{overflowX:'auto'}}>
+     <table style={{width:'100%',borderCollapse:'collapse',textAlign:'left'}}>
+      <thead><tr>{['Email','Signed up','Verified','Email opt-in','Text opt-in'].map(h=><th key={h} style={{padding:12,borderBottom:'1px solid #526071'}}>{h}</th>)}</tr></thead>
+      <tbody>{filtered.map(m=><tr key={m.id}>
+       <td style={{padding:12,borderBottom:'1px solid #293747'}}>{m.email||'No email'}</td>
+       <td style={{padding:12,borderBottom:'1px solid #293747'}}>{new Date(m.created_at).toLocaleDateString('en-US')}</td>
+       <td style={{padding:12,borderBottom:'1px solid #293747'}}>{m.email_confirmed?'Yes':'No'}</td>
+       <td style={{padding:12,borderBottom:'1px solid #293747'}}>{m.email_opt_in?'Yes':'No'}</td>
+       <td style={{padding:12,borderBottom:'1px solid #293747'}}>{m.sms_opt_in?'Yes':'No'}</td>
+      </tr>)}</tbody>
+     </table>
+    </div>
+    <p style={{color:'#b6c3d3'}}>Showing {filtered.length} of {members.length} website accounts.</p>
+   </>}
+  </div>
+ </main>;
+}
