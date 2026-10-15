@@ -2,13 +2,14 @@ import {createClient} from '@supabase/supabase-js';
 export const dynamic='force-dynamic';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// PREVIEW TEST ONLY. No live keys, no production charges, no real-player checkout.
+// Environment-isolated checkout. Production requires explicit enablement and live Stripe credentials.
 export async function POST(request:Request){
  try{
-  if(process.env.VERCEL_ENV!=='preview'||process.env.PICKUP_STRIPE_TEST_ENABLED!=='true')
+  if(!((process.env.VERCEL_ENV==='preview'&&process.env.PICKUP_STRIPE_TEST_ENABLED==='true')||(process.env.VERCEL_ENV==='production'&&process.env.PICKUP_STRIPE_LIVE_ENABLED==='true')))
    return Response.json({error:'Stripe test checkout is not enabled.'},{status:503});
   const stripeKey=process.env.STRIPE_SECRET_KEY;
-  if(!stripeKey?.startsWith('sk_test_'))
+  const live=process.env.VERCEL_ENV==='production';
+  if(!stripeKey?.startsWith(live?'sk_live_':'sk_test_'))
    return Response.json({error:'Stripe test credentials are not configured.'},{status:503});
   const token=request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
   if(!token)return Response.json({error:'Sign in required.'},{status:401});
@@ -21,8 +22,10 @@ export async function POST(request:Request){
   if(authError||!user?.email||!user.email_confirmed_at)
    return Response.json({error:'Sign in required.'},{status:401});
   const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
-  const {data:admin,error:adminError}=await db.from('admin_users').select('user_id').eq('user_id',user.id).maybeSingle();
-  if(adminError||!admin)return Response.json({error:'Test checkout is admin-only.'},{status:403});
+  if(!live){
+   const {data:admin,error:adminError}=await db.from('admin_users').select('user_id').eq('user_id',user.id).maybeSingle();
+   if(adminError||!admin)return Response.json({error:'Test checkout is admin-only.'},{status:403});
+  }
   const body=await request.json().catch(()=>null);
   if(!body||typeof body.registration_id!=='string'||!uuid.test(body.registration_id))
    return Response.json({error:'Invalid registration.'},{status:400});
@@ -34,7 +37,7 @@ export async function POST(request:Request){
    return Response.json({error:'Registration is not eligible for checkout.'},{status:409});
   const {data:game,error:gameError}=await db.from('pickup_games')
    .select('id,title,starts_at,status,price_cents,is_test').eq('id',registration.game_id).maybeSingle();
-  if(gameError||!game||!game.is_test||game.status!=='published'||new Date(game.starts_at)<=new Date())
+  if(gameError||!game||game.is_test===live||game.status!=='published'||new Date(game.starts_at)<=new Date())
    return Response.json({error:'Test game unavailable.'},{status:409});
   if(!Number.isSafeInteger(game.price_cents)||game.price_cents<50||game.price_cents>100000)
    return Response.json({error:'Test game price must be between $0.50 and $1,000.'},{status:409});
@@ -46,7 +49,7 @@ export async function POST(request:Request){
    // Never create a second checkout when a tracked session exists.
    // Retrieve its current state directly from Stripe before offering a redirect.
    const existingId=prior[0].stripe_checkout_session_id;
-   if(typeof existingId!=='string'||!/^cs_test_[A-Za-z0-9_]+$/.test(existingId))
+   if(typeof existingId!=='string'||!(live?/^cs_live_[A-Za-z0-9_]+$/:/^cs_test_[A-Za-z0-9_]+$/).test(existingId))
     return Response.json({error:'Existing test checkout could not be verified. Contact an admin.'},{status:409});
    const existingResponse=await fetch('https://api.stripe.com/v1/checkout/sessions/'+encodeURIComponent(existingId),{
     headers:{Authorization:'Bearer '+stripeKey},signal:AbortSignal.timeout(12000),cache:'no-store'
@@ -55,7 +58,7 @@ export async function POST(request:Request){
    if(!existingResponse.ok||!existing)
     return Response.json({error:'Unable to verify your existing checkout. Please try again later.'},{status:503});
    const belongsToRegistration=existing.id===existingId&&existing.object==='checkout.session'&&
-    existing.livemode===false&&existing.mode==='payment'&&
+    existing.livemode===live&&existing.mode==='payment'&&
     existing.client_reference_id===registration.id&&
     existing.metadata?.registration_id===registration.id&&
     existing.metadata?.game_id===game.id&&
@@ -71,9 +74,8 @@ export async function POST(request:Request){
     'This test checkout has expired or is no longer available. Contact an admin to reset the test checkout safely.'},{status:409});
   }
   const host=process.env.VERCEL_URL;
-  if(!host||!/^[a-z0-9.-]+\.vercel\.app$/i.test(host))
-   return Response.json({error:'Preview URL unavailable.'},{status:503});
-  const origin='https://'+host;
+  const origin=live?'https://allinsportsnj.com':(host&&/^[a-z0-9.-]+\.vercel\.app$/i.test(host)?'https://'+host:'');
+  if(!origin)return Response.json({error:'Checkout return URL unavailable.'},{status:503});
   const form=new URLSearchParams({
    mode:'payment',success_url:origin+'/payment/confirmation?registration_id='+encodeURIComponent(registration.id),cancel_url:origin+'/play?stripe=cancel',
    customer_email:user.email,'client_reference_id':registration.id,
@@ -88,7 +90,7 @@ export async function POST(request:Request){
   });
   const stripeResponse=await fetch('https://api.stripe.com/v1/checkout/sessions',{
    method:'POST',headers:{Authorization:'Bearer '+stripeKey,'Content-Type':'application/x-www-form-urlencoded',
-    'Idempotency-Key':'ais-preview-checkout-'+registration.id},
+    'Idempotency-Key':(live?'ais-live-checkout-':'ais-preview-checkout-')+registration.id},
    body:form.toString(),signal:AbortSignal.timeout(12000)
   });
   const checkout=await stripeResponse.json().catch(()=>null);
