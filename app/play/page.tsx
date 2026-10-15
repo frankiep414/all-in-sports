@@ -41,7 +41,7 @@ export default function PlayPage() {
       if(!response.ok)throw new Error(result.error||'Registration failed.');
       setRegistrations(current=>({...current,[gameId]:{id:result.registration_id,status:result.status,payment_status:'unpaid',payment_reference:result.payment_reference}}));
       setGames(current=>current.map(game=>game.id===gameId?{...game,registered_count:game.registered_count+(result.status==='waitlisted'?0:1),waitlist_count:game.waitlist_count+(result.status==='waitlisted'?1:0),spots_remaining:Math.max(0,game.spots_remaining-(result.status==='waitlisted'?0:1))}:game));
-      setRegistrationMessage('Registration received. Your spot is provisional; payment has not been collected. Do not send money yet.');
+      setRegistrationMessage('Registration received. Your spot is provisional until payment is confirmed. Use the payment options shown for your registration when available.');
     }catch(error){setRegistrationMessage(error instanceof Error?error.message:'Registration failed.');}
     finally{setRegistering(null);}
   }
@@ -130,7 +130,7 @@ export default function PlayPage() {
         <p style={{fontSize:19,color:'#b8c1d0',lineHeight:1.6,maxWidth:730}}>Browse upcoming All In Sports sessions and request your spot. Payment options appear once your registration is eligible.</p>
         <div style={{border:'1px solid #303945',borderRadius:18,padding:28,background:'#111820',marginTop:34}}>
           <h2 style={{marginTop:0}}>{focusedGameId?'Your selected game':'Upcoming games'}</h2>
-        {focusedGameId&&<Link href="/play" style={{display:'inline-block',color:'#95d9ff',marginBottom:16,fontWeight:700}}>← BROWSE ALL GAMES</Link>}
+        {focusedGameId&&<button type="button" onClick={()=>{setFocusedGameId(null);window.history.replaceState(null,'','/play');}} style={{display:'inline-block',background:'none',border:0,padding:0,cursor:'pointer',color:'#95d9ff',marginBottom:16,fontWeight:700,fontSize:'inherit'}}>← BROWSE ALL GAMES</button>}
         {!gamesLoading&&!gamesError&&focusedGameId&&!games.some(game=>game.id===focusedGameId)&&<p role="status">This game is not currently available. Browse all games to find another session.</p>}
           {gamesLoading && <p style={{color:'#b8c1d0'}}>Loading upcoming games…</p>}
           {gamesError && <p role="alert" style={{color:'#ffb7b7'}}>Unable to load games. Please try again later.</p>}
@@ -172,10 +172,10 @@ export default function PlayPage() {
             {!signedIn && <p style={{color:'#b8c1d0',fontSize:14}}><Link href="/?auth=1&returnTo=%2Fplay" style={{color:'#95d9ff'}}>Sign in or create your Player ID</Link> before registering.</p>}
           </article>)}
           {registrationMessage && <p role="status" style={{color:'#95d9ff',fontWeight:700}}>{registrationMessage}</p>}
-          <p style={{color:'#95d9ff',fontWeight:700}}>Registration requests are open in this preview. Payment collection and automatic waitlist notifications are not enabled. Do not send money.</p>
+          <p style={{color:'#95d9ff',fontWeight:700}}>Registration requests are open. A spot is confirmed only after payment is verified. {liveCardEnabled ? 'Secure card checkout is available for eligible registrations.' : 'Card checkout is not currently enabled.'} Waitlist notifications are not guaranteed; check your registration status for updates.</p>
         </div>
         {!focusedGameId&&<><h2 style={{marginTop:52}}>How payment will work</h2>
-        <p style={{color:'#b8c1d0'}}>Choose a method to preview the payment instructions. This is informational only — no payment or reservation is being created.</p>
+        <p style={{color:'#b8c1d0'}}>Payment methods depend on your registration status and the options currently enabled. Request a spot first, then follow the payment instructions shown for your registration.</p>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:16,marginTop:20}}>
           <button type="button" onClick={()=>setMethod('zelle')} aria-pressed={method==='zelle'} style={{textAlign:'left',cursor:'pointer',border:method==='zelle'?'2px solid #95d9ff':'1px solid #303945',background:'#111820',color:'#fff',borderRadius:16,padding:24}}>
             <strong style={{fontSize:21}}>Zelle</strong><p style={{color:'#9ee6bb'}}>No added checkout fee</p><span style={{color:'#b8c1d0'}}>Payment confirmed manually by our team.</span>
@@ -192,13 +192,13 @@ export default function PlayPage() {
               <div style={{maxWidth:340,margin:'18px 0',padding:12,background:'#fff',borderRadius:12}}>
                 <img src="/all-in-sports-zelle-original-uncropped.png" alt="Official Chase Zelle QR code for ALL IN SPORTS IMOM LLC" style={{display:'block',width:'100%',height:'auto',objectFit:'contain'}} />
               </div>
-              <p style={{color:'#b8c1d0',fontSize:14}}>Preview only. Scan to verify the recipient is ALL IN SPORTS IMOM LLC, but do not send a payment during testing.</p>
-              <p style={{color:'#b8c1d0',marginBottom:0}}>Payment instructions and references are not active. Please do not send payment until All In Sports explicitly provides instructions. Spots are confirmed only after we verify payment.</p>
+              <p style={{color:'#b8c1d0',fontSize:14}}>Only use Zelle when All In Sports has explicitly instructed you to pay for your registration. Verify the recipient before sending.</p>
+              <p style={{color:'#b8c1d0',marginBottom:0}}>Do not send an unsolicited payment. Zelle payments require manual verification before a spot is confirmed.</p>
             </>
           ) : (
             <>
               <strong>Secure online checkout</strong>
-              <p style={{color:'#b8c1d0',marginBottom:0}}>When registration opens, you’ll see the final card price before paying. Any differences between payment methods will follow applicable rules. Your spot will be confirmed only after successful payment verification. Stripe checkout is not active yet.</p>
+              <p style={{color:'#b8c1d0',marginBottom:0}}>For eligible registrations, use the Pay Securely by Card button on your selected game. The final amount is shown before payment. Your spot is confirmed after successful payment verification.</p>
             </>
           )}
         </div>
