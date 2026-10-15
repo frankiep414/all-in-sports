@@ -37,7 +37,17 @@ export async function GET(request:Request){
     email_opt_in:row.email_opt_in===true,sms_opt_in:row.sms_opt_in===true
    });
   }
-  const members=users.map(u=>({...u,email_opt_in:preferenceMap.get(u.id)?.email_opt_in===true,
+  const playerMap=new Map<string,{id:number;full_name:string}>();
+  for(let i=0;i<users.length;i+=100){
+   const emails=users.slice(i,i+100).map(u=>u.email).filter(Boolean);
+   if(!emails.length)continue;
+   const {data,error}=await db.from('players').select('id,full_name,email').in('email',emails);
+   if(error)throw Error('Unable to read Player IDs.');
+   for(const player of data||[])if(typeof player.email==='string'){
+    playerMap.set(player.email.toLowerCase(),{id:player.id,full_name:player.full_name||''});
+   }
+  }
+  const members=users.map(u=>({...u,player_id:playerMap.get(u.email.toLowerCase())?.id??null,player_name:playerMap.get(u.email.toLowerCase())?.full_name??null,email_opt_in:preferenceMap.get(u.id)?.email_opt_in===true,
    sms_opt_in:preferenceMap.get(u.id)?.sms_opt_in===true}));
   members.sort((a,b)=>b.created_at.localeCompare(a.created_at));
   return Response.json({members,summary:{
