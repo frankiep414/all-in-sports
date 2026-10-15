@@ -890,47 +890,6 @@ setSignupComplete(true);
         </div>
       </section>
 
-      <section className="section communitySection" id="community">
-        <div className="communityPanel">
-          <div>
-            <p className="eyebrow">BUILT FOR THE COMMUNITY</p>
-            <h2>Your soccer world. One place.</h2>
-            <p>
-              Teams, schedules, standings, registrations, player profiles,
-              highlights and everything that comes next.
-            </p>
-          </div>
-
-          <button type="button" className="primaryButton" onClick={() => setShowAuthWelcome(true)}>
-            Join All In
-            <ArrowRight size={18} />
-          </button>
-        </div>
-
-        <div className="platformGrid">
-          <a href="/play" aria-label="Explore Play: pickup and open play">
-            <Play size={20} />
-            <strong>PLAY</strong>
-            <span>Pickup &amp; Open Play</span>
-          </a>
-          <a href="/compete" aria-label="Explore Compete: leagues and tournaments">
-            <Trophy size={20} />
-            <strong>COMPETE</strong>
-            <span>Leagues &amp; Tournaments</span>
-          </a>
-          <a href="/events" aria-label="Explore Events: parties and special events">
-            <CalendarDays size={20} />
-            <strong>EVENTS</strong>
-            <span>Parties &amp; Special Events</span>
-          </a>
-          <a href="#history" aria-label="Explore History: champions and All In legacy">
-            <Shield size={20} />
-            <strong>HISTORY</strong>
-            <span>Champions &amp; All In Legacy</span>
-          </a>
-        </div>
-      </section>
-
       <footer>
         <div className="footerBrand">
           <img src="/all-in-logo.svg" alt="All In Sports" />
