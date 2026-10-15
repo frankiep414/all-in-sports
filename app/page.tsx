@@ -882,33 +882,33 @@ setSignupComplete(true);
             </p>
           </div>
 
-          <button className="primaryButton">
+          <button type="button" className="primaryButton" onClick={() => setShowAuthWelcome(true)}>
             Join All In
             <ArrowRight size={18} />
           </button>
         </div>
 
         <div className="platformGrid">
-          <div>
-            <Shield size={20} />
-            <strong>YOUR TEAMS</strong>
-            <span>Rosters & history</span>
-          </div>
-          <div>
+          <a href="/play" aria-label="Explore Play: pickup and open play">
+            <Play size={20} />
+            <strong>PLAY</strong>
+            <span>Pickup &amp; Open Play</span>
+          </a>
+          <a href="/compete" aria-label="Explore Compete: leagues and tournaments">
+            <Trophy size={20} />
+            <strong>COMPETE</strong>
+            <span>Leagues &amp; Tournaments</span>
+          </a>
+          <a href="/events" aria-label="Explore Events: parties and special events">
             <CalendarDays size={20} />
-            <strong>YOUR SCHEDULE</strong>
-            <span>Never miss a game</span>
-          </div>
-          <div>
-            <BarChart3 size={20} />
-            <strong>YOUR STATS</strong>
-            <span>Build your profile</span>
-          </div>
-          <div>
-            <Camera size={20} />
-            <strong>YOUR MOMENTS</strong>
-            <span>Highlights & memories</span>
-          </div>
+            <strong>EVENTS</strong>
+            <span>Parties &amp; Special Events</span>
+          </a>
+          <a href="#history" aria-label="Explore History: champions and All In legacy">
+            <Shield size={20} />
+            <strong>HISTORY</strong>
+            <span>Champions &amp; All In Legacy</span>
+          </a>
         </div>
       </section>
 
