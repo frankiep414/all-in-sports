@@ -16,7 +16,7 @@ function validSignature(payload:string,header:string,secret:string):boolean{
 }
 
 async function sendPickupPaymentConfirmation(
- db:ReturnType<typeof createClient>,registrationId:string,amountCents:number
+ db:any,registrationId:string,amountCents:number
 ):Promise<void>{
  // Transactional mail is separately enabled; never controlled by marketing opt-in.
  if(process.env.VERCEL_ENV!=='production'||process.env.PICKUP_PAYMENT_CONFIRMATION_EMAIL_ENABLED!=='true')return;
