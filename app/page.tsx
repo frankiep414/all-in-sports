@@ -173,7 +173,9 @@ export default function Home() {
   function getPickupReturnPath() {
     const params = new URLSearchParams(window.location.search);
     const destination = params.get('returnTo') || '';
-    return destination === '/play' || destination.startsWith('/play?') ? destination : null;
+    // Only allow known, internal sign-in destinations (never external redirects).
+    if (destination === '/my-all-in' || destination === '/play' || destination.startsWith('/play?')) return destination;
+    return null;
   }
 
   async function loadVerifiedPlayer() {
