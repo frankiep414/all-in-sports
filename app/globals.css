@@ -5192,3 +5192,37 @@ html {
   .launchpadIntro {margin-bottom:14px;}
   .launchCard {min-height:132px;}
 }
+
+/* Prevent the floating player profile from overlapping the compact launchpad cards */
+@media (min-width:1101px) {
+  .homeLaunchpad .launchpadPlayer {
+    position:relative;
+    top:auto;
+    right:auto;
+    width:auto;
+    max-width:240px;
+    justify-self:center;
+    grid-column:2;
+    grid-row:1;
+    margin:0 auto;
+    pointer-events:auto;
+  }
+  .homeLaunchpad .launchpadInner {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 240px;
+    column-gap:26px;
+    align-items:center;
+  }
+  .homeLaunchpad .launchpadIntro {
+    grid-column:1;
+    grid-row:1;
+    margin-bottom:20px;
+  }
+  .homeLaunchpad .launchpadGrid {
+    grid-column:1 / -1;
+    grid-row:2;
+  }
+  .homeLaunchpad .launchpadPlayer img {width:120px;height:120px;}
+  .homeLaunchpad .launchpadPlayerInfo strong {font-size:15px;}
+  .homeLaunchpad .launchpadMiniStats {gap:10px;margin-top:7px;}
+}
