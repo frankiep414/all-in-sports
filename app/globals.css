@@ -5226,3 +5226,9 @@ html {
   .homeLaunchpad .launchpadPlayerInfo strong {font-size:15px;}
   .homeLaunchpad .launchpadMiniStats {gap:10px;margin-top:7px;}
 }
+
+/* Keep launchpad cards comfortably below the player stats */
+@media (min-width:1101px) {
+  .homeLaunchpad .launchpadGrid {margin-top:26px;}
+  .homeLaunchpad .launchpadPlayer {padding-bottom:8px;}
+}
