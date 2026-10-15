@@ -272,10 +272,17 @@ return (
   };
 
   try {
+    const { data: { session: signupSession } } = await supabase.auth.getSession();
+    if (!signupSession?.access_token) {
+      setShowPlayerSignup(false);
+      setShowAuthWelcome(true);
+      return;
+    }
     const response = await fetch('/api/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${signupSession.access_token}`,
       },
       body: JSON.stringify(data),
     });
