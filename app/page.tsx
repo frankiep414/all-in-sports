@@ -171,7 +171,7 @@ export default function Home() {
     setVerifiedEmail(email);
     setPlayerLoadError('');
     try {
-      const response = await fetch(`/api/player?email=${encodeURIComponent(email)}`, { cache: 'no-store' });
+      const response = await fetch('/api/player', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' });
       if (response.ok) {
         const player = await response.json();
         if (player?.id) {
