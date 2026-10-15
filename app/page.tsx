@@ -1,3 +1,4 @@
+// Deployment refresh: trigger Vercel production build for merged auth updates (2026-10-15).
 'use client';
 
 import { useEffect, useState } from 'react';
