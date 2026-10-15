@@ -1,0 +1,688 @@
+'use client';
+
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+type PickupGame = {id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;status:string;is_test?:boolean;series_id?:string|null;occurrence_index?:number|null};
+type Status = 'loading' | 'authorized' | 'denied' | 'error';
+
+export default function AdminPage() {
+  // Carmita event reporting lives on a separate admin-only route.
+  const [status, setStatus] = useState<Status>('loading');
+  const [saving,setSaving] = useState(false);
+  const [repeatWeekly,setRepeatWeekly]=useState(false);
+  const [testGame,setTestGame]=useState(false);
+  const [weeks,setWeeks]=useState(8);
+  const [games,setGames] = useState<PickupGame[]>([]);
+  const [editingId,setEditingId]=useState<string|null>(null);
+  const [editGame,setEditGame]=useState({title:'',venue:'',date:'',start:'',end:'',price:'',capacity:''});
+  const [editSaving,setEditSaving]=useState(false);
+  const [editMessage,setEditMessage]=useState('');
+  const [editRepeat,setEditRepeat]=useState(false);
+  const [editWeeks,setEditWeeks]=useState(8);
+  const [draftActionBusy,setDraftActionBusy]=useState(false);
+  async function draftAction(item:PickupGame,action:'convert'|'delete') {
+    const description=action==='delete'
+      ?`Permanently delete draft "${item.title}"? This cannot be undone.`
+      :`Convert "${item.title}" into ${editWeeks} weekly draft games, including the original? This will create ${editWeeks-1} new drafts.`;
+    if(!window.confirm(description))return;
+    setDraftActionBusy(true);setEditMessage('');
+    try {
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Please sign in again.');
+      const response=await fetch('/api/admin/games',{method:action==='delete'?'DELETE':'PUT',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({id:item.id,...(action==='convert'?{weeks:editWeeks}:{})})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Unable to update draft.');
+      await loadGames(session.access_token);
+      setEditingId(null);setEditRepeat(false);
+      setEditMessage(action==='delete'?'Draft deleted.':`Converted to ${editWeeks} weekly drafts. Your original game is week one.`);
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update draft.');}
+    finally{setDraftActionBusy(false);}
+  }
+  async function changeStatus(item:PickupGame,action:'publish'|'cancel'){
+    const question=action==='publish'
+      ?`Publish "${item.title}" to the public Play page? Registration and payment will remain closed.`
+      :`Cancel "${item.title}"? It will disappear from the public Play page.`;
+    if(!window.confirm(question))return;
+    setDraftActionBusy(true);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Please sign in again.');
+      const response=await fetch('/api/admin/games',{method:'PATCH',
+       headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+       body:JSON.stringify({id:item.id,action})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Unable to change game status.');
+      await loadGames(session.access_token);
+      setEditMessage(action==='publish'?'Game published on the preview Play page. Registration remains closed.':'Game cancelled.');
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update game.');}
+    finally{setDraftActionBusy(false);}
+  }
+  const [audienceBusy,setAudienceBusy]=useState(false);
+  async function checkGameAudience(gameId:string){
+    setAudienceBusy(true);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again.');
+      const response=await fetch('/api/admin/notifications/audience-preview',{method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({game_id:gameId})});
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'Unable to check announcement audience.');
+      setEditMessage(`Announcement audience for ${result.game_title}: ${result.email_opted_in_count} email opt-ins; ${result.prior_email_delivery_records} previous email delivery records. AUDIT ONLY — nothing sent.`);
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to check announcement audience.');}
+    finally{setAudienceBusy(false);}
+  }
+  const [batchBusy,setBatchBusy]=useState(false);
+  const [batchProgress,setBatchProgress]=useState<Record<string,{cursor:string|null;sent:number;skipped:number;failed:number;processed:number;complete:boolean}>>({});
+  useEffect(()=>{
+    if(status!=='authorized')return;
+    let active=true;
+    (async()=>{
+      try{
+        const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+        if(!url||!key)return;
+        const client=createClient(url,key);
+        const {data:{session}}=await client.auth.getSession();
+        if(!session?.access_token)return;
+        const response=await fetch('/api/admin/notifications/batch-progress',{
+          headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+        if(!response.ok)return;
+        const result=await response.json();
+        if(!active||!Array.isArray(result.progress))return;
+        const saved:Record<string,{cursor:string|null;sent:number;skipped:number;failed:number;processed:number;complete:boolean}>={};
+        for(const row of result.progress){
+          if(typeof row.game_id!=='string')continue;
+          saved[row.game_id]={cursor:row.after_user_id||null,sent:row.sent||0,
+            skipped:row.skipped||0,failed:row.failed||0,processed:row.processed||0,
+            complete:row.complete===true};
+        }
+        setBatchProgress(saved);
+      }catch{/* Saved progress is optional to display; sending still checks the server. */}
+    })();
+    return()=>{active=false;};
+  },[status]);
+  async function sendAnnouncementBatch(gameId:string,continueBatch=false){
+    const previous=batchProgress[gameId];
+    if(continueBatch&&(!previous?.cursor||previous.complete))return;
+    const prompt=continueBatch
+      ?'Continue the next Preview batch of up to 20 opted-in candidates? This sends REAL emails only to allowlisted recipients.'
+      :'Start a Preview announcement batch of up to 20 opted-in candidates? This sends REAL emails only to allowlisted recipients.';
+    if(!window.confirm(prompt))return;
+    setBatchBusy(true);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again.');
+      const response=await fetch('/api/admin/notifications/announce-batch',{method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({game_id:gameId,confirm:'SEND_OPTED_IN_EMAIL_BATCH',
+          ...(continueBatch&&previous?.cursor?{after_user_id:previous.cursor}:{})})});
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'Announcement batch was not sent.');
+      const saved=result.progress;
+      const next={
+        cursor:result.complete?null:(saved?.after_user_id||null),
+        sent:Number(saved?.sent||0),skipped:Number(saved?.skipped||0),
+        failed:Number(saved?.failed||0),processed:Number(saved?.processed||0),
+        complete:saved?.complete===true
+      };
+      setBatchProgress(current=>({...current,[gameId]:next}));
+      setEditMessage(`Preview batch: ${result.sent} sent, ${result.skipped} skipped, ${result.failed} failed. Session totals: ${next.sent} sent, ${next.skipped} skipped, ${next.failed} failed across ${next.processed} candidates. ${next.complete?'All candidates checked.':'More candidates may remain. Continue manually below.'}`);
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Announcement batch failed.');}
+    finally{setBatchBusy(false);}
+  }
+  const [pilotBusy,setPilotBusy]=useState(false);
+  async function sendPilotAnnouncement(gameId:string){
+    if(!window.confirm('Send ONE preview-only announcement to the explicitly configured, opted-in pilot email? No other players will be emailed.'))return;
+    setPilotBusy(true);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again.');
+      const response=await fetch('/api/admin/notifications/announce-pilot',{method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({game_id:gameId})});
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'Pilot email not sent.');
+      setEditMessage(`ONE preview pilot announcement sent to ${result.recipient}. No other players notified.`);
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Pilot email not sent.');}
+    finally{setPilotBusy(false);}
+  }
+  const [announceBusy,setAnnounceBusy]=useState(false);
+  async function testGameAnnouncement(gameId:string){
+   if(!window.confirm('Send ONE new-game announcement email to your own admin inbox for this game? No players will be notified.'))return;
+   setAnnounceBusy(true);setEditMessage('');
+   try{
+    const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if(!url||!key)throw Error('Authentication unavailable.');
+    const client=createClient(url,key);
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.access_token)throw Error('Please sign in again.');
+    const response=await fetch('/api/admin/notifications/announce-test',{method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+      body:JSON.stringify({game_id:gameId})});
+    const result=await response.json();
+    if(!response.ok)throw Error(result.error||'Test announcement failed.');
+    setEditMessage(`New-game announcement test sent to ${result.to}. Check your inbox.`);
+   }catch(error){setEditMessage(error instanceof Error?error.message:'Test announcement failed.');}
+   finally{setAnnounceBusy(false);}
+  }
+  const [testSignupBusy,setTestSignupBusy]=useState(false);
+  async function registerTestGame(gameId:string){
+   if(!window.confirm('Register your own Player ID for this test-only game? No payment will be collected.'))return;
+   setTestSignupBusy(true);setEditMessage('');
+   try{
+    const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if(!url||!key)throw new Error('Authentication unavailable.');
+    const client=createClient(url,key);
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.access_token)throw new Error('Sign in required.');
+    const response=await fetch('/api/registrations',{method:'POST',headers:{
+     'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`
+    },body:JSON.stringify({game_id:gameId})});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||'Unable to register.');
+    setEditMessage('Test registration saved. Open Notification Center to check Registration Received.');
+    if(rosterGame===gameId){setRosterGame(null);setRoster([]);}
+   }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to register test game.');}
+   finally{setTestSignupBusy(false);}
+  }
+  const [testEmailBusy,setTestEmailBusy]=useState(false);
+  const [testEmailStatus,setTestEmailStatus]=useState('');
+  async function sendRegistrationTestEmail(registrationId:string){
+   if(!window.confirm('Send one real registration test email to your signed-in admin email? This cannot be undone.'))return;
+   setTestEmailBusy(true);setTestEmailStatus('Requesting one test email…');
+   try{
+    const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if(!url||!key)throw new Error('Authentication unavailable.');
+    const client=createClient(url,key);
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.access_token)throw new Error('Sign in required.');
+    const response=await fetch('/api/admin/notifications/send-test',{method:'POST',headers:{
+     'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`
+    },body:JSON.stringify({registration_id:registrationId,confirm:true})});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||'Test email not confirmed.');
+    setTestEmailStatus(`Resend accepted the test email for ${result.recipient}. Check inbox and Resend logs.`);
+   }catch(error){setTestEmailStatus(error instanceof Error?error.message:'Unable to confirm test email.');}
+   finally{setTestEmailBusy(false);}
+  }
+  const [emailPreview,setEmailPreview]=useState<{subject:string;text:string}|null>(null);
+  const [emailPreviewStatus,setEmailPreviewStatus]=useState('');
+  async function previewRegistrationEmail(registrationId:string){
+   setEmailPreview(null);setEmailPreviewStatus('Preparing email preview…');
+   try{
+    const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if(!url||!key)throw new Error('Authentication unavailable.');
+    const client=createClient(url,key);
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.access_token)throw new Error('Sign in required.');
+    const response=await fetch('/api/admin/notifications/preview',{method:'POST',headers:{
+     'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`
+    },body:JSON.stringify({registration_id:registrationId})});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||'Preview unavailable.');
+    setEmailPreview({subject:result.subject,text:result.text});
+    setEmailPreviewStatus('Preview only — no email sent.');
+   }catch(error){setEmailPreviewStatus(error instanceof Error?error.message:'Preview unavailable.');}
+  }
+  const [rosterGame,setRosterGame]=useState<string|null>(null);
+  const [roster,setRoster]=useState<Array<{id:string;player_name:string;status:string;payment_status:string;payment_reference?:string;created_at:string}>>([]);
+  const [rosterMessage,setRosterMessage]=useState('');
+  async function viewRoster(id:string){
+    if(rosterGame===id){setRosterGame(null);return;}
+    setRosterGame(id);setRoster([]);setRosterMessage('Loading roster…');setDemoRegistration('');setDemoConfirmed(false);
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Sign in required.');
+      const response=await fetch(`/api/admin/registrations?game_id=${encodeURIComponent(id)}`,{
+       headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Unable to load roster.');
+      setRoster(result.registrations||[]);setRosterMessage('');
+    }catch(error){setRosterMessage(error instanceof Error?error.message:'Unable to load roster.');}
+  }
+  const [notificationRows,setNotificationRows]=useState<Array<{id:string;event_type:string;created_at:string}>>([]);
+  const [notificationStatus,setNotificationStatus]=useState('');
+  async function loadNotifications(){
+    setNotificationStatus('Loading notification history…');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Sign in required.');
+      const response=await fetch('/api/admin/notifications',{headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Unable to load notifications.');
+      setNotificationRows(result.events||[]);
+      setNotificationStatus((result.events||[]).length?'Delivery remains disabled — history only.':'No notifications recorded. Delivery is not enabled.');
+    }catch(error){setNotificationStatus(error instanceof Error?error.message:'Unable to load notifications.');}
+  }
+  const [paymentBusy,setPaymentBusy]=useState(false);
+  const [demoRegistration,setDemoRegistration]=useState('');
+  const [demoConfirmed,setDemoConfirmed]=useState(false);
+  async function adminRegistrationAction(action:'verify_zelle'|'reconcile',id:string){
+    if(action==='verify_zelle'&&!window.confirm('Have you independently verified this Zelle payment in your bank account?'))return;
+    if(action==='reconcile'&&!window.confirm('Release unpaid spots after 10 AM and offer available places to the waitlist? No notifications will be sent yet.'))return;
+    setPaymentBusy(true);setRosterMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Sign in required.');
+      const response=await fetch(action==='verify_zelle'?'/api/admin/payments':'/api/admin/waitlist',{
+        method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify(action==='verify_zelle'?{action,registration_id:id}:{action,game_id:id})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Action failed.');
+      setRosterMessage(action==='verify_zelle'?'Zelle payment verified and spot confirmed.':'Waitlist updated. Offers have NOT been messaged to players yet.');
+      const rosterResponse=await fetch(`/api/admin/registrations?game_id=${encodeURIComponent(rosterGame||id)}`,{
+        headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+      if(rosterResponse.ok){const rows=await rosterResponse.json();setRoster(rows.registrations||[]);}
+    }catch(error){setRosterMessage(error instanceof Error?error.message:'Action failed.');}
+    finally{setPaymentBusy(false);}
+  }
+  const [testPriceEditId,setTestPriceEditId]=useState<string|null>(null);
+  const [testPriceValue,setTestPriceValue]=useState('1.00');
+  const [testPriceBusy,setTestPriceBusy]=useState(false);
+  async function saveTestPrice(item:PickupGame){
+   setTestPriceBusy(true);setEditMessage('');
+   try{
+    const amount=Number(testPriceValue);
+    if(!Number.isFinite(amount)||amount<0.5||amount>1000||Math.round(amount*100)!==amount*100)
+     throw new Error('Enter a valid amount from $0.50 to $1,000 with at most two decimal places.');
+    const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if(!url||!key)throw new Error('Authentication unavailable.');
+    const client=createClient(url,key);
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.access_token)throw new Error('Sign in required.');
+    const response=await fetch('/api/admin/games',{method:'PATCH',headers:{
+     Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'
+    },body:JSON.stringify({id:item.id,action:'set_test_price',price_cents:Math.round(amount*100)})});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||'Unable to update test price.');
+    await loadGames(session.access_token);
+    setTestPriceEditId(null);setEditMessage('Test game price updated. Refresh Play to test Stripe Checkout.');
+   }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update test price.');}
+   finally{setTestPriceBusy(false);}
+  }
+  function beginEdit(item:PickupGame) {
+    const format=(iso:string)=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso));
+    const pieces=(iso:string)=>Object.fromEntries(format(iso).map(part=>[part.type,part.value]));
+    const start=pieces(item.starts_at),end=pieces(item.ends_at);
+    setEditGame({title:item.title,venue:item.venue,date:`${start.year}-${start.month}-${start.day}`,
+      start:`${start.hour}:${start.minute}`,end:`${end.hour}:${end.minute}`,
+      price:(item.price_cents/100).toFixed(2),capacity:String(item.capacity)});
+    setEditingId(item.id);setEditRepeat(false);setEditWeeks(8);setEditMessage('');
+  }
+  async function saveEdit(event:React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();if(!editingId)return;
+    setEditSaving(true);setEditMessage('');
+    try {
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Please sign in again.');
+      const start=new Date(`${editGame.date}T${editGame.start}`);
+      const end=new Date(`${editGame.date}T${editGame.end}`);
+      if(!Number.isFinite(start.getTime())||!Number.isFinite(end.getTime())||end<=start)
+        throw new Error('End time must be after start time.');
+      const response=await fetch('/api/admin/games',{method:'PATCH',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({id:editingId,title:editGame.title,venue:editGame.venue,
+          starts_at:start.toISOString(),ends_at:end.toISOString(),
+          price_cents:Math.round(Number(editGame.price)*100),capacity:Number(editGame.capacity)})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Unable to update game.');
+      await loadGames(session.access_token);
+      setEditingId(null);setEditMessage('Game updated successfully.');
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update game.');}
+    finally{setEditSaving(false);}
+  }
+  const [gamesError,setGamesError] = useState('');
+  async function loadGames(token:string) {
+    const response=await fetch('/api/admin/games',{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
+    if(!response.ok) {setGamesError('Unable to load games.');return;}
+    const result=await response.json();
+    setGames(result.games || []);
+    setGamesError('');
+  }
+  const [message,setMessage] = useState('');
+  const [game,setGame] = useState({title:'',venue:'',date:'',start:'',end:'',price:'20',capacity:'20'});
+  async function createDraft(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true); setMessage('');
+    try {
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if (!url || !key) throw new Error('Authentication configuration unavailable.');
+      const supabase=createClient(url,key);
+      const {data:{session}}=await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Please sign in again.');
+      const start=new Date(`${game.date}T${game.start}`);
+      const end=new Date(`${game.date}T${game.end}`);
+      const priceNumber=Number(game.price);
+      const capacityNumber=Number(game.capacity);
+      if (!Number.isFinite(priceNumber) || !Number.isFinite(capacityNumber)) throw new Error('Enter valid price and capacity.');
+      const response=await fetch('/api/admin/games',{
+        method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({title:game.title,venue:game.venue,starts_at:start.toISOString(),ends_at:end.toISOString(),price_cents:Math.round(priceNumber*100),capacity:capacityNumber,
+          repeat_weekly:repeatWeekly,weeks:repeatWeekly?weeks:1,is_test:testGame,
+          local_start:`${game.date}T${game.start}`,local_end:`${game.date}T${game.end}`})
+      });
+      const result=await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not save game.');
+      setMessage(repeatWeekly?`${weeks} weekly game drafts saved successfully. None are published.`:'Game draft saved successfully. It is not published.');
+      await loadGames(session.access_token);
+      setGame({title:'',venue:'',date:'',start:'',end:'',price:'20',capacity:'20'});setTestGame(false);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to save game.');
+    } finally {setSaving(false);}
+  }
+  useEffect(() => {
+    let active = true;
+    async function checkAccess() {
+      try {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+        if (!url || !key) throw new Error('Configuration unavailable');
+        const supabase = createClient(url, key);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          if (active) setStatus('denied');
+          return;
+        }
+        const response = await fetch('/api/admin/me', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          cache: 'no-store',
+        });
+        if (active) setStatus(response.ok ? 'authorized' : response.status === 401 || response.status === 403 ? 'denied' : 'error');
+        if (response.ok && active) await loadGames(session.access_token);
+      } catch {
+        if (active) setStatus('error');
+      }
+    }
+    void checkAccess();
+    return () => { active = false; };
+  }, []);
+
+  return (
+    <main style={{minHeight:'100vh',background:'#080b10',color:'#f6f8fb',padding:'clamp(24px,5vw,72px)'}}>
+      <div style={{padding:'12px 20px',background:'#22152b',borderBottom:'1px solid #674477',marginBottom:20}}><Link href="/admin/carmita" style={{color:'#e2b8ff',fontWeight:800}}>❤️ Play for Carmita — registrations & payments →</Link></div>
+      <nav style={{display:'flex',justifyContent:'space-between',gap:16,marginBottom:64,flexWrap:'wrap'}}>
+        <Link href="/" style={{color:'#95d9ff',fontWeight:800,textDecoration:'none'}}>← ALL IN SPORTS</Link>
+        <Link href="/play" style={{color:'#fff',textDecoration:'none'}}>VIEW PLAY PAGE →</Link>
+      </nav>
+      <section style={{maxWidth:1000,margin:'0 auto'}}>
+        {status==='loading' && <p role="status">Checking administrator access…</p>}
+        {status==='denied' && <div role="alert"><h1>Administrator access required</h1><p>Please sign in with an authorized All In Sports administrator account.</p><Link href="/">Return to sign in</Link></div>}
+        {status==='error' && <div role="alert"><h1>Unable to verify access</h1><p>Please try again later. No administrator data has been loaded.</p></div>}
+        {status==='authorized' && <>
+          <p style={{color:'#95d9ff',letterSpacing:3,fontWeight:800}}>ALL IN SPORTS // ADMIN</p>
+          <h1 style={{fontSize:'clamp(38px,7vw,72px)',margin:'12px 0'}}>Command Center</h1>
+          <p style={{color:'#b8c1d0',fontSize:18}}>Manage your games, registrations, and payments in one place.</p>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',gap:16,marginTop:40}}>
+            {[
+              ['Games','Create sessions, set pricing and player limits.','DRAFT CREATION READY'],
+              ['Registrations','View player registrations and pending payment status.','ROSTER VIEW READY'],
+              ['Zelle payments','Verify bank receipts before confirming spots.','IN DEVELOPMENT'],
+              ['Stripe payments','Track confirmed checkout payments and refunds.','NOT CONNECTED'],
+            ].map(([title,description,tag])=><div key={title} style={{background:'#111820',border:'1px solid #303945',borderRadius:16,padding:24}}>
+              <strong style={{fontSize:21}}>{title}</strong><p style={{color:'#b8c1d0',lineHeight:1.6}}>{description}</p><small style={{color:'#95d9ff',fontWeight:800,letterSpacing:1}}>{tag}</small>
+            </div>)}
+          </div>
+          <section style={{marginTop:30,border:'1px solid #303945',borderRadius:16,padding:22,background:'#111820'}}>
+            <h2 style={{marginTop:0}}>Notification Center</h2>
+            <p style={{color:'#b8c1d0'}}>Email and SMS delivery are not connected or enabled. View recorded events only.</p>
+            <button type="button" onClick={()=>void loadNotifications()} style={{padding:'10px 16px',borderRadius:8,background:'#26384a',color:'#fff',border:'1px solid #95d9ff'}}>REFRESH NOTIFICATION HISTORY</button>
+            {notificationStatus && <p role="status">{notificationStatus}</p>}
+            {notificationRows.map(row=><p key={row.id} style={{borderTop:'1px solid #303945',paddingTop:10}}>{row.event_type.replaceAll('_',' ')} · {new Date(row.created_at).toLocaleString()}</p>)}
+          </section>
+          <section style={{marginTop:24,border:'1px solid #303945',borderRadius:16,padding:22,background:'#111820'}}>
+            <h2 style={{marginTop:0}}>Registration email preview — TEST ONLY</h2>
+            <p style={{color:'#b8c1d0'}}>Open a test game's roster to preview or explicitly send one email to your own admin account. Preview does not send. Each registration allows only one test attempt.</p>
+            {testEmailStatus && <p role="status">{testEmailStatus}</p>}
+            {emailPreviewStatus && <p role="status">{emailPreviewStatus}</p>}
+            {emailPreview && <div style={{border:'1px solid #445063',borderRadius:10,padding:16}}>
+              <strong>{emailPreview.subject}</strong>
+              <pre style={{whiteSpace:'pre-wrap',fontFamily:'inherit',lineHeight:1.6}}>{emailPreview.text}</pre>
+            </div>}
+          </section>
+          <section style={{marginTop:40,background:'#111820',border:'1px solid #303945',borderRadius:18,padding:26}}>
+            <h2 style={{marginTop:0}}>Create a pickup game</h2>
+            <p style={{color:'#b8c1d0'}}>Save a draft first. Publishing and player checkout will be added after testing.</p>
+            <form onSubmit={createDraft} style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16}}>
+              {([
+                ['title','Game title','text'],['venue','Field / location','text'],
+                ['date','Game date','date'],['start','Start time','time'],['end','End time','time'],
+                ['price','Price per player ($)','number'],['capacity','Player capacity','number']
+              ] as const).map(([field,label,type])=><label key={field} style={{display:'grid',gap:7,color:'#dce6f2',fontWeight:600}}>
+                {label}<input required type={type} value={game[field]} min={field==='price'?'0':field==='capacity'?'2':undefined} max={field==='capacity'?'100':undefined} step={field==='price'?'0.01':undefined} onChange={e=>setGame(current=>({...current,[field]:e.target.value}))} style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:12,fontSize:16}}/>
+              </label>)}
+              <div style={{gridColumn:'1 / -1',display:'grid',gap:12}}>
+                <label style={{display:'flex',alignItems:'center',gap:10}}><input type="checkbox" checked={testGame} onChange={e=>setTestGame(e.target.checked)}/> TEST GAME — hide from public Play listings; admins only</label>
+                <label style={{display:'flex',alignItems:'center',gap:12,fontWeight:700}}>
+                  <input type="checkbox" checked={repeatWeekly} onChange={e=>setRepeatWeekly(e.target.checked)} style={{width:20,height:20}}/>
+                  Repeat this game every week
+                </label>
+                {repeatWeekly && <label style={{display:'grid',gap:8,maxWidth:260}}>
+                  Number of weeks (2–16)
+                  <input type="number" min={2} max={16} step={1} required value={weeks} onChange={e=>setWeeks(Number(e.target.value))}
+                    style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:12,fontSize:16}}/>
+                  <small style={{color:'#b8c1d0'}}>Each week is saved as a separate unpublished game. Times use New York time.</small>
+                </label>}
+              </div>
+              <div style={{gridColumn:'1 / -1'}}>
+                <button type="submit" disabled={saving} style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:10,padding:'14px 22px',fontWeight:800,cursor:'pointer'}}>{saving?'Saving…':'SAVE GAME DRAFT'}</button>
+                {message && <p role="status" style={{color:'#c8e5fa'}}>{message}</p>}
+              </div>
+            </form>
+          </section>
+          <section style={{marginTop:36}}>
+            <h2>Saved games</h2>
+            {gamesError && <p role="alert">{gamesError}</p>}
+            {!gamesError && games.length===0 && <p style={{color:'#b8c1d0'}}>No saved games yet. Create your first draft above.</p>}
+            {editMessage && <p role="status" style={{color:'#95d9ff'}}>{editMessage}</p>}
+            <div style={{display:'grid',gap:12}}>
+              {games.map(item=><article key={item.id} style={{border:'1px solid #303945',borderRadius:14,padding:20,background:'#111820'}}>
+                <div style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+                  <strong>{item.title}{item.is_test?' · TEST ONLY':''}</strong><span style={{color:'#95d9ff',fontWeight:700}}>{item.status.toUpperCase()}</span>
+                </div>
+                <p style={{color:'#b8c1d0'}}>{item.venue} · {new Date(item.starts_at).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'})}</p>
+                {item.series_id && <p style={{color:'#95d9ff',marginBottom:8}}>Weekly series · Game {item.occurrence_index}</p>}
+                <p style={{marginBottom:0}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players</p>
+                {item.status==='published' && <button type="button" disabled={audienceBusy}
+                  onClick={()=>void checkGameAudience(item.id)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#273b29',color:'#c7f3d0',border:'1px solid #527b59',fontWeight:800}}>
+                  {audienceBusy?'CHECKING…':'CHECK EMAIL AUDIENCE (NO SEND)'}
+                </button>}
+                {item.status==='published' && <button type="button" disabled={batchBusy}
+                  onClick={()=>void sendAnnouncementBatch(item.id)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#4b3029',color:'#ffd5c2',border:'1px solid #9c6350',fontWeight:800}}>
+                  {batchBusy?'SENDING BATCH…':'SEND OPTED-IN EMAIL BATCH (PREVIEW)'}
+                </button>}
+                {item.status==='published' && batchProgress[item.id]?.cursor && !batchProgress[item.id]?.complete && <button type="button" disabled={batchBusy}
+                  onClick={()=>void sendAnnouncementBatch(item.id,true)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#244238',color:'#d3f8e5',border:'1px solid #4b8e77',fontWeight:800}}>
+                  {batchBusy?'PROCESSING…':'CONTINUE NEXT EMAIL BATCH (PREVIEW)'}
+                </button>}
+                {item.status==='published' && batchProgress[item.id] && <p style={{color:'#b8cde0',fontSize:13,marginTop:8}}>
+                  Saved progress: {batchProgress[item.id].processed} candidates checked · {batchProgress[item.id].sent} sent · {batchProgress[item.id].skipped} skipped · {batchProgress[item.id].failed} failed
+                  {batchProgress[item.id].complete?' · Complete':' · More may remain'}
+                </p>}
+                {item.status==='published' && <button type="button" disabled={pilotBusy}
+                  onClick={()=>void sendPilotAnnouncement(item.id)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#3b2b17',color:'#ffe0ad',border:'1px solid #92703e',fontWeight:800}}>
+                  {pilotBusy?'SENDING PILOT…':'SEND 1 OPTED-IN PILOT EMAIL'}
+                </button>}
+                {item.status==='published' && <button type="button" disabled={announceBusy}
+                  onClick={()=>void testGameAnnouncement(item.id)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#193b4c',color:'#bce7ff',border:'1px solid #527c94',fontWeight:800}}>
+                  {announceBusy?'SENDING…':'TEST NEW-GAME EMAIL (ADMIN ONLY)'}
+                </button>}
+                {item.is_test && item.status==='published' && <button type="button" disabled={testSignupBusy}
+                  onClick={()=>void registerTestGame(item.id)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#95d9ff',color:'#08101a',fontWeight:800}}>
+                  {testSignupBusy?'REGISTERING…':'REGISTER MY PLAYER ID (TEST)'}
+                </button>}
+                <button type="button" onClick={()=>void viewRoster(item.id)}
+                  style={{marginTop:14,marginRight:12,background:'#26384a',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:'10px 18px',fontWeight:700}}>
+                  {rosterGame===item.id?'HIDE ROSTER':'VIEW ROSTER'}
+                </button>
+                {rosterGame===item.id && <div style={{marginTop:14,padding:16,background:'#080b10',borderRadius:10}}>
+                  <h3 style={{marginTop:0}}>Registration & waitlist tracker</h3>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(135px,1fr))',gap:10,marginBottom:16}}>
+                    {([
+                      ['Confirmed',roster.filter(r=>r.status==='confirmed').length],
+                      ['Pending payment',roster.filter(r=>r.status==='pending_payment').length],
+                      ['Awaiting verification',roster.filter(r=>r.payment_status==='pending_verification').length],
+                      ['Waitlisted',roster.filter(r=>r.status==='waitlisted').length],
+                      ['Offers active',roster.filter(r=>r.status==='offered').length],
+                      ['Available capacity',Math.max(0,item.capacity-roster.filter(r=>['confirmed','pending_payment','offered'].includes(r.status)).length)]
+                    ] as const).map(([label,count])=><div key={label} style={{border:'1px solid #303945',borderRadius:9,padding:12}}>
+                      <strong style={{display:'block',fontSize:23,color:'#95d9ff'}}>{count}</strong>
+                      <span style={{fontSize:13,color:'#b8c1d0'}}>{label}</span>
+                    </div>)}
+                  </div>
+                  <div style={{border:'1px dashed #95d9ff',borderRadius:10,padding:14,marginBottom:16}}>
+                    <strong style={{color:'#95d9ff'}}>Zelle workflow simulator — no real changes</strong>
+                    <p style={{fontSize:13,color:'#b8c1d0'}}>Preview a reported payment and admin confirmation. No money is sent and no database record is updated.</p>
+                    <select aria-label="Select registration for simulation" value={demoRegistration}
+                      onChange={e=>{setDemoRegistration(e.target.value);setDemoConfirmed(false);}}
+                      style={{width:'100%',maxWidth:400,padding:10,background:'#111820',color:'#fff',border:'1px solid #445063',borderRadius:8}}>
+                      <option value="">Choose an unpaid registration</option>
+                      {roster.filter(r=>r.status==='pending_payment'&&r.payment_status==='unpaid').map(r=>
+                        <option key={r.id} value={r.id}>{r.player_name}</option>)}
+                    </select>
+                    {demoRegistration && <div style={{marginTop:12}}>
+                      <p><strong>SIMULATED:</strong> {demoConfirmed?'Payment verified — Confirmed':'Payment reported — Awaiting verification'}</p>
+                      <button type="button" onClick={()=>setDemoConfirmed(v=>!v)}
+                        style={{padding:'9px 13px',border:'1px solid #95d9ff',borderRadius:8,color:'#fff',background:'#26384a'}}>
+                        {demoConfirmed?'RESET SIMULATION':'SIMULATE ADMIN VERIFICATION'}
+                      </button>
+                    </div>}
+                  </div>
+                  <h4>All registrations ({roster.length})</h4>
+                  {rosterMessage && <p role="status">{rosterMessage}</p>}
+                  {!rosterMessage && roster.length===0 && <p>No registrations yet.</p>}
+                  {roster.map(entry=><div key={entry.id} style={{borderTop:'1px solid #303945',paddingTop:10,marginBottom:10}}>
+                    <strong>{entry.player_name}</strong>{entry.payment_reference ? ` · Ref: ${entry.payment_reference}` : ''}{entry.status==='waitlisted' ? ` · Waitlist #${roster.filter(r=>r.status==='waitlisted').findIndex(r=>r.id===entry.id)+1}` : ''} · {entry.status.replaceAll('_',' ')} · Payment: {entry.payment_status.replaceAll('_',' ')}
+                    {item.is_test && <button type="button" disabled={testEmailBusy}
+                     onClick={()=>void sendRegistrationTestEmail(entry.id)}
+                     style={{marginLeft:12,padding:'7px 12px',border:'1px solid #a9e6b8',borderRadius:7,background:'#23422e',color:'#fff'}}>
+                     {testEmailBusy?'SENDING…':'SEND TEST EMAIL'}
+                    </button>}
+                    {item.is_test && <button type="button" onClick={()=>void previewRegistrationEmail(entry.id)}
+                     style={{marginLeft:12,padding:'7px 12px',border:'1px solid #95d9ff',borderRadius:7,background:'#26384a',color:'#fff'}}>
+                     PREVIEW EMAIL
+                    </button>}
+                    {entry.payment_status==='pending_verification' && <button type="button" disabled={paymentBusy}
+                      onClick={()=>void adminRegistrationAction('verify_zelle',entry.id)}
+                      style={{marginLeft:12,padding:'7px 12px',border:0,borderRadius:7,background:'#a9e6b8',fontWeight:700}}>
+                      VERIFY ZELLE
+                    </button>}
+                  </div>)}
+                  <button type="button" disabled={paymentBusy} onClick={()=>void adminRegistrationAction('reconcile',item.id)}
+                    style={{padding:'9px 13px',border:'1px solid #95d9ff',borderRadius:8,color:'#95d9ff',background:'transparent',fontWeight:700}}>
+                    PROCESS GAME-DAY WAITLIST (MANUAL TEST)
+                  </button>
+                  <p style={{color:'#b8c1d0',fontSize:13}}>Only use after 10 AM New York time on game day. This does not notify players.</p>
+                  <p style={{color:'#b8c1d0',fontSize:13}}>Pending registrations are not paid or confirmed.</p>
+                </div>}
+                {item.is_test && item.status==='published' && <button type="button"
+                  onClick={()=>{setTestPriceEditId(testPriceEditId===item.id?null:item.id);setTestPriceValue((item.price_cents/100).toFixed(2));}}
+                  style={{marginTop:14,marginRight:12,background:'#26384a',color:'#fff',border:'1px solid #95d9ff',borderRadius:9,padding:'10px 18px',fontWeight:700}}>
+                  {testPriceEditId===item.id?'CLOSE PRICE EDIT':'EDIT TEST PRICE'}
+                </button>}
+                {testPriceEditId===item.id && <div style={{marginTop:12,padding:14,border:'1px solid #445063',borderRadius:10}}>
+                  <label style={{display:'grid',gap:8,maxWidth:220}}>Test price per player ($)
+                    <input type="number" min="0.50" max="1000" step="0.01" value={testPriceValue}
+                      onChange={e=>setTestPriceValue(e.target.value)}
+                      style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:8,padding:10}}/>
+                  </label>
+                  <p style={{fontSize:13,color:'#b8c1d0'}}>Preview test games only. Editing is blocked after any payment activity.</p>
+                  <button type="button" disabled={testPriceBusy} onClick={()=>void saveTestPrice(item)}
+                    style={{background:'#95d9ff',color:'#08101a',padding:'10px 18px',border:0,borderRadius:8,fontWeight:800}}>
+                    {testPriceBusy?'SAVING…':'SAVE TEST PRICE'}
+                  </button>
+                </div>}
+                {item.status==='draft' && <button type="button" onClick={()=>beginEdit(item)}
+                  style={{marginTop:14,background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'10px 18px',fontWeight:800,cursor:'pointer'}}>EDIT GAME</button>}
+
+                {item.status==='draft' && <button type="button" disabled={draftActionBusy||editSaving}
+                  onClick={()=>void draftAction(item,'delete')}
+                  style={{marginTop:14,marginLeft:12,background:'transparent',color:'#ffaaaa',border:'1px solid #7e4444',borderRadius:9,padding:'10px 18px',fontWeight:700,cursor:'pointer'}}>DELETE DRAFT</button>}
+                {item.status==='draft' && <button type="button" disabled={draftActionBusy||editSaving}
+                  onClick={()=>void changeStatus(item,'publish')}
+                  style={{marginTop:14,marginLeft:12,background:'#a9e6b8',color:'#08101a',border:0,borderRadius:9,padding:'10px 18px',fontWeight:800}}>PUBLISH GAME</button>}
+                {item.status==='published' && <button type="button" disabled={draftActionBusy}
+                  onClick={()=>void changeStatus(item,'cancel')}
+                  style={{marginTop:14,background:'transparent',color:'#ffaaaa',border:'1px solid #7e4444',borderRadius:9,padding:'10px 18px',fontWeight:700}}>CANCEL GAME</button>}
+                {editingId===item.id && <form onSubmit={saveEdit} style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,marginTop:18,paddingTop:16,borderTop:'1px solid #303945'}}>
+                  {([['title','Game title','text'],['venue','Field / location','text'],['date','Game date','date'],
+                    ['start','Start time','time'],['end','End time','time'],['price','Price per player ($)','number'],
+                    ['capacity','Player capacity','number']] as const).map(([field,label,type])=><label key={field} style={{display:'grid',gap:6}}>
+                      {label}<input required type={type} value={editGame[field]} min={field==='price'?'0':field==='capacity'?'2':undefined}
+                        max={field==='capacity'?'100':undefined} step={field==='price'?'0.01':undefined}
+                        onChange={e=>setEditGame(current=>({...current,[field]:e.target.value}))}
+                        style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:11,fontSize:15}}/>
+                    </label>)}
+
+                  {!item.series_id && <div style={{gridColumn:'1 / -1',display:'grid',gap:10}}>
+                    <label style={{display:'flex',alignItems:'center',gap:10}}>
+                      <input type="checkbox" checked={editRepeat} onChange={e=>setEditRepeat(e.target.checked)}/>
+                      Make this game recurring every week
+                    </label>
+                    {editRepeat && <label style={{display:'grid',gap:6,maxWidth:250}}>
+                      Number of weeks (including this game)
+                      <input type="number" min={2} max={16} step={1} value={editWeeks}
+                        onChange={e=>setEditWeeks(Number(e.target.value))}
+                        style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:11}}/>
+                    </label>}
+                    {editRepeat && <p style={{margin:0,color:'#b8c1d0'}}>Save any changes to this game first. Then select Make Recurring to create the remaining dates.</p>}
+                  </div>}
+                  <div style={{gridColumn:'1 / -1',display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>
+                    <button type="submit" disabled={editSaving} style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800}}>{editSaving?'Saving…':'SAVE CHANGES'}</button>
+
+                    {editRepeat && !item.series_id && <button type="button" disabled={draftActionBusy||editSaving||editWeeks<2||editWeeks>16}
+                      onClick={()=>void draftAction(item,'convert')}
+                      style={{background:'#a9e6b8',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800}}>
+                      {draftActionBusy?'Working…':`MAKE RECURRING (${editWeeks} WEEKS)`}
+                    </button>}
+                    <button type="button" onClick={()=>{setEditingId(null);setEditMessage('');}} style={{background:'transparent',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:'11px 18px'}}>CANCEL</button>
+                  </div>
+
+                  <p style={{gridColumn:'1 / -1',color:'#b8c1d0',margin:0}}>Saving edits updates only this game. Make Recurring uses the currently saved details.</p>
+                </form>}
+              </article>)}
+            </div>
+          </section>
+          <p style={{color:'#b8c1d0',marginTop:32}}>Published games can accept registration requests. Payment collection and confirmation are not enabled yet.</p>
+        </>}
+      </section>
+    </main>
+  );
+}

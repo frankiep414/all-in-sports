@@ -1,39 +1,31 @@
-import { ArrowLeft, ArrowRight, CalendarDays, Clock3, MapPin, Footprints, Trophy, Heart } from 'lucide-react';
+import Link from 'next/link';
 
-export default function EventsPage() {
+export default function Page() {
   return (
-    <main className="carmitaPage">
-      <nav className="nav">
-        <div className="navInner">
-          <a className="brand" href="/"><img src="/all-in-sports-future.png" alt="All In Sports" /></a>
-          <div className="navLinks">
-            <a href="/#play">Play</a>
-            <a href="/#history">History</a>
-            <a href="/events" aria-current="page">Events</a>
-            <a href="/#community">Community</a>
-          </div>
-          <a href="/my-all-in" className="profileButton">My All In</a>
-        </div>
+    <main style={{minHeight:'100vh',background:'#080b10',color:'#f6f8fb',padding:'clamp(24px,5vw,72px)',fontFamily:'inherit'}}>
+      <nav style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,marginBottom:32}}>
+        <Link href="/" style={{color:'#95d9ff',fontWeight:800,textDecoration:'none',letterSpacing:2}}>← ALL IN SPORTS</Link>
+        <Link href="/my-all-in" style={{color:'#fff',textDecoration:'none'}}>MY ALL IN →</Link>
       </nav>
-      <section className="section" style={{ paddingTop: 95, paddingBottom: 95, maxWidth: 1120, margin: '0 auto' }}>
-        <p className="eyebrow">ALL IN SPORTS // COMMUNITY EVENTS</p>
-        <h1 style={{ fontSize: 'clamp(3rem, 8vw, 6rem)', lineHeight: 1, margin: '18px 0 22px', fontWeight: 900 }}>MORE THAN <span style={{ color: '#6edcff' }}>THE GAME.</span></h1>
-        <p style={{ maxWidth: 680, fontSize: '1.12rem', lineHeight: 1.7, opacity: .85, marginBottom: 42 }}>Soccer, community and unforgettable experiences. Explore our upcoming special events.</p>
-        <article style={{ border: '1px solid rgba(110,220,255,.25)', borderRadius: 24, padding: 'clamp(24px, 5vw, 48px)', background: 'linear-gradient(130deg, rgba(110,220,255,.09), rgba(5,7,10,.9))' }}>
-          <p className="eyebrow"><Heart size={16} style={{ verticalAlign: 'middle', marginRight: 8 }} /> FEATURED CHARITY EVENT</p>
-          <h2 style={{ fontSize: 'clamp(2.3rem, 6vw, 4.5rem)', lineHeight: 1.05, margin: '18px 0' }}>PLAY FOR <span style={{ color: '#6edcff' }}>CARMITA.</span></h2>
-          <p style={{ maxWidth: 700, lineHeight: 1.7, marginBottom: 26 }}>A day honoring our mom and bringing family, friends and community together through a coed 7v7 soccer tournament, a 2-mile fun run, a 1-mile walk and a Halloween costume contest.</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, marginBottom: 26, fontWeight: 600 }}>
-            <span><CalendarDays size={17} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Saturday, October 31, 2026</span>
-            <span><Clock3 size={17} style={{ verticalAlign: 'middle', marginRight: 6 }} /> 9 AM–1 PM</span>
-            <span><MapPin size={17} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Harrison High School, Harrison, NJ</span>
-          </div>
-          <p style={{ marginBottom: 26 }}><Trophy size={17} style={{ verticalAlign: 'middle', marginRight: 8 }} />7v7: $250/team or $25/player <span style={{ margin: '0 10px' }}>·</span><Footprints size={17} style={{ verticalAlign: 'middle', marginRight: 8 }} />Run/walk: $25</p>
-          <p style={{ marginBottom: 28, opacity: .9 }}>Proceeds will benefit the Brain Aneurysm Foundation.</p>
-          <a className="primaryButton" href="/play-for-carmita">EXPLORE THE EVENT <ArrowRight size={18} /></a>
-        </article>
-        <p style={{ marginTop: 36, opacity: .7 }}>More All In events coming soon.</p>
-        <a href="/" style={{ display: 'inline-flex', gap: 8, alignItems: 'center', marginTop: 22 }}><ArrowLeft size={16} /> Back to All In Sports</a>
+      <section style={{maxWidth:1080,margin:'0 auto'}}>
+        <p style={{color:'#95d9ff',letterSpacing:4,fontWeight:800}}>EVENTS // ALL IN SPORTS</p>
+        <h1 style={{fontSize:'clamp(36px,5vw,62px)',lineHeight:1.05,margin:'10px 0 8px',fontWeight:900}}>More than just the game.</h1>
+        <h2 style={{fontSize:'clamp(20px,3vw,30px)',color:'#95d9ff',margin:'10px 0'}}>Parties & Community</h2>
+        <p style={{fontSize:16,lineHeight:1.5,color:'#b8c1d0',maxWidth:730}}>All In Sports brings people together through private group events, celebrations, and community activities. Details and availability are shared directly with our team.</p>
+        <section style={{marginTop:22,padding:'clamp(20px,3vw,32px)',border:'1px solid #a66ac2',borderRadius:22,background:'linear-gradient(135deg,#25162f,#12151e)'}}>
+          <p style={{color:'#e2b8ff',letterSpacing:3,fontWeight:800}}>FEATURED COMMUNITY EVENT</p>
+          <h3 style={{fontSize:'clamp(27px,3.5vw,42px)',margin:'12px 0'}}>PLAY FOR CARMITA</h3>
+          <p style={{fontSize:19,color:'#e4d8ec',lineHeight:1.6}}>A charity soccer tournament honoring our mom and supporting the Brain Aneurysm Foundation.</p>
+          <p style={{color:'#fff',lineHeight:1.8}}>Saturday, October 31, 2026 · 9 AM–1 PM<br />Coed 7v7 · $250 per team / $25 per player<br />Harrison High School · Harrison, NJ</p>
+          <Link href="/play-for-carmita" style={{display:'inline-block',marginTop:16,padding:'15px 24px',borderRadius:12,background:'#e2b8ff',color:'#160d1b',fontWeight:900,textDecoration:'none'}}>EXPLORE THE EVENT →</Link>
+        </section>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(190px,1fr))',gap:16,marginTop:26}}>
+          <div style={{border:'1px solid #303945',borderRadius:18,padding:24,background:'#111820'}}><strong style={{fontSize:20}}>Private group events</strong><p style={{color:'#95d9ff',fontSize:13}}>DETAILS COMING SOON</p></div>
+          <div style={{border:'1px solid #303945',borderRadius:18,padding:24,background:'#111820'}}><strong style={{fontSize:20}}>Celebrations</strong><p style={{color:'#95d9ff',fontSize:13}}>DETAILS COMING SOON</p></div>
+          <div style={{border:'1px solid #303945',borderRadius:18,padding:24,background:'#111820'}}><strong style={{fontSize:20}}>Community events</strong><p style={{color:'#95d9ff',fontSize:13}}>DETAILS COMING SOON</p></div>
+        </div>
+        <p style={{color:'#b8c1d0',marginTop:40}}>Want to know when the next opportunity is available? Reach out through our <Link href="/#community" style={{color:'#95d9ff'}}>community section</Link>.</p>
+        <Link href="/" style={{display:'inline-block',marginTop:24,padding:'14px 22px',borderRadius:12,background:'#95d9ff',color:'#08101a',fontWeight:800,textDecoration:'none'}}>BACK TO ALL IN →</Link>
       </section>
     </main>
   );

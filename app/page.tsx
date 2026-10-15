@@ -171,7 +171,7 @@ export default function Home() {
     setVerifiedEmail(email);
     setPlayerLoadError('');
     try {
-      const response = await fetch(`/api/player?email=${encodeURIComponent(email)}`, { cache: 'no-store' });
+      const response = await fetch('/api/player', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' });
       if (response.ok) {
         const player = await response.json();
         if (player?.id) {
@@ -272,10 +272,17 @@ return (
   };
 
   try {
+    const { data: { session: signupSession } } = await supabase.auth.getSession();
+    if (!signupSession?.access_token) {
+      setShowPlayerSignup(false);
+      setShowAuthWelcome(true);
+      return;
+    }
     const response = await fetch('/api/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${signupSession.access_token}`,
       },
       body: JSON.stringify(data),
     });
@@ -508,9 +515,9 @@ setSignupComplete(true);
           </a>
 
           <div className="navLinks">
-            <a href="#play">Play</a>
-            <a href="#leagues">Leagues</a>
-            <a href="#tournaments">Tournaments</a>
+            <a href="/play">Play</a>
+            <a href="/compete">Leagues</a>
+            <a href="/compete">Tournaments</a>
             <a href="#community">Community</a>
           </div>
 
@@ -624,7 +631,7 @@ setSignupComplete(true);
 </div>
     <div className="launchpadGrid">
 
-      <a href="#play" className="launchCard">
+      <a href="/play" className="launchCard">
         <div className="launchIcon">
           <Play size={28} />
         </div>
@@ -638,7 +645,7 @@ setSignupComplete(true);
         <ArrowRight className="launchArrow" size={24} />
       </a>
 
-      <a href="#compete" className="launchCard">
+      <a href="/compete" className="launchCard">
         <div className="launchIcon">
           <Trophy size={28} />
         </div>
