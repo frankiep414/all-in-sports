@@ -7,7 +7,7 @@ This release **prepares** live pickup checkout and opt-in announcement batches; 
 - Register a **live-mode Stripe webhook endpoint** `https://allinsportsnj.com/api/stripe/webhook` for `checkout.session.completed`; set its unique signing secret as `PICKUP_STRIPE_LIVE_WEBHOOK_SECRET` in Production.
 - Review and apply `supabase/migrations/20261015_pickup_stripe_live_payment_confirmation.sql` in the intended Production Supabase project. This is a separate function; the Preview test confirmation function remains intact.
 - Confirm the existing pickup registration and checkout session tables are present in that project. Existing Preview admin game/roster tests are evidence of schema presence only for that environment.
-- Only after credentials, webhook and database prerequisites are verified, explicitly set `PICKUP_STRIPE_LIVE_ENABLED=true` in Production. Default is off. Live checkout requires a signed-in confirmed user, their eligible unpaid registration, a published upcoming non-test game, and live Stripe credentials.
+- Only after credentials, webhook and database prerequisites are verified, explicitly set both `PICKUP_STRIPE_LIVE_ENABLED=true` and `NEXT_PUBLIC_PICKUP_STRIPE_LIVE_ENABLED=true` in Production. The public flag only shows the button; the server flag is the payment authorization gate. Default is off. Live checkout requires a signed-in confirmed user, their eligible unpaid registration, a published upcoming non-test game, and live Stripe credentials.
 - Verify the new live-only configuration with a tightly controlled transaction and webhook reconciliation before general availability; do not repeat the already tested Preview lifecycle.
 
 ## Live opt-in announcements
