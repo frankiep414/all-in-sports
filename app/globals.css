@@ -5068,3 +5068,17 @@ html {
   .carmitaActivityGrid { grid-template-columns: 1fr; }
   .carmitaActivityGrid > div { min-height: 0; }
 }
+
+/* Event activity photography */
+.carmitaActivityGrid > div { padding:0 0 24px; overflow:hidden; }
+.carmitaActivityGrid .carmitaActivityPhoto {
+  display:block; width:100%; height:155px; object-fit:cover;
+  border-bottom:1px solid rgba(110,220,255,.18);
+  filter:saturate(.86) contrast(1.06);
+}
+.carmitaActivityGrid > div > span,
+.carmitaActivityGrid > div > strong,
+.carmitaActivityGrid > div > p { margin-left:24px; margin-right:24px; }
+.carmitaActivityGrid > div > span { margin-top:4px; }
+.carmitaActivityGrid > div > strong { margin-top:-6px; }
+.carmitaActivityGrid > div > p { margin-top:0; }
