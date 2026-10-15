@@ -46,3 +46,24 @@ export function gamePublishedEmail(input:{title:string;venue:string;startsAt:str
   '<br><strong>Start:</strong> '+escapeHtml(input.startsAt)+'</p>');
  return {subject,html,text};
 }
+
+
+export function pickupPaymentConfirmedEmail(input:{
+ gameTitle:string;venue:string;startsAt:string;amountCents:number;reference:string;
+}):EmailTemplate{
+ const amount='$'+(input.amountCents/100).toFixed(2);
+ const profileUrl='https://allinsportsnj.com/my-all-in';
+ const subject='All In Sports — Payment confirmed: '+input.gameTitle;
+ const details='Game: '+input.gameTitle+'\nVenue: '+input.venue+'\nStart: '+input.startsAt+'\nAmount paid: '+amount+'\nReference: '+input.reference;
+ const text='Your pickup payment was confirmed and your spot is reserved.\n\n'+details+'\n\nView your registration: '+profileUrl+'\n\nAll In Sports NJ';
+ const html=shell('Payment confirmed — you’re in!',
+  '<p>Your pickup payment was confirmed and your spot is reserved.</p>'+
+  '<section style="padding:20px;background:#172434;border:1px solid #34485d;border-radius:12px;margin:22px 0">'+
+  '<p style="line-height:1.9;margin:0"><strong>Game:</strong> '+escapeHtml(input.gameTitle)+'<br>'+
+  '<strong>Venue:</strong> '+escapeHtml(input.venue)+'<br>'+
+  '<strong>Start:</strong> '+escapeHtml(input.startsAt)+'<br>'+
+  '<strong>Amount paid:</strong> '+escapeHtml(amount)+'<br>'+
+  '<strong>Reference:</strong> '+escapeHtml(input.reference)+'</p></section>'+
+  '<p><a href="'+profileUrl+'" style="display:inline-block;background:#a9dbff;color:#07111d;padding:14px 22px;border-radius:9px;font-weight:bold;text-decoration:none">VIEW MY ALL IN →</a></p>');
+ return {subject,html,text};
+}
