@@ -15,6 +15,7 @@ import {
   CalendarDays,
   Camera,
   ChevronRight,
+  ChevronDown,
   CircleUserRound,
   Clock3,
   MapPin,
@@ -155,6 +156,7 @@ export default function Home() {
   full_name: string;
 } | null>(null);
   const [verifiedEmail, setVerifiedEmail] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
   const [playerLoadError, setPlayerLoadError] = useState('');
 
@@ -163,10 +165,16 @@ export default function Home() {
     if (sessionError || !session?.user?.email) {
       localStorage.removeItem('allInPlayerId');
       setCurrentPlayer(null);
+      setIsAdmin(false);
       setAuthChecking(false);
       return;
     }
 
+    setIsAdmin(false);
+    fetch('/api/admin/access',{headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'})
+      .then(response=>response.ok?response.json():{isAdmin:false})
+      .then(data=>setIsAdmin(data.isAdmin===true))
+      .catch(()=>setIsAdmin(false));
     const email = session.user.email;
     setVerifiedEmail(email);
     setPlayerLoadError('');
@@ -204,6 +212,7 @@ export default function Home() {
       } else if (event === 'SIGNED_OUT') {
         localStorage.removeItem('allInPlayerId');
         setCurrentPlayer(null);
+        setIsAdmin(false);
         setVerifiedEmail('');
         setShowPlayerSignup(false);
         setShowAuthWelcome(false);
@@ -531,7 +540,17 @@ setSignupComplete(true);
             <a href="#community">Community</a>
           </div>
 
-     {currentPlayer ? <a href="/my-all-in" className="profileButton"><CircleUserRound size={18} />{currentPlayer.full_name.split(' ')[0]}</a> : <button type="button" className="profileButton" onClick={() => setShowAuthWelcome(true)} style={{cursor:'pointer',font:'inherit'}}><CircleUserRound size={18} />Log In / Sign Up</button>}
+     {currentPlayer ? (
+        <div className="profileDropdown">
+          <details>
+            <summary className="profileButton"><CircleUserRound size={18} />{currentPlayer.full_name.split(' ')[0]}<ChevronDown size={16} /></summary>
+            <div className="profileDropdownMenu">
+              <a href="/my-all-in">My All In Profile</a>
+              {isAdmin && <a href="/admin">Admin Dashboard</a>}
+            </div>
+          </details>
+        </div>
+      ) : <button type="button" className="profileButton" onClick={() => setShowAuthWelcome(true)} style={{cursor:'pointer',font:'inherit'}}><CircleUserRound size={18} />Log In / Sign Up</button>}
         </div>
       </nav>
 
