@@ -146,6 +146,16 @@ const intelligence = [
 ];
 
 export default function Home() {
+  const [featuredGames,setFeaturedGames] = useState<Array<{id:string;title:string;venue:string;starts_at:string;price_cents:number;spots_remaining:number}>>([]);
+  useEffect(()=>{
+    let active=true;
+    fetch('/api/games',{cache:'no-store'})
+      .then(response=>response.ok?response.json():{games:[]})
+      .then(data=>{if(active)setFeaturedGames((data.games||[]).slice(0,2));})
+      .catch(()=>{});
+    return ()=>{active=false;};
+  },[]);
+  const charityUpcoming = Date.now() < new Date('2026-11-01T00:00:00-04:00').getTime();
   const [showAuthWelcome, setShowAuthWelcome] = useState(false);
   const [showPlayerSignup, setShowPlayerSignup] = useState(false);
   const [playedBefore, setPlayedBefore] = useState(false);
@@ -554,6 +564,16 @@ setSignupComplete(true);
         </div>
       </nav>
 
+      <aside className="homeFeaturedStrip" aria-label="Featured upcoming activities">
+        <div className="homeFeaturedStripInner">
+          <strong className="homeFeaturedStripLabel"><Zap size={16}/> WHAT'S NEXT</strong>
+          {featuredGames.slice(0,1).map(game=><a href={`/play?game=${encodeURIComponent(game.id)}`} key={game.id}><Play size={16}/><span>Next Pickup: {game.title}</span><ArrowRight size={15}/></a>)}
+          <a href="/compete"><Trophy size={16}/><span>Men's League · Nov 3</span><ArrowRight size={15}/></a>
+          <a href="/compete"><Trophy size={16}/><span>Coed League · Nov 4</span><ArrowRight size={15}/></a>
+          {charityUpcoming && <a href="/play-for-carmita"><CalendarDays size={16}/><span>Play for Carmita · Oct 31</span><ArrowRight size={15}/></a>}
+        </div>
+      </aside>
+
       <section className="homeLaunchpad">
   <div className="launchpadInner">
 
@@ -724,6 +744,57 @@ setSignupComplete(true);
 
   </div>
 </section>
+      <section className="featuredSection" aria-labelledby="featured-heading">
+        <div className="featuredHeading">
+          <div>
+            <p className="eyebrow">DON'T MISS OUT</p>
+            <h2 id="featured-heading">UPCOMING <span>&amp; FEATURED</span></h2>
+            <p>Pickup games, upcoming leagues, and special events — all in one place.</p>
+          </div>
+          <a href="/play" className="featuredAllGames">SEE ALL GAMES <ArrowRight size={18}/></a>
+        </div>
+        <div className="featuredGrid">
+          {featuredGames.map(game=>(
+            <a className="featuredCard featuredPickup" href={`/play?game=${encodeURIComponent(game.id)}`} key={game.id}>
+              <div className="featuredCardVisual"><Play size={38}/><span>UPCOMING PICKUP</span></div>
+              <div className="featuredCardBody">
+                <span className="featuredCategory">PLAY · PICKUP SOCCER</span>
+                <h3>{game.title}</h3>
+                <p><CalendarDays size={17}/>{new Date(game.starts_at).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric',timeZone:'America/New_York'})} · {new Date(game.starts_at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/New_York'})}</p>
+                <p><MapPin size={17}/>{game.venue}</p>
+                <span className="featuredAction">VIEW GAME &amp; REGISTER <ArrowRight size={18}/></span>
+              </div>
+            </a>
+          ))}
+          {[
+            {title:"Men's Tuesday League",start:"Tuesday, November 3",day:"Tuesdays"},
+            {title:"Coed Wednesday League",start:"Wednesday, November 4",day:"Wednesdays"}
+          ].map(league=>(
+            <a className="featuredCard featuredLeague" href="/compete" key={league.title}>
+              <div className="featuredCardVisual"><Trophy size={38}/><span>REGISTRATION OPENING SOON</span></div>
+              <div className="featuredCardBody">
+                <span className="featuredCategory">COMPETE · UPCOMING LEAGUE</span>
+                <h3>{league.title}</h3>
+                <p><CalendarDays size={17}/>{league.start} · 9:30–11 PM</p>
+                <p><MapPin size={17}/>Sofive Carlstadt</p>
+                <p className="featuredLeagueNote">Planned league · {league.day} · Details subject to confirmation</p>
+                <span className="featuredAction">SEE LEAGUE DETAILS <ArrowRight size={18}/></span>
+              </div>
+            </a>
+          ))}
+          {charityUpcoming && <a className="featuredCard featuredCharity" href="/play-for-carmita">
+            <div className="featuredCardVisual"><Trophy size={38}/><span>FEATURED CHARITY EVENT</span></div>
+            <div className="featuredCardBody">
+              <span className="featuredCategory">COMPETE · COMMUNITY</span>
+              <h3>Play for Carmita</h3>
+              <p><CalendarDays size={17}/>Saturday, October 31 · 9 AM–1 PM</p>
+              <p><MapPin size={17}/>Harrison High School · Harrison, NJ</p>
+              <span className="featuredAction">EXPLORE EVENT &amp; REGISTER <ArrowRight size={18}/></span>
+            </div>
+          </a>}
+          {featuredGames.length===0 && !charityUpcoming && <div className="featuredEmpty">More games and events are coming soon. <a href="/play">Explore Play →</a></div>}
+        </div>
+      </section>
       <section className="section" id="play" style={{ display: 'none' }}>
         <div className="sectionHeading">
           <div>
