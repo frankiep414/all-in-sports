@@ -14,9 +14,10 @@ function validSignature(payload:string,header:string,secret:string):boolean{
  });
 }
 export async function POST(request:Request){
- if(process.env.VERCEL_ENV!=='preview'||process.env.PICKUP_STRIPE_TEST_ENABLED!=='true')
+ if(!((process.env.VERCEL_ENV==='preview'&&process.env.PICKUP_STRIPE_TEST_ENABLED==='true')||(process.env.VERCEL_ENV==='production'&&process.env.PICKUP_STRIPE_LIVE_ENABLED==='true')))
   return Response.json({error:'Disabled'},{status:503});
- const secret=process.env.STRIPE_WEBHOOK_SECRET;
+ const live=process.env.VERCEL_ENV==='production';
+ const secret=live?process.env.PICKUP_STRIPE_LIVE_WEBHOOK_SECRET:process.env.STRIPE_WEBHOOK_SECRET;
  if(!secret?.startsWith('whsec_')){
   // Safe diagnostics: never include the signing secret or request payload.
   const diagnostic={
@@ -35,7 +36,7 @@ export async function POST(request:Request){
   return Response.json({error:'Invalid signature'},{status:400});
  try{
   const event=JSON.parse(raw);
-  if(typeof event.id!=='string'||typeof event.type!=='string'||event.livemode!==false)
+  if(typeof event.id!=='string'||typeof event.type!=='string'||event.livemode!==live)
    return Response.json({error:'Invalid test event'},{status:400});
   if(event.type!=='checkout.session.completed')return Response.json({received:true});
   const session=event.data?.object;
@@ -46,7 +47,7 @@ export async function POST(request:Request){
   const key=process.env.SUPABASE_SECRET_KEY;
   if(!url||!key)return Response.json({error:'Database unavailable'},{status:503});
   const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
-  const {data:result,error}=await db.rpc('confirm_pickup_stripe_test_payment',{
+  const {data:result,error}=await db.rpc(live?'confirm_pickup_stripe_live_payment':'confirm_pickup_stripe_test_payment',{
    p_session_id:session.id,p_payment_intent_id:typeof session.payment_intent==='string'?session.payment_intent:null,
    p_amount_cents:session.amount_total,p_currency:session.currency
   });
