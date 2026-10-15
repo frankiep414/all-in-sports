@@ -13,7 +13,7 @@ export async function POST(request:Request){
  const rawAllowlist=process.env.PICKUP_ANNOUNCEMENT_BATCH_ALLOWLIST||'';
  const allowedEmails=rawAllowlist.split(',').map(value=>value.trim().toLowerCase()).filter(Boolean);
  if((!live&&!allowedEmails.length)||allowedEmails.length>20||allowedEmails.some(email=>!/^\S+@\S+\.\S+$/.test(email)))
-  return Response.json({error:'Configure 1–20 valid Preview allowlist emails before enabling batches.'},{status:503});
+  return Response.json({error:'Configure a valid recipient allowlist (required in Preview; optional in Production).'},{status:503});
  const allowlist=new Set(allowedEmails);
  const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL;
  const key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -91,7 +91,7 @@ export async function POST(request:Request){
   const {data:{user:recipient},error:recipientError}=await db.auth.admin.getUserById(entry.user_id);
   const email=recipient?.email?.trim().toLowerCase();
   if(recipientError||!recipient?.email_confirmed_at||!email){skipped++;continue;}
-  if(!allowlist.has(email)){skipped++;continue;}
+  if((!live||allowlist.size>0)&&!allowlist.has(email)){skipped++;continue;}
   const {data:player,error:playerError}=await db.from('players').select('id').ilike('email',email).limit(1);
   if(playerError){failed++;continue;}
   if(!player?.length){skipped++;continue;}
