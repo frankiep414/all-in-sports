@@ -5171,3 +5171,24 @@ html {
 .homeFeaturedStripInner a:hover,.homeFeaturedStripInner a:focus-visible {background:rgba(110,220,255,.13);border-color:#8de5ff;}
 .homeFeaturedStripInner a svg {flex-shrink:0;color:#8de5ff;}
 @media(max-width:640px){.homeFeaturedStripInner{justify-content:flex-start;padding:11px 14px;gap:8px;}.homeFeaturedStripLabel{width:100%;}.homeFeaturedStripInner a{font-size:11px;padding:7px 9px;}}
+
+/* Compact homepage hero: keep navigation and upcoming opportunities in first viewport */
+@media (min-width: 900px) {
+  .homeLaunchpad {min-height:0; padding:24px 32px 28px; align-items:stretch;}
+  .launchpadIntro {margin-bottom:22px;}
+  .launchpadIntro h1 {font-size:clamp(38px,4vw,56px);line-height:1;}
+  .launchpadSubtitle {margin-top:10px;font-size:15px;}
+  .launchpadGrid {gap:12px;}
+  .launchCard {min-height:150px;padding:18px;border-radius:16px;}
+  .launchIcon {width:40px;height:40px;border-radius:11px;}
+  .launchIcon svg {width:22px;height:22px;}
+  .launchCardContent h2 {font-size:24px;}
+  .launchCardContent p {font-size:13px;}
+  .launchpadInner {max-width:1240px;}
+  .featuredSection {padding-top:22px;}
+}
+@media (min-width: 900px) and (max-height: 800px) {
+  .homeLaunchpad {padding-top:18px;padding-bottom:20px;}
+  .launchpadIntro {margin-bottom:14px;}
+  .launchCard {min-height:132px;}
+}
