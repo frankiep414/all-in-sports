@@ -5159,3 +5159,6 @@ html {
 .featuredEmpty {padding:28px;border:1px solid #344653;border-radius:18px;color:#bdc9d5;}
 .featuredEmpty a {color:#8de5ff;text-decoration:underline;}
 @media(max-width:640px){.featuredSection{padding:26px 20px 56px;}.featuredHeading{align-items:start;flex-direction:column;gap:10px;}.featuredCardVisual{min-height:100px;}.featuredCardBody{padding:22px;}}
+
+.featuredLeague .featuredCardVisual {background:radial-gradient(circle at 15% 50%,rgba(87,207,243,.16),transparent 65%),linear-gradient(120deg,#132a32,#10141f);}
+.featuredLeagueNote {font-size:12px!important;color:#a4b1c0!important;line-height:1.5;}
