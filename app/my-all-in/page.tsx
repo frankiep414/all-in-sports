@@ -40,6 +40,31 @@ export default function MyAllInPage() {
   const [upcoming,setUpcoming]=useState<Array<{id:string;title:string;venue:string;starts_at:string;status:string;payment_status:string;payment_reference:string|null;game_id:string}>>([]);
   const [upcomingLoading,setUpcomingLoading]=useState(true);
   const [upcomingError,setUpcomingError]=useState(false);
+  const [withdrawBusy,setWithdrawBusy]=useState<string|null>(null);
+  const [withdrawMessage,setWithdrawMessage]=useState('');
+  async function withdrawRegistration(game:{id:string;title:string;payment_status:string}){
+    const paid=game.payment_status==='paid';
+    const warning=paid
+      ? 'Withdrawing from this game does not automatically issue a refund. Please contact All In Sports management regarding any reimbursement.'
+      : 'Withdraw from this game? Your registration will be cancelled and your spot released.';
+    if(!window.confirm(game.title+'\\n\\n'+warning))return;
+    setWithdrawBusy(game.id);setWithdrawMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Sign-in unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token){window.location.assign('/?auth=1&returnTo=%2Fmy-all-in');return;}
+      const response=await fetch('/api/registrations',{method:'DELETE',headers:{Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({registration_id:game.id})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Unable to withdraw.');
+      setUpcoming(current=>current.filter(item=>item.id!==game.id));
+      setWithdrawMessage(paid?'Withdrawal recorded. Contact All In Sports management for any reimbursement. No refund has been issued.':'Withdrawal recorded. Your spot has been released.');
+    }catch(error){setWithdrawMessage(error instanceof Error?error.message:'Unable to withdraw.');}
+    finally{setWithdrawBusy(null);}
+  }
+
   const [player, setPlayer] = useState<{
     id: number;
     full_name: string;
@@ -169,6 +194,7 @@ export default function MyAllInPage() {
             </div>
 
             <p className="cardEyebrow">MY UPCOMING GAMES</p>
+            {withdrawMessage&&<p role="status" style={{color:'#95d9ff'}}>{withdrawMessage}</p>}
             {upcomingLoading ? <p>Loading your registrations…</p> :
               upcomingError ? <p role="alert">Unable to load your games right now. Please refresh.</p> :
               <div>
@@ -198,6 +224,13 @@ export default function MyAllInPage() {
                         <p style={{margin:'0 0 8px'}}>{game.status==='waitlisted'?'Waitlisted — no spot reserved':game.payment_status==='pending_verification'?'Zelle reported — awaiting verification':game.status==='confirmed'?'Payment verified — reservation confirmed':'Payment due — reservation not yet confirmed'}</p>
                         {game.payment_reference&&<p style={{margin:'0 0 12px'}}>Payment reference: <strong>{game.payment_reference}</strong></p>}
                         {bucket.label==='PENDING PAYMENT'&&<a href={`/play?game=${encodeURIComponent(game.game_id)}`} style={{color:'#95d9ff',fontWeight:700,textDecoration:'none'}}>VIEW PAYMENT OPTIONS →</a>}
+                        {game.payment_status==='paid'&&<p style={{color:'#ffd7a1',fontSize:13,margin:'10px 0'}}>Withdrawal does not automatically issue a refund. Contact All In Sports management regarding reimbursement.</p>}
+                        <div style={{marginTop:14}}>
+                          <button type="button" disabled={withdrawBusy!==null} onClick={()=>void withdrawRegistration(game)}
+                            style={{background:'transparent',border:'1px solid #d18b8b',color:'#ffb3b3',borderRadius:8,padding:'9px 13px',fontWeight:700,cursor:'pointer'}}>
+                            {withdrawBusy===game.id?'WITHDRAWING…':game.status==='waitlisted'?'LEAVE WAITLIST':'WITHDRAW FROM GAME'}
+                          </button>
+                        </div>
                       </div>
                     </details>)}
                 </section>)}
