@@ -9,7 +9,16 @@ type Method = 'zelle' | 'card';
 export default function PlayPage() {
   const [method, setMethod] = useState<Method>('zelle');
   const [focusedGameId,setFocusedGameId]=useState<string|null>(null);
-  useEffect(()=>{setFocusedGameId(new URLSearchParams(window.location.search).get('game'));},[]);
+  useEffect(()=>{
+    const syncSelectedGame=()=>setFocusedGameId(new URLSearchParams(window.location.search).get('game'));
+    syncSelectedGame();
+    window.addEventListener('popstate',syncSelectedGame);
+    return ()=>window.removeEventListener('popstate',syncSelectedGame);
+  },[]);
+  function browseAllGames(){
+    window.history.pushState(null,'','/play');
+    setFocusedGameId(null);
+  }
   const [games,setGames]=useState<Array<{id:string;title:string;venue:string;starts_at:string;ends_at:string;price_cents:number;capacity:number;registered_count:number;waitlist_count:number;spots_remaining:number}>>([]);
   const [gamesLoading,setGamesLoading]=useState(true);
   const [registrations,setRegistrations]=useState<Record<string,{id:string;status:string;payment_status:string;payment_reference?:string}>>({});
@@ -130,7 +139,7 @@ export default function PlayPage() {
         <p style={{fontSize:19,color:'#b8c1d0',lineHeight:1.6,maxWidth:730}}>Browse upcoming All In Sports sessions and request your spot. Payment options appear once your registration is eligible.</p>
         <div style={{border:'1px solid #303945',borderRadius:18,padding:28,background:'#111820',marginTop:34}}>
           <h2 style={{marginTop:0}}>{focusedGameId?'Your selected game':'Upcoming games'}</h2>
-        {focusedGameId&&<Link href="/play" style={{display:'inline-block',color:'#95d9ff',marginBottom:16,fontWeight:700}}>← BROWSE ALL GAMES</Link>}
+        {focusedGameId&&<button type="button" onClick={browseAllGames} style={{display:'inline-block',color:'#95d9ff',background:'none',border:0,padding:0,marginBottom:16,fontWeight:700,cursor:'pointer',font:'inherit'}}>← BROWSE ALL GAMES</button>}
         {!gamesLoading&&!gamesError&&focusedGameId&&!games.some(game=>game.id===focusedGameId)&&<p role="status">This game is not currently available. Browse all games to find another session.</p>}
           {gamesLoading && <p style={{color:'#b8c1d0'}}>Loading upcoming games…</p>}
           {gamesError && <p role="alert" style={{color:'#ffb7b7'}}>Unable to load games. Please try again later.</p>}
