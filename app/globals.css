@@ -5082,3 +5082,19 @@ html {
 .carmitaActivityGrid > div > span { margin-top:4px; }
 .carmitaActivityGrid > div > strong { margin-top:-6px; }
 .carmitaActivityGrid > div > p { margin-top:0; }
+
+/* Account dropdown in homepage navigation */
+.profileDropdown { position:relative; z-index:50; }
+.profileDropdown details { position:relative; }
+.profileDropdown summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:8px; white-space:nowrap; }
+.profileDropdown summary::-webkit-details-marker { display:none; }
+.profileDropdownMenu {
+  position:absolute; top:calc(100% + 10px); right:0; min-width:190px;
+  padding:8px; border:1px solid rgba(110,220,255,.25);
+  border-radius:14px; background:#101820; box-shadow:0 14px 32px rgba(0,0,0,.4);
+}
+.profileDropdownMenu a {
+  display:block; padding:12px; border-radius:8px; color:#f4f8fc;
+  text-decoration:none; font-size:14px; font-weight:700;
+}
+.profileDropdownMenu a:hover,.profileDropdownMenu a:focus-visible { background:rgba(110,220,255,.12); color:#6edcff; }
