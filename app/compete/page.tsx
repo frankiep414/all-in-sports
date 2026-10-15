@@ -25,10 +25,20 @@ export default function Page() {
             <p style={{color:'#b8c1d0',fontSize:14,marginBottom:0}}>Planned league — final details and registration to be announced.</p>
           </article>)}
         </div>
-        <div style={{border:'1px solid #303945',borderRadius:18,padding:24,background:'#111820',marginTop:24}}>
-          <strong style={{fontSize:20}}>Tournaments</strong>
-          <p style={{color:'#95d9ff',fontSize:13}}>DETAILS COMING SOON</p>
-        </div>
+        <section style={{marginTop:36}} aria-labelledby="tournaments-heading">
+          <h2 id="tournaments-heading" style={{fontSize:28,margin:'0 0 18px'}}>Upcoming Tournaments</h2>
+          <article style={{border:'1px solid #6c5364',borderRadius:18,padding:'clamp(20px,4vw,32px)',background:'#17151d'}}>
+            <p style={{color:'#ffb2c9',fontWeight:800,fontSize:13,letterSpacing:1.5,marginTop:0}}>CHARITY TOURNAMENT · REGISTRATION OPEN</p>
+            <h3 style={{fontSize:'clamp(25px,4vw,34px)',margin:'8px 0 12px'}}>Play for Carmita</h3>
+            <p style={{color:'#d9d0d9',lineHeight:1.65}}>A coed 7v7 charity soccer tournament bringing family, friends and the community together in support of the Brain Aneurysm Foundation.</p>
+            <p><strong>Date:</strong> Saturday, October 31, 2026</p>
+            <p><strong>Time:</strong> 9:00 AM–1:00 PM</p>
+            <p><strong>Location:</strong> Harrison High School · Harrison, NJ</p>
+            <p><strong>Soccer:</strong> Coed 7v7 · $250 per team or $25 per individual</p>
+            <p style={{color:'#d9d0d9',fontSize:14}}>Also featuring a 2-mile fun run, 1-mile walk and family activities.</p>
+            <Link href="/play-for-carmita" style={{display:'inline-block',marginTop:14,padding:'13px 20px',borderRadius:10,background:'#ffb2c9',color:'#21121a',fontWeight:800,textDecoration:'none'}}>VIEW EVENT & REGISTER →</Link>
+          </article>
+        </section>
         <p style={{color:'#b8c1d0',marginTop:40}}>Want to know when the next opportunity is available? Reach out through our <Link href="/#community" style={{color:'#95d9ff'}}>community section</Link>.</p>
         <Link href="/" style={{display:'inline-block',marginTop:24,padding:'14px 22px',borderRadius:12,background:'#95d9ff',color:'#08101a',fontWeight:800,textDecoration:'none'}}>BACK TO ALL IN →</Link>
       </section>
