@@ -45,7 +45,7 @@ export async function POST(request:Request){
   .select('after_user_id,processed,sent,skipped,failed,complete').eq('game_id',id).maybeSingle();
  if(checkpointError)return Response.json({error:'Unable to load saved batch progress.'},{status:503});
  if(checkpoint?.complete)return Response.json({sent:0,skipped:0,failed:0,processed:0,
-  next_cursor:null,complete:true,progress:checkpoint,mode:'manual_preview_batch'});
+  next_cursor:null,complete:true,progress:checkpoint,mode:live?'manual_live_batch':'manual_preview_batch'});
  // Limit each invocation to 20 candidates; page using cursor, not unbounded loops.
  const cursor=checkpoint?.after_user_id||null;
  let query=db.from('player_announcement_preferences').select('user_id')
@@ -119,7 +119,7 @@ export async function POST(request:Request){
    const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{
     Authorization:'Bearer '+resend,'Content-Type':'application/json','Idempotency-Key':'all-in-game-batch-'+claim.id
    },body:JSON.stringify({from:'All In Sports <noreply@allinsportsnj.com>',to:[email],
-    subject:'[PREVIEW] '+template.subject,html,headers:{'List-Unsubscribe':'<'+providerUnsubscribe+'>','List-Unsubscribe-Post':'List-Unsubscribe=One-Click'},
+    subject:(live?'':'[PREVIEW] ')+template.subject,html,headers:{'List-Unsubscribe':'<'+providerUnsubscribe+'>','List-Unsubscribe-Post':'List-Unsubscribe=One-Click'},
     text:template.text+'\n\nRegister: '+link+'\nManage email preferences: '+manage+'\nUnsubscribe: '+unsubscribe}),
     signal:AbortSignal.timeout(10000)});
    const result=await response.json().catch(()=>({}));
