@@ -19,24 +19,6 @@ import {
 } from 'lucide-react';
 
 export default function MyAllInPage() {
-  const [emailAnnouncements,setEmailAnnouncements]=useState(false);
-  const [preferencesLoading,setPreferencesLoading]=useState(true);
-  const [preferencesMessage,setPreferencesMessage]=useState('');
-  const [preferencesSaving,setPreferencesSaving]=useState(false);
-  async function saveEmailAnnouncements(next:boolean){
-    setPreferencesSaving(true);setPreferencesMessage('');
-    try{
-      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-      if(!url||!key)throw Error('Authentication unavailable.');
-      const client=createClient(url,key);
-      const {data:{session}}=await client.auth.getSession();
-      if(!session?.access_token)throw Error('Sign in required.');
-      const response=await fetch('/api/announcement-preferences',{method:'PUT',headers:{Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({email_opt_in:next})});
-      if(!response.ok){const result=await response.json().catch(()=>({}));throw Error(result.error||'Unable to save preference.');}
-      setEmailAnnouncements(next);setPreferencesMessage(next?'Email game alerts enabled.':'Email game alerts disabled.');
-    }catch(error){setPreferencesMessage(error instanceof Error?error.message:'Could not save your preference. Please try again.');}
-    finally{setPreferencesSaving(false);}
-  }
   const [signingOut, setSigningOut] = useState(false);
   async function handleSignOut() {
     if (signingOut) return;
@@ -84,12 +66,6 @@ export default function MyAllInPage() {
         cache: 'no-store',
       });
       if (response.ok) {
-        try {
-          const prefResponse=await fetch('/api/announcement-preferences',{headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
-          if(prefResponse.ok){const prefs=await prefResponse.json();if(active)setEmailAnnouncements(prefs.email_opt_in===true);}
-          else if(active)setPreferencesMessage('Email preferences are not available yet.');
-        }catch{if(active)setPreferencesMessage('Email preferences are not available yet.');}
-        finally{if(active)setPreferencesLoading(false);}
         const profile = await response.json();
         if (active) setPlayer(profile);
         try {
@@ -186,16 +162,6 @@ export default function MyAllInPage() {
           </div>
         </section>
 
-        <section className="dashboardWideCard" style={{marginBottom:24}}>
-          <h3>GAME ANNOUNCEMENTS</h3>
-          <p>Get an email when All In Sports announces a new pickup game. Optional — you can turn it off anytime.</p>
-          <label style={{display:'flex',alignItems:'center',gap:12,cursor:'pointer',fontWeight:700}}>
-            <input type="checkbox" checked={emailAnnouncements} disabled={preferencesLoading||preferencesSaving} onChange={event=>void saveEmailAnnouncements(event.target.checked)} />
-            Email me about new games
-          </label>
-          <p role="status" style={{fontSize:13,color:'#a9dbff'}}>{preferencesLoading?'Loading preferences…':preferencesMessage}</p>
-          <p style={{fontSize:12,color:'#a7b4c4'}}>SMS announcements are not enabled yet and will require separate consent.</p>
-        </section>
         <div className="dashboardGrid">
           <section className="dashboardCard nextGameCard">
             <div className="dashboardCardIcon">
