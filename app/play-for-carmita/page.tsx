@@ -1,4 +1,5 @@
 import CarmitaRegistration from './registration';
+import CarmitaDonation from './donation';
 
 import {
   ArrowLeft,
@@ -105,6 +106,7 @@ export default function PlayForCarmitaPage() {
                 REGISTER INDIVIDUALLY · $25
               </a>
             </div>
+            <p style={{marginTop:12}}><a href="#donate" style={{color:"#e2b8ff",fontWeight:800}}>CAN\'T ATTEND? MAKE A DONATION ❤️ →</a></p>
             <p style={{ marginTop: 16, fontSize: 15, lineHeight: 1.6, opacity: 0.9 }}>Individual registration is $25 total and covers soccer, the fun run/walk, or both. Team registration is $250.</p>
 
             <div className="carmitaHeroMeta">
@@ -180,6 +182,7 @@ export default function PlayForCarmitaPage() {
 
 
           <CarmitaRegistration />
+          <CarmitaDonation />
 
           <p style={{ marginTop: 24, lineHeight: 1.7, opacity: 0.85 }}>
             Saturday, October 31, 2026 · 9:00 AM–1:00 PM · Harrison High School, Harrison, NJ.
