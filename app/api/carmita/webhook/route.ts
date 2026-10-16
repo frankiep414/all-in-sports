@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     return Response.json({ received: true });
   const session = event.data?.object;
   if (session?.object !== 'checkout.session' || session.payment_status !== 'paid' || session.mode !== 'payment' ||
-      typeof session.id !== 'string' || typeof session.metadata?.registration_id !== 'string')
+      typeof session.id !== 'string' || (typeof session.metadata?.registration_id !== 'string' && typeof session.metadata?.donation_id !== 'string'))
     return Response.json({ received: true });
   const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   // Donation checkouts are separate from event participation registrations.
