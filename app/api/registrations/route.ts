@@ -1,3 +1,4 @@
+import {sendAdminRegistrationAlert} from '../../../lib/admin-registration-alert';
 import {createClient} from '@supabase/supabase-js';
 import {sendAutomatedTestRegistrationEmail} from '../../../lib/automated-registration-email';
 export const dynamic='force-dynamic';
@@ -55,6 +56,28 @@ export async function POST(request:Request){
     payload:{payment_reference:referenceRow?.payment_reference||null}
    },{onConflict:'event_key',ignoreDuplicates:true});
    if(eventError)console.error('Registration notification event failed',{code:eventError.code});
+  }
+  // Send only on the first notification-event insertion, not repeated signup requests.
+  // Existing event rows are deduplicated by their event_key.
+  if (row?.registration_id && ['pending_payment','waitlisted','offered'].includes(row.registration_status) && !game.is_test) {
+   const eventType=row.registration_status==='waitlisted'?'waitlist_joined':'registration_received';
+   const {data:eventRows,error:claimError}=await access.db.from('notification_events').upsert({
+    event_key:`admin_alert:${row.registration_id}`,event_type:eventType,
+    game_id:body.game_id,registration_id:row.registration_id,
+    payload:{admin_alert:true}
+   },{onConflict:'event_key',ignoreDuplicates:true}).select('id');
+   if(claimError)console.error('Admin pickup alert claim failed',claimError.code);
+   if(!claimError && eventRows?.length){
+    const [{data:details},{data:playerDetails}]=await Promise.all([
+     access.db.from('pickup_games').select('title,venue,starts_at').eq('id',body.game_id).maybeSingle(),
+     access.db.from('players').select('full_name').eq('id',player.id).maybeSingle()
+    ]);
+    await sendAdminRegistrationAlert({kind:'pickup',id:String(row.registration_id),
+     name:playerDetails?.full_name||'Player',email:access.user.email!,
+     title:details?.title||'Pickup game',status:row.registration_status,
+     details:[`Venue: ${details?.venue||'Not provided'}`,`Starts: ${details?.starts_at||'Not provided'}`,
+      `Payment reference: ${referenceRow?.payment_reference||'Not assigned'}`]});
+   }
   }
   // Preview-only opt-in: deliver registration receipt for test and regular games.
   // Unique notification delivery claim prevents repeat emails.
