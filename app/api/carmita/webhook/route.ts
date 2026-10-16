@@ -1,5 +1,6 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
+import {sendAdminRegistrationAlert} from '../../../../lib/admin-registration-alert';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -96,6 +97,20 @@ export async function POST(request: Request) {
     // Retry so the next delivery re-reads the persisted payment state.
     return Response.json({ error: 'Payment state changed; retry' }, { status: 503 });
   }
+  }
+  // Notify organizers about paid event registrations without blocking confirmation.
+  const {data:adminDetails,error:adminDetailsError}=await db.from('carmita_registrations')
+   .select('contact_name,contact_email,registration_type,team_name,activities,amount_cents')
+   .eq('id',reg.id).maybeSingle();
+  if(!adminDetailsError && adminDetails){
+   await sendAdminRegistrationAlert({kind:'event',id:reg.id,
+    name:adminDetails.contact_name,email:adminDetails.contact_email,
+    title:'Play for Carmita',status:'Paid / confirmed',details:[
+     `Registration type: ${adminDetails.registration_type}`,
+     `Team: ${adminDetails.team_name||'N/A'}`,
+     `Activities: ${(adminDetails.activities||[]).join(', ')}`,
+     `Amount paid: ${(adminDetails.amount_cents/100).toFixed(2)}`
+    ]});
   }
   if (reg.confirmation_email_status === 'sent') return Response.json({ received: true });
   // Atomically lease this paid registration before any email attempt.
