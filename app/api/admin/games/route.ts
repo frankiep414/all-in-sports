@@ -220,13 +220,28 @@ export async function PATCH(request: Request) {
    end<=start || !Number.isInteger(price) || price<0 || price>100000 ||
    !Number.isInteger(capacity) || capacity<2 || capacity>100)
    return Response.json({error:'Check the updated game details.'},{status:400});
-  const {data:existing,error:findError}=await access.admin.from('pickup_games').select('id,status').eq('id',id).maybeSingle();
-  if(findError) return Response.json({error:'Unable to verify game.'},{status:500});
-  if(!existing) return Response.json({error:'Game not found.'},{status:404});
-  if(existing.status!=='draft') return Response.json({error:'Only draft games can be edited at this stage.'},{status:409});
+  const {data:existing,error:findError}=await access.admin.from('pickup_games')
+   .select('id,status,starts_at,price_cents').eq('id',id).maybeSingle();
+  if(findError)return Response.json({error:'Unable to verify game.'},{status:503});
+  if(!existing)return Response.json({error:'Game not found.'},{status:404});
+  if(!['draft','published'].includes(existing.status))
+   return Response.json({error:'Only draft or published games can be edited.'},{status:409});
+  if(existing.status==='published'){
+   if(new Date(existing.starts_at).getTime()<=Date.now()||start.getTime()<=Date.now())
+    return Response.json({error:'Only upcoming published games can be edited.'},{status:409});
+   const {data:registrations,error:regError}=await access.admin.from('pickup_registrations')
+    .select('id,status').eq('game_id',id);
+   if(regError)return Response.json({error:'Unable to verify registrations.'},{status:503});
+   const rows=registrations||[];
+   const occupied=rows.filter(r=>['confirmed','pending_payment','offered'].includes(r.status)).length;
+   if(capacity<occupied)return Response.json({error:`Capacity cannot be below ${occupied} active registrations.`},{status:409});
+   if(price!==existing.price_cents){
+    if(rows.length)return Response.json({error:'Price cannot change after a registration. Existing payments must be preserved.'},{status:409});
+   }
+  }
   const {data,error}=await access.admin.from('pickup_games').update({
    title,venue,starts_at:start.toISOString(),ends_at:end.toISOString(),price_cents:price,capacity
-  }).eq('id',id).eq('status','draft').select('id').maybeSingle();
+  }).eq('id',id).eq('status',existing.status).select('id').maybeSingle();
   if(error) {console.error('Game update failed',{code:error.code,message:error.message});return Response.json({error:'Unable to update game.'},{status:500});}
   if(!data) return Response.json({error:'Game changed; refresh and try again.'},{status:409});
   return Response.json({updated:true});

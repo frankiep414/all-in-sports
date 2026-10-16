@@ -630,7 +630,7 @@ export default function AdminPage() {
                     {testPriceBusy?'SAVING…':'SAVE TEST PRICE'}
                   </button>
                 </div>}
-                {item.status==='draft' && <button type="button" onClick={()=>beginEdit(item)}
+                {(item.status==='draft'||item.status==='published') && <button type="button" onClick={()=>beginEdit(item)}
                   style={{marginTop:14,background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'10px 18px',fontWeight:800,cursor:'pointer'}}>EDIT GAME</button>}
 
                 {item.status==='draft' && <button type="button" disabled={draftActionBusy||editSaving}
@@ -652,7 +652,8 @@ export default function AdminPage() {
                         style={{background:'#080b10',color:'#fff',border:'1px solid #445063',borderRadius:9,padding:11,fontSize:15}}/>
                     </label>)}
 
-                  {!item.series_id && <div style={{gridColumn:'1 / -1',display:'grid',gap:10}}>
+                  {item.status==='published' && <p style={{gridColumn:'1 / -1',color:'#ffd7a1',margin:0}}>Published game: existing registrations and payment records remain intact. Price changes are blocked after registrations. Capacity cannot drop below active registrations. Date and time changes are not automatically emailed to players.</p>}
+                   {!item.series_id && <div style={{gridColumn:'1 / -1',display:'grid',gap:10}}>
                     <label style={{display:'flex',alignItems:'center',gap:10}}>
                       <input type="checkbox" checked={editRepeat} onChange={e=>setEditRepeat(e.target.checked)}/>
                       Make this game recurring every week
