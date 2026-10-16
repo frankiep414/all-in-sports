@@ -15,6 +15,8 @@ export default function AdminPage() {
   const [testGame,setTestGame]=useState(false);
   const [weeks,setWeeks]=useState(8);
   const [games,setGames] = useState<PickupGame[]>([]);
+  const [gameView,setGameView] = useState<'active'|'published'|'draft'|'all'>('active');
+  const visibleGames = games.filter(game => gameView === 'all' || (gameView === 'active' ? game.status === 'published' || game.status === 'draft' : game.status === gameView));
   const [editingId,setEditingId]=useState<string|null>(null);
   const [editGame,setEditGame]=useState({title:'',venue:'',date:'',start:'',end:'',price:'',capacity:''});
   const [editSaving,setEditSaving]=useState(false);
@@ -504,11 +506,24 @@ export default function AdminPage() {
           </section>
           <section style={{marginTop:36}}>
             <h2>Saved games</h2>
+            <div role="group" aria-label="Filter saved games by status" style={{display:'flex',gap:10,flexWrap:'wrap',margin:'16px 0 20px'}}>
+              {([
+                ['active','Published + Drafts',games.filter(g=>g.status==='published'||g.status==='draft').length],
+                ['published','Published',games.filter(g=>g.status==='published').length],
+                ['draft','Drafts',games.filter(g=>g.status==='draft').length],
+                ['all','All Games',games.length]
+              ] as const).map(([value,label,count])=><button key={value} type="button" aria-pressed={gameView===value}
+                onClick={()=>{setGameView(value);setEditingId(null);}}
+                style={{padding:'10px 16px',borderRadius:10,border:gameView===value?'2px solid #95d9ff':'1px solid #536577',background:gameView===value?'#244459':'#151e28',color:gameView===value?'#fff':'#c9d6e2',fontWeight:700,cursor:'pointer'}}>
+                {label} ({count})
+              </button>)}
+            </div>
+            {games.length>0 && visibleGames.length===0 && <p role="status" style={{color:'#b8c1d0'}}>No games in this view. Choose another filter to see other saved games.</p>}
             {gamesError && <p role="alert">{gamesError}</p>}
             {!gamesError && games.length===0 && <p style={{color:'#b8c1d0'}}>No saved games yet. Create your first draft above.</p>}
             {editMessage && <p role="status" style={{color:'#95d9ff'}}>{editMessage}</p>}
             <div style={{display:'grid',gap:12}}>
-              {games.map(item=><article key={item.id} style={{border:'1px solid #303945',borderRadius:14,padding:20,background:'#111820'}}>
+              {visibleGames.map(item=><article key={item.id} style={{border:'1px solid #303945',borderRadius:14,padding:20,background:'#111820'}}>
                 <div style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
                   <strong>{item.title}{item.is_test?' · TEST ONLY':''}</strong><span style={{color:'#95d9ff',fontWeight:700}}>{item.status.toUpperCase()}</span>
                 </div>
