@@ -75,6 +75,40 @@ export async function POST(request: Request) {
       );
     }
 
+    // Notify the internal admin inbox once for each newly created Player ID.
+    // This is an operational notification, not a marketing email.
+    try {
+      const resendKey = process.env.RESEND_API_KEY;
+      if (!resendKey) {
+        console.error('New member admin notification: RESEND_API_KEY missing');
+      } else {
+        const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[char] || char));
+        const name = fullName.trim();
+        const memberEmail = user.email;
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${resendKey}`,
+            'Content-Type': 'application/json',
+            'Idempotency-Key': `all-in-new-member-${newPlayer.id}`,
+          },
+          body: JSON.stringify({
+            from: 'All In Sports <noreply@allinsportsnj.com>',
+            to: ['allinsports.imom@gmail.com'],
+            subject: 'New All In Sports member: ' + name.replace(/[\\r\\n]/g, ' ').slice(0, 100),
+            html: `<h2>New All In Sports member ⚽</h2><p><strong>Name:</strong> ${escapeHtml(name)}</p><p><strong>Email:</strong> ${escapeHtml(memberEmail)}</p><p><strong>Player ID:</strong> ${escapeHtml(String(newPlayer.id))}</p><p>A new member has completed Player ID signup.</p>`,
+            text: `New All In Sports member\\nName: ${name}\\nEmail: ${memberEmail}\\nPlayer ID: ${newPlayer.id}`,
+          }),
+          signal: AbortSignal.timeout(12000),
+        });
+        if (!response.ok) console.error('New member admin notification failed', response.status);
+      }
+    } catch (notificationError) {
+      console.error('New member admin notification error', notificationError);
+    }
+
     // Record optional email announcement consent only after Player ID creation.
     // If preference storage is not installed, do not infer consent from signup.
     if (emailConsent === true) {
