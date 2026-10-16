@@ -237,10 +237,6 @@ export async function PATCH(request: Request) {
    if(capacity<occupied)return Response.json({error:`Capacity cannot be below ${occupied} active registrations.`},{status:409});
    if(price!==existing.price_cents){
     if(rows.length)return Response.json({error:'Price cannot change after a registration. Existing payments must be preserved.'},{status:409});
-    const {data:sessions,error:sessionsError}=await access.admin.from('pickup_stripe_checkout_sessions')
-     .select('id').eq('game_id',id).limit(1);
-    if(sessionsError)return Response.json({error:'Unable to verify checkout history. Price unchanged.'},{status:503});
-    if(sessions?.length)return Response.json({error:'Price cannot change after Stripe checkout activity.'},{status:409});
    }
   }
   const {data,error}=await access.admin.from('pickup_games').update({
