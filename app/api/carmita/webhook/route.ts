@@ -34,6 +34,46 @@ export async function POST(request: Request) {
       typeof session.id !== 'string' || typeof session.metadata?.registration_id !== 'string')
     return Response.json({ received: true });
   const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  // Donation checkouts are separate from event participation registrations.
+  if(typeof session.metadata?.donation_id==='string'){
+    const {data:donation,error:lookupError}=await db.from('carmita_donations')
+      .select('id,donor_name,donor_email,amount_cents,currency,payment_status,stripe_checkout_session_id,stripe_livemode,receipt_email_status')
+      .eq('id',session.metadata.donation_id).maybeSingle();
+    if(lookupError)return Response.json({error:'Donation lookup unavailable'},{status:503});
+    if(!donation||donation.stripe_checkout_session_id!==session.id||
+       donation.amount_cents!==session.amount_total||donation.currency!==session.currency||
+       donation.stripe_livemode!==event.livemode)return Response.json({error:'Donation payment mismatch'},{status:400});
+    if(!['paid','pending'].includes(donation.payment_status))return Response.json({error:'Invalid donation state'},{status:409});
+    if(donation.payment_status==='pending'){
+      const {data:updated,error:updateError}=await db.from('carmita_donations').update({
+        payment_status:'paid',paid_at:new Date().toISOString(),
+        stripe_payment_intent_id:typeof session.payment_intent==='string'?session.payment_intent:null
+      }).eq('id',donation.id).eq('payment_status','pending').select('id').maybeSingle();
+      if(updateError||!updated)return Response.json({error:'Donation payment update retry'},{status:503});
+    }
+    if(donation.receipt_email_status!=='sent'){
+      const key=process.env.CARMITA_RESEND_API_KEY;
+      if(!key)return Response.json({error:'Donation receipt email not configured'},{status:503});
+      const esc=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c));
+      const amount=(donation.amount_cents/100).toFixed(2);
+      const receipt=await fetch('https://api.resend.com/emails',{method:'POST',headers:{
+        Authorization:`Bearer ${key}`,'Content-Type':'application/json',
+        'Idempotency-Key':`carmita-donation-receipt-${donation.id}`
+      },body:JSON.stringify({
+        from:'All In Sports | Play for Carmita <events@allinsportsnj.com>',
+        to:[donation.donor_email],reply_to:'allinsports.imom@gmail.com',
+        subject:'Thank you for supporting Play for Carmita ❤️',
+        html:`<h1>Thank you, ${esc(donation.donor_name)}!</h1><p>We received your ${amount} donation in support of Play for Carmita.</p><p>All In Sports is collecting contributions and will donate event proceeds to the Brain Aneurysm Foundation.</p><p>This is a payment acknowledgment, not a charitable tax receipt.</p>`
+      }),signal:AbortSignal.timeout(20000),cache:'no-store'}).catch(()=>null);
+      if(!receipt?.ok)return Response.json({error:'Donation receipt retry'},{status:503});
+      const receiptData=await receipt.json().catch(()=>({}));
+      const {error:markError}=await db.from('carmita_donations').update({
+        receipt_email_status:'sent',receipt_email_id:typeof receiptData.id==='string'?receiptData.id:null
+      }).eq('id',donation.id);
+      if(markError)return Response.json({error:'Donation receipt tracking retry'},{status:503});
+    }
+    return Response.json({received:true});
+  }
   const { data: reg, error } = await db.from('carmita_registrations')
     .select('id,amount_cents,currency,payment_status,stripe_checkout_session_id,confirmation_email_status')
     .eq('id', session.metadata.registration_id).maybeSingle();
