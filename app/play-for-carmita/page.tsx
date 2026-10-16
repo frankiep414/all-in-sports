@@ -105,8 +105,11 @@ export default function PlayForCarmitaPage() {
               <a href="?type=individual#register" className="ghostButton">
                 REGISTER INDIVIDUALLY · $25
               </a>
+              <a href="#donate" className="ghostButton" style={{border:"2px solid #e2b8ff",background:"rgba(226,184,255,0.15)",color:"#f1d6ff",fontWeight:800}}>
+                CAN\'T JOIN? DONATE ❤️
+                <ArrowRight size={17} />
+              </a>
             </div>
-            <p style={{marginTop:12}}><a href="#donate" style={{color:"#e2b8ff",fontWeight:800}}>CAN\'T ATTEND? MAKE A DONATION ❤️ →</a></p>
             <p style={{ marginTop: 16, fontSize: 15, lineHeight: 1.6, opacity: 0.9 }}>Individual registration is $25 total and covers soccer, the fun run/walk, or both. Team registration is $250.</p>
 
             <div className="carmitaHeroMeta">
