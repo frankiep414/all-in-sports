@@ -38,6 +38,16 @@ export async function POST(request:Request){
   const registrationType=body.registration_type==='team'?'team':'solo';
   if(registrationType==='team'&&process.env.TEAM_REGISTRATION_ENABLED!=='true')
    return Response.json({error:'Team registration is not enabled yet.'},{status:503});
+  if(registrationType==='team'){
+   // Pilot is restricted to admin accounts and test games in Vercel Preview.
+   // A public team registration is never allowed until a separate rollout.
+   if(process.env.VERCEL_ENV!=='preview'||!game.is_test)
+    return Response.json({error:'Team registration is limited to admin test games.'},{status:403});
+   const {data:pilotAdmin,error:pilotError}=await access.db.from('admin_users')
+    .select('user_id').eq('user_id',access.user.id).maybeSingle();
+   if(pilotError||!pilotAdmin)
+    return Response.json({error:'Team registration is admin-only during testing.'},{status:403});
+  }
   const teamName=registrationType==='team'&&typeof body.team_name==='string'?body.team_name.trim():null;
   if(registrationType==='team'&&(!teamName||teamName.length<2||teamName.length>80))
    return Response.json({error:'Enter a team name (2–80 characters).'},{status:400});
