@@ -41,10 +41,11 @@ export async function POST(request:Request){
   const teamName=registrationType==='team'&&typeof body.team_name==='string'?body.team_name.trim():null;
   if(registrationType==='team'&&(!teamName||teamName.length<2||teamName.length>80))
    return Response.json({error:'Enter a team name (2–80 characters).'},{status:400});
-  const {data,error}=await access.db.rpc('request_pickup_registration',{
-   p_game_id:body.game_id,p_player_id:String(player.id),p_user_id:access.user.id,
-   p_registration_type:registrationType,p_team_name:teamName
-  });
+  const registrationArgs={p_game_id:body.game_id,p_player_id:String(player.id),p_user_id:access.user.id};
+  // Before schema rollout, retain the existing three-argument solo RPC.
+  const {data,error}=process.env.TEAM_REGISTRATION_ENABLED==='true'
+   ? await access.db.rpc('request_pickup_registration',{...registrationArgs,p_registration_type:registrationType,p_team_name:teamName})
+   : await access.db.rpc('request_pickup_registration',registrationArgs);
   if(error){
    if(error.message.includes('REGISTRATION_ALREADY_EXISTS'))return Response.json({error:'You already registered for this game with a different registration type.'},{status:409});
    if(error.message.includes('GAME_FULL'))return Response.json({error:'This game is full.'},{status:409});
