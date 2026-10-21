@@ -30,7 +30,7 @@ export async function POST(request:Request){
   if(!body||typeof body.registration_id!=='string'||!uuid.test(body.registration_id))
    return Response.json({error:'Invalid registration.'},{status:400});
   const {data:registration,error:regError}=await db.from('pickup_registrations')
-   .select('id,user_id,game_id,status,payment_status,payment_reference,spots_reserved,registration_type,team_name')
+   .select(process.env.TEAM_REGISTRATION_ENABLED==='true'?'id,user_id,game_id,status,payment_status,payment_reference,spots_reserved,registration_type,team_name':'id,user_id,game_id,status,payment_status,payment_reference')
    .eq('id',body.registration_id).eq('user_id',user.id).maybeSingle();
   if(regError||!registration)return Response.json({error:'Registration unavailable.'},{status:404});
   if(!['pending_payment','offered'].includes(registration.status)||registration.payment_status!=='unpaid')
