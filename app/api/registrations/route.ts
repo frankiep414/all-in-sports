@@ -36,6 +36,8 @@ export async function POST(request:Request){
   if(playerError)return Response.json({error:'Unable to verify Player ID.'},{status:503});
   if(!player)return Response.json({error:'Complete your All In player profile before registering.'},{status:403});
   const registrationType=body.registration_type==='team'?'team':'solo';
+  if(registrationType==='team'&&process.env.TEAM_REGISTRATION_ENABLED!=='true')
+   return Response.json({error:'Team registration is not enabled yet.'},{status:503});
   const teamName=registrationType==='team'&&typeof body.team_name==='string'?body.team_name.trim():null;
   if(registrationType==='team'&&(!teamName||teamName.length<2||teamName.length>80))
    return Response.json({error:'Enter a team name (2–80 characters).'},{status:400});
