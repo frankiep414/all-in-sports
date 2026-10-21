@@ -23,7 +23,7 @@ async function sendPickupPaymentConfirmation(
  const resend=process.env.RESEND_API_KEY;
  if(!resend)return;
  const {data:registration,error:regError}=await db.from('pickup_registrations')
-  .select('id,user_id,game_id,status,payment_status,payment_reference,spots_reserved')
+  .select(process.env.TEAM_REGISTRATION_ENABLED==='true'?'id,user_id,game_id,status,payment_status,payment_reference,spots_reserved':'id,user_id,game_id,status,payment_status,payment_reference')
   .eq('id',registrationId).maybeSingle();
  if(regError||!registration||registration.status!=='confirmed'||registration.payment_status!=='paid')return;
  const {data:event,error:eventError}=await db.from('notification_events')
