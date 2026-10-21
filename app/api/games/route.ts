@@ -14,7 +14,7 @@ export async function GET(){
   const games=data||[];
   if(games.length===0)return Response.json({games:[]},{headers:{'Cache-Control':'no-store'}});
   const {data:registrations,error:registrationError}=await db.from('pickup_registrations')
-   .select('game_id,status,spots_reserved').in('game_id',games.map(game=>game.id)).limit(10000);
+   .select(process.env.TEAM_REGISTRATION_ENABLED==='true'?'game_id,status,spots_reserved':'game_id,status').in('game_id',games.map(game=>game.id)).limit(10000);
   if(registrationError){
    console.error('Public availability lookup failed',{code:registrationError.code});
    return Response.json({error:'Game availability unavailable.'},{status:503});
