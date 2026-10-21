@@ -103,7 +103,9 @@ BEGIN
  IF NOT FOUND THEN RETURN 'unknown_session'; END IF;
  IF s.status='completed' THEN RETURN 'already_processed'; END IF;
  SELECT * INTO r FROM public.pickup_registrations WHERE id=s.registration_id FOR UPDATE;
- SELECT * INTO g FROM public.pickup_games WHERE id=r.game_id FOR UPDATE;
+ -- Game price/mode is read without a row lock to avoid a lock-order cycle
+ -- with signup and waitlist reconciliation (which lock the game first).
+ SELECT * INTO g FROM public.pickup_games WHERE id=r.game_id;
  IF g.is_test IS DISTINCT FROM %L OR s.amount_cents<>p_amount_cents
  OR s.currency<>p_currency OR g.price_cents*r.spots_reserved<>p_amount_cents THEN
   UPDATE public.pickup_stripe_checkout_sessions SET status='refund_required',updated_at=now() WHERE id=s.id;
