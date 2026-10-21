@@ -28,6 +28,8 @@ export default function PlayPage() {
   const [reporting,setReporting]=useState<string|null>(null);
   const reportingEnabled=process.env.NEXT_PUBLIC_PICKUP_ZELLE_REPORTING_ENABLED==='true';
   const liveCardEnabled=process.env.NEXT_PUBLIC_PICKUP_STRIPE_LIVE_ENABLED==='true';
+  const [registrationType,setRegistrationType]=useState<'solo'|'team'>('solo');
+  const [teamName,setTeamName]=useState('');
   const [registering,setRegistering]=useState<string|null>(null);
   const [registrationMessage,setRegistrationMessage]=useState('');
   const [signedIn,setSignedIn]=useState(false);
@@ -49,11 +51,11 @@ export default function PlayPage() {
       if(!token){openSignIn();return;}
       const response=await fetch('/api/registrations',{method:'POST',
         headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
-        body:JSON.stringify({game_id:gameId})});
+        body:JSON.stringify({game_id:gameId,registration_type:registrationType,team_name:registrationType==='team'?teamName:null})});
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'Registration failed.');
       setRegistrations(current=>({...current,[gameId]:{id:result.registration_id,status:result.status,payment_status:'unpaid',payment_reference:result.payment_reference}}));
-      setGames(current=>current.map(game=>game.id===gameId?{...game,registered_count:game.registered_count+(result.status==='waitlisted'?0:1),waitlist_count:game.waitlist_count+(result.status==='waitlisted'?1:0),spots_remaining:Math.max(0,game.spots_remaining-(result.status==='waitlisted'?0:1))}:game));
+      setGames(current=>current.map(game=>game.id===gameId?{...game,registered_count:game.registered_count+(result.status==='waitlisted'?0:(registrationType==='team'?5:1)),waitlist_count:game.waitlist_count+(result.status==='waitlisted'?(registrationType==='team'?5:1):0),spots_remaining:Math.max(0,game.spots_remaining-(result.status==='waitlisted'?0:(registrationType==='team'?5:1)))}:game));
       setRegistrationMessage('Registration received. Your spot is provisional; payment has not been collected. Do not send money yet.');
     }catch(error){setRegistrationMessage(error instanceof Error?error.message:'Registration failed.');}
     finally{setRegistering(null);}
@@ -162,8 +164,9 @@ export default function PlayPage() {
                 <span style={{fontSize:13,color:'#b8c1d0'}}>{label}</span>
               </div>)}
             </div>
+            {!registrations[item.id] && <div style={{margin:'12px 0',display:'flex',flexWrap:'wrap',gap:12,alignItems:'center'}}><label><input type="radio" name={'registration-type-'+item.id} checked={registrationType==='solo'} onChange={()=>setRegistrationType('solo')}/> Register Solo — ${(item.price_cents/100).toFixed(2)}</label><label><input type="radio" name={'registration-type-'+item.id} checked={registrationType==='team'} onChange={()=>setRegistrationType('team')}/> Register a Team — ${(item.price_cents*5/100).toFixed(2)} (5 players)</label>{registrationType==='team'&&<input aria-label="Team name" placeholder="Team name" maxLength={80} value={teamName} onChange={event=>setTeamName(event.target.value)} style={{padding:10,borderRadius:8}}/>}</div>}
             {registrations[item.id] ? <strong style={{color:'#9ee6bb'}}>Your registration: {registrations[item.id].status==='confirmed'?'Confirmed — You’re in!':registrations[item.id].payment_status==='pending_verification'?'Payment submitted — Awaiting verification':registrations[item.id].status==='waitlisted'?'Waitlisted':registrations[item.id].status==='offered'?'Waitlist offer':registrations[item.id].status==='expired'?'Expired':'Registered — Payment due'}</strong> :
-              <button type="button" disabled={registering!==null} onClick={()=>void register(item.id)}
+              <button type="button" disabled={registering!==null||(registrationType==='team'&&teamName.trim().length<2)} onClick={()=>void register(item.id)}
                 style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800,cursor:'pointer'}}>
                 {registering===item.id?'Registering…':'REQUEST A SPOT'}
               </button>}
