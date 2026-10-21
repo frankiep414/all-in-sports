@@ -110,7 +110,7 @@ export async function GET(request:Request){
   const access=await session(request);
   if(!access)return Response.json({error:'Sign in required.'},{status:401});
   const {data,error}=await access.db.from('pickup_registrations')
-   .select('id,game_id,status,payment_status,payment_reference,created_at,registration_type,team_name,spots_reserved')
+   .select(process.env.TEAM_REGISTRATION_ENABLED==='true'?'id,game_id,status,payment_status,payment_reference,created_at,registration_type,team_name,spots_reserved':'id,game_id,status,payment_status,payment_reference,created_at')
    .eq('user_id',access.user.id).order('created_at',{ascending:false}).limit(100);
   if(error)return Response.json({error:'Registrations unavailable.'},{status:503});
   return Response.json({registrations:data},{headers:{'Cache-Control':'no-store'}});
