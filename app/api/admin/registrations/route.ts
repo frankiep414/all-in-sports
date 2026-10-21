@@ -18,7 +18,7 @@ export async function GET(request:Request){
   const gameId=new URL(request.url).searchParams.get('game_id');
   if(!gameId||!/^[0-9a-f-]{36}$/i.test(gameId))return Response.json({error:'Invalid game.'},{status:400});
   const {data,error:lookupError}=await db.from('pickup_registrations')
-    .select('id,user_id,player_id,status,payment_status,payment_reference,created_at,registration_type,team_name,spots_reserved')
+    .select(process.env.TEAM_REGISTRATION_ENABLED==='true'?'id,user_id,player_id,status,payment_status,payment_reference,created_at,registration_type,team_name,spots_reserved':'id,user_id,player_id,status,payment_status,payment_reference,created_at')
     .eq('game_id',gameId).order('created_at',{ascending:true}).limit(100);
   if(lookupError)return Response.json({error:'Unable to load roster.'},{status:503});
   const playerIds=[...new Set((data||[]).map(r=>r.player_id))];
