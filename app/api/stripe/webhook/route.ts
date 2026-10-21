@@ -26,25 +26,26 @@ async function sendPickupPaymentConfirmation(
   .select(process.env.TEAM_REGISTRATION_ENABLED==='true'?'id,user_id,game_id,status,payment_status,payment_reference,spots_reserved':'id,user_id,game_id,status,payment_status,payment_reference')
   .eq('id',registrationId).maybeSingle();
  if(regError||!registration||registration.status!=='confirmed'||registration.payment_status!=='paid')return;
+ const reg=registration as unknown as {id:string;user_id:string;game_id:string;status:string;payment_status:string;payment_reference:string|null;spots_reserved?:number};
  const {data:event,error:eventError}=await db.from('notification_events')
-  .select('id').eq('event_key','payment_verified:'+registration.id).maybeSingle();
+  .select('id').eq('event_key','payment_verified:'+reg.id).maybeSingle();
  if(eventError||!event)return;
  const {data:game,error:gameError}=await db.from('pickup_games')
-  .select('title,venue,starts_at,price_cents,is_test').eq('id',registration.game_id).maybeSingle();
- if(gameError||!game||game.is_test||game.price_cents*(registration.spots_reserved||1)!==amountCents)return;
- const {data:{user},error:userError}=await db.auth.admin.getUserById(registration.user_id);
+  .select('title,venue,starts_at,price_cents,is_test').eq('id',reg.game_id).maybeSingle();
+ if(gameError||!game||game.is_test||game.price_cents*(reg.spots_reserved||1)!==amountCents)return;
+ const {data:{user},error:userError}=await db.auth.admin.getUserById(reg.user_id);
  if(userError||!user?.email_confirmed_at||!user.email)return;
  const email=user.email.trim().toLowerCase();
  // Unique(event_id,channel,destination) is the durable, at-most-once claim.
  const {data:claim,error:claimError}=await db.from('notification_deliveries').insert({
-  event_id:event.id,recipient_user_id:registration.user_id,channel:'email',
+  event_id:event.id,recipient_user_id:reg.user_id,channel:'email',
   destination:email,status:'sending',provider:'resend',attempts:1
  }).select('id').single();
  if(claimError||!claim)return;
  const template=pickupPaymentConfirmedEmail({
   gameTitle:game.title,venue:game.venue,
   startsAt:new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'}),
-  amountCents,reference:registration.payment_reference||''
+  amountCents,reference:reg.payment_reference||''
  });
  try{
   const response=await fetch('https://api.resend.com/emails',{
