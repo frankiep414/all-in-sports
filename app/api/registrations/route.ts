@@ -35,10 +35,16 @@ export async function POST(request:Request){
    .select('id').ilike('email',access.user.email!).maybeSingle();
   if(playerError)return Response.json({error:'Unable to verify Player ID.'},{status:503});
   if(!player)return Response.json({error:'Complete your All In player profile before registering.'},{status:403});
+  const registrationType=body.registration_type==='team'?'team':'solo';
+  const teamName=registrationType==='team'&&typeof body.team_name==='string'?body.team_name.trim():null;
+  if(registrationType==='team'&&(!teamName||teamName.length<2||teamName.length>80))
+   return Response.json({error:'Enter a team name (2–80 characters).'},{status:400});
   const {data,error}=await access.db.rpc('request_pickup_registration',{
-   p_game_id:body.game_id,p_player_id:String(player.id),p_user_id:access.user.id
+   p_game_id:body.game_id,p_player_id:String(player.id),p_user_id:access.user.id,
+   p_registration_type:registrationType,p_team_name:teamName
   });
   if(error){
+   if(error.message.includes('REGISTRATION_ALREADY_EXISTS'))return Response.json({error:'You already registered for this game with a different registration type.'},{status:409});
    if(error.message.includes('GAME_FULL'))return Response.json({error:'This game is full.'},{status:409});
    if(error.message.includes('GAME_UNAVAILABLE'))return Response.json({error:'This game is no longer open.'},{status:409});
    if(error.message.includes('REGISTRATION_CANCELLED'))return Response.json({error:'Your registration was cancelled. Contact All In Sports.'},{status:409});
