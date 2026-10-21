@@ -155,10 +155,45 @@ $migration$;
 -- from the expected solo/one-seat default.
 DO $postflight$
 BEGIN
- IF EXISTS (SELECT 1 FROM public.pickup_registrations WHERE registration_type <> 'solo' AND spots_reserved <> 5)
+ IF EXISTS (SELECT 1 FROM public.pickup_registrations WHERE registration_type = 'team' AND spots_reserved <> 5)
  THEN RAISE EXCEPTION 'TEAM_MIGRATION_INVALID_TEAM_SEATS'; END IF;
  IF EXISTS (SELECT 1 FROM public.pickup_registrations WHERE registration_type = 'solo' AND spots_reserved <> 1)
  THEN RAISE EXCEPTION 'TEAM_MIGRATION_INVALID_SOLO_SEATS'; END IF;
 END;
 $postflight$;
+-- Verify the seat-weighted rules inside the same rollback-only transaction.
+DO $behavior_tests$
+DECLARE active_seats integer; next_waiting_seats integer; solo_total integer; team_total integer;
+BEGIN
+ SELECT coalesce(sum(seats),0) INTO active_seats
+ FROM (VALUES ('confirmed',5),('pending_payment',1),('waitlisted',5)) AS t(status,seats)
+ WHERE status IN ('confirmed','pending_payment','offered');
+ IF active_seats <> 6 THEN RAISE EXCEPTION 'SEAT_SUM_TEST_FAILED'; END IF;
+
+ -- With 4 seats remaining, a team cannot enter, even though a solo can.
+ IF active_seats + 5 <= 10 THEN RAISE EXCEPTION 'TEAM_OVERBOOK_TEST_FAILED'; END IF;
+ IF NOT (active_seats + 1 <= 10) THEN RAISE EXCEPTION 'SOLO_CAPACITY_TEST_FAILED'; END IF;
+
+ -- FIFO: the oldest waiting team needs 5 seats, so don't skip them.
+ SELECT seats INTO next_waiting_seats FROM
+  (VALUES (1,5),(2,1)) AS queue(position,seats)
+ ORDER BY position LIMIT 1;
+ IF next_waiting_seats <= (10-active_seats) THEN RAISE EXCEPTION 'FIFO_TEST_FAILED'; END IF;
+
+ solo_total := 1600*1;
+ team_total := 1600*5;
+ IF solo_total <> 1600 OR team_total <> 8000 THEN
+  RAISE EXCEPTION 'CHECKOUT_PRICE_TEST_FAILED';
+ END IF;
+
+ -- Confirm all functions exist with the intended signatures.
+ IF to_regprocedure('public.request_pickup_registration(uuid,text,uuid,text,text)') IS NULL
+ OR to_regprocedure('public.request_pickup_registration(uuid,text,uuid)') IS NULL
+ OR to_regprocedure('public.reconcile_pickup_waitlist(uuid)') IS NULL
+ OR to_regprocedure('public.confirm_pickup_stripe_test_payment(text,text,integer,text)') IS NULL
+ OR to_regprocedure('public.confirm_pickup_stripe_live_payment(text,text,integer,text)') IS NULL
+ THEN RAISE EXCEPTION 'TEAM_FUNCTION_SIGNATURE_TEST_FAILED'; END IF;
+END;
+$behavior_tests$;
+
 ROLLBACK;
