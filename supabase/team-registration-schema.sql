@@ -1,5 +1,20 @@
 -- Team registration atomic migration. REVIEW IN PREVIEW BEFORE PRODUCTION.
 -- Existing solo registrations default to one seat.
+-- Abort rather than silently overbook if existing active registrations exceed
+-- the published capacity. This is a safety check, not a data modification.
+DO $preflight$
+BEGIN
+ IF EXISTS (
+  SELECT 1 FROM public.pickup_games g
+  JOIN public.pickup_registrations r ON r.game_id=g.id
+  WHERE r.status IN ('pending_payment','confirmed','offered')
+  GROUP BY g.id,g.capacity
+  HAVING count(*)>g.capacity
+ ) THEN
+  RAISE EXCEPTION 'TEAM_MIGRATION_CAPACITY_PREFLIGHT_FAILED';
+ END IF;
+END;
+$preflight$;
 ALTER TABLE public.pickup_registrations
  ADD COLUMN IF NOT EXISTS registration_type text NOT NULL DEFAULT 'solo',
  ADD COLUMN IF NOT EXISTS team_name text,
