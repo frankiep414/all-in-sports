@@ -14,7 +14,7 @@ export async function GET(){
   const games=data||[];
   if(games.length===0)return Response.json({games:[]},{headers:{'Cache-Control':'no-store'}});
   const {data:registrations,error:registrationError}=await db.from('pickup_registrations')
-   .select('game_id,status').in('game_id',games.map(game=>game.id)).limit(10000);
+   .select('game_id,status,spots_reserved').in('game_id',games.map(game=>game.id)).limit(10000);
   if(registrationError){
    console.error('Public availability lookup failed',{code:registrationError.code});
    return Response.json({error:'Game availability unavailable.'},{status:503});
@@ -22,8 +22,8 @@ export async function GET(){
   const totals=new Map<string,{registered:number;waitlisted:number}>();
   for(const registration of registrations||[]){
    const total=totals.get(registration.game_id)||{registered:0,waitlisted:0};
-   if(['confirmed','pending_payment','offered'].includes(registration.status))total.registered++;
-   if(registration.status==='waitlisted')total.waitlisted++;
+   if(['confirmed','pending_payment','offered'].includes(registration.status))total.registered+=registration.spots_reserved||1;
+   if(registration.status==='waitlisted')total.waitlisted+=registration.spots_reserved||1;
    totals.set(registration.game_id,total);
   }
   return Response.json({games:games.map(game=>{
