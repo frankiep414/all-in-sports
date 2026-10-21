@@ -23,7 +23,7 @@ async function sendPickupPaymentConfirmation(
  const resend=process.env.RESEND_API_KEY;
  if(!resend)return;
  const {data:registration,error:regError}=await db.from('pickup_registrations')
-  .select('id,user_id,game_id,status,payment_status,payment_reference')
+  .select('id,user_id,game_id,status,payment_status,payment_reference,spots_reserved')
   .eq('id',registrationId).maybeSingle();
  if(regError||!registration||registration.status!=='confirmed'||registration.payment_status!=='paid')return;
  const {data:event,error:eventError}=await db.from('notification_events')
@@ -31,7 +31,7 @@ async function sendPickupPaymentConfirmation(
  if(eventError||!event)return;
  const {data:game,error:gameError}=await db.from('pickup_games')
   .select('title,venue,starts_at,price_cents,is_test').eq('id',registration.game_id).maybeSingle();
- if(gameError||!game||game.is_test||game.price_cents!==amountCents)return;
+ if(gameError||!game||game.is_test||game.price_cents*(registration.spots_reserved||1)!==amountCents)return;
  const {data:{user},error:userError}=await db.auth.admin.getUserById(registration.user_id);
  if(userError||!user?.email_confirmed_at||!user.email)return;
  const email=user.email.trim().toLowerCase();
