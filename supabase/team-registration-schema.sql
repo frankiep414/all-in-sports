@@ -154,7 +154,7 @@ $migration$;
 -- from the expected solo/one-seat default.
 DO $postflight$
 BEGIN
- IF EXISTS (SELECT 1 FROM public.pickup_registrations WHERE registration_type <> 'solo' AND spots_reserved <> 5)
+ IF EXISTS (SELECT 1 FROM public.pickup_registrations WHERE registration_type = 'team' AND spots_reserved <> 5)
  THEN RAISE EXCEPTION 'TEAM_MIGRATION_INVALID_TEAM_SEATS'; END IF;
  IF EXISTS (SELECT 1 FROM public.pickup_registrations WHERE registration_type = 'solo' AND spots_reserved <> 1)
  THEN RAISE EXCEPTION 'TEAM_MIGRATION_INVALID_SOLO_SEATS'; END IF;
