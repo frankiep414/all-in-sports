@@ -1,3 +1,4 @@
+BEGIN;
 -- Team registration atomic migration. REVIEW IN PREVIEW BEFORE PRODUCTION.
 -- Existing solo registrations default to one seat.
 -- Abort rather than silently overbook if existing active registrations exceed
@@ -148,3 +149,15 @@ $fn$,fname,mode_test);
  END LOOP;
 END;
 $migration$;
+
+-- Abort the entire migration if any preexisting registration was changed away
+-- from the expected solo/one-seat default.
+DO $postflight$
+BEGIN
+ IF EXISTS (SELECT 1 FROM public.pickup_registrations WHERE registration_type <> 'solo' AND spots_reserved <> 5)
+ THEN RAISE EXCEPTION 'TEAM_MIGRATION_INVALID_TEAM_SEATS'; END IF;
+ IF EXISTS (SELECT 1 FROM public.pickup_registrations WHERE registration_type = 'solo' AND spots_reserved <> 1)
+ THEN RAISE EXCEPTION 'TEAM_MIGRATION_INVALID_SOLO_SEATS'; END IF;
+END;
+$postflight$;
+COMMIT;
