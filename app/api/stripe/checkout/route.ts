@@ -30,7 +30,7 @@ export async function POST(request:Request){
   if(!body||typeof body.registration_id!=='string'||!uuid.test(body.registration_id))
    return Response.json({error:'Invalid registration.'},{status:400});
   const {data:registration,error:regError}=await db.from('pickup_registrations')
-   .select('id,user_id,game_id,status,payment_status,payment_reference')
+   .select('id,user_id,game_id,status,payment_status,payment_reference,spots_reserved,registration_type,team_name')
    .eq('id',body.registration_id).eq('user_id',user.id).maybeSingle();
   if(regError||!registration)return Response.json({error:'Registration unavailable.'},{status:404});
   if(!['pending_payment','offered'].includes(registration.status)||registration.payment_status!=='unpaid')
@@ -41,6 +41,8 @@ export async function POST(request:Request){
    return Response.json({error:'Test game unavailable.'},{status:409});
   if(!Number.isSafeInteger(game.price_cents)||game.price_cents<50||game.price_cents>100000)
    return Response.json({error:'Test game price must be between $0.50 and $1,000.'},{status:409});
+  const totalCents=game.price_cents*(registration.spots_reserved||1);
+  if(!Number.isSafeInteger(totalCents)||totalCents>100000)return Response.json({error:'Invalid checkout total.'},{status:409});
   const {data:prior,error:priorError}=await db.from('pickup_stripe_checkout_sessions')
    .select('stripe_checkout_session_id,status').eq('registration_id',registration.id)
    .eq('status','open').order('created_at',{ascending:false}).limit(1);
@@ -62,7 +64,7 @@ export async function POST(request:Request){
     existing.client_reference_id===registration.id&&
     existing.metadata?.registration_id===registration.id&&
     existing.metadata?.game_id===game.id&&
-    existing.currency==='usd'&&existing.amount_total===game.price_cents;
+    existing.currency==='usd'&&existing.amount_total===totalCents;
    if(!belongsToRegistration)
     return Response.json({error:'Existing checkout details do not match this registration. Contact an admin.'},{status:409});
    if(existing.status==='open'&&existing.payment_status==='unpaid'&&
@@ -83,8 +85,8 @@ export async function POST(request:Request){
    'metadata[payment_reference]':registration.payment_reference,
    'line_items[0][price_data][currency]':'usd',
    'line_items[0][price_data][unit_amount]':String(game.price_cents),
-   'line_items[0][price_data][product_data][name]':game.title,
-   'line_items[0][quantity]':'1',
+   'line_items[0][price_data][product_data][name]':registration.registration_type==='team'?game.title+' — '+registration.team_name:game.title,
+   'line_items[0][quantity]':String(registration.spots_reserved||1),
    'payment_method_types[0]':'card',
    'expires_at':String(Math.floor(Date.now()/1000)+1800)
   });
@@ -100,7 +102,7 @@ export async function POST(request:Request){
   }
   const {error:saveError}=await db.from('pickup_stripe_checkout_sessions').insert({
    registration_id:registration.id,stripe_checkout_session_id:checkout.id,
-   amount_cents:game.price_cents,currency:'usd',status:'open'
+   amount_cents:totalCents,currency:'usd',status:'open'
   });
   if(saveError){
    await fetch('https://api.stripe.com/v1/checkout/sessions/'+encodeURIComponent(checkout.id)+'/expire',{
