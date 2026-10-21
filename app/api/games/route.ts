@@ -19,8 +19,10 @@ export async function GET(){
    console.error('Public availability lookup failed',{code:registrationError.code});
    return Response.json({error:'Game availability unavailable.'},{status:503});
   }
+  type SeatRow={game_id:string;status:string;spots_reserved?:number};
+  const rows=(registrations||[]) as unknown as SeatRow[];
   const totals=new Map<string,{registered:number;waitlisted:number}>();
-  for(const registration of registrations||[]){
+  for(const registration of rows){
    const total=totals.get(registration.game_id)||{registered:0,waitlisted:0};
    if(['confirmed','pending_payment','offered'].includes(registration.status))total.registered+=registration.spots_reserved||1;
    if(registration.status==='waitlisted')total.waitlisted+=registration.spots_reserved||1;
