@@ -67,3 +67,14 @@ export function pickupPaymentConfirmedEmail(input:{
   '<p><a href="'+profileUrl+'" style="display:inline-block;background:#a9dbff;color:#07111d;padding:14px 22px;border-radius:9px;font-weight:bold;text-decoration:none">VIEW MY ALL IN →</a></p>');
  return {subject,html,text};
 }
+
+export function waitlistOfferEmail(input:{
+ playerName:string;gameTitle:string;venue:string;startsAt:string;
+ paymentReference:string;expiresAt:string;
+}):EmailTemplate{
+ const profileUrl='https://www.allinsportsnj.com/my-all-in';
+ const subject='All In Sports — A spot opened up: '+input.gameTitle;
+ const text='Hi '+input.playerName+',\n\nA spot opened up for you! Your waitlist registration is now offered, not yet confirmed. Please sign in and complete payment before '+input.expiresAt+'.\n\nGame: '+input.gameTitle+'\nVenue: '+input.venue+'\nStart: '+input.startsAt+'\nReference: '+input.paymentReference+'\n\nView your registration and pay: '+profileUrl+'\n\nAll In Sports NJ';
+ const html=shell('A spot opened up!', '<p>Hi '+escapeHtml(input.playerName)+',</p><p>Your waitlist registration has been offered a spot. <strong>Payment is required to confirm it.</strong></p><p><strong>Offer expires:</strong> '+escapeHtml(input.expiresAt)+'</p><p><strong>Game:</strong> '+escapeHtml(input.gameTitle)+'<br><strong>Venue:</strong> '+escapeHtml(input.venue)+'<br><strong>Start:</strong> '+escapeHtml(input.startsAt)+'<br><strong>Reference:</strong> '+escapeHtml(input.paymentReference)+'</p><p><a href="'+profileUrl+'" style="display:inline-block;background:#a9dbff;color:#07111d;padding:14px 22px;border-radius:9px;font-weight:bold;text-decoration:none">VIEW OFFER &amp; PAY →</a></p>');
+ return {subject,text,html};
+}
