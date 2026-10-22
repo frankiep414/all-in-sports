@@ -10,7 +10,7 @@ export async function GET(){
    .select('id,title,venue,starts_at,ends_at,price_cents,capacity')
    .eq('status','published').eq('is_test',false).gte('starts_at',new Date().toISOString())
    .order('starts_at',{ascending:true}).limit(50);
-  if(error){console.error('Public game list failed',{code:error.code});return Response.json({error:'Games unavailable.'},{status:503});}
+  if(error){console.error('Public game list failed',{code:error.code,message:error.message,details:error.details,hint:error.hint});return Response.json({error:'Games unavailable.'},{status:503});}
   const games=data||[];
   if(games.length===0)return Response.json({games:[]},{headers:{'Cache-Control':'no-store'}});
   const {data:registrations,error:registrationError}=await db.from('pickup_registrations')
