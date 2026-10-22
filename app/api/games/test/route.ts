@@ -21,11 +21,12 @@ export async function GET(request:Request){
  if(gameError)return Response.json({error:'Unavailable'},{status:503});
  const ids=(games||[]).map(g=>g.id);
  if(!ids.length)return Response.json({games:[]});
- const {data:regs,error:regError}=await db.from('pickup_registrations').select('game_id,status').in('game_id',ids);
+ const {data:regs,error:regError}=await db.from('pickup_registrations').select(process.env.TEAM_REGISTRATION_ENABLED==='true'?'game_id,status,spots_reserved':'game_id,status').in('game_id',ids);
  if(regError)return Response.json({error:'Unavailable'},{status:503});
+ const rows=(regs||[]) as unknown as Array<{game_id:string;status:string;spots_reserved?:number}>;
  return Response.json({games:(games||[]).map(game=>{
-  const active=(regs||[]).filter(r=>r.game_id===game.id&&['pending_payment','confirmed','offered'].includes(r.status)).length;
-  const waitlist=(regs||[]).filter(r=>r.game_id===game.id&&r.status==='waitlisted').length;
+  const active=rows.filter(r=>r.game_id===game.id&&['pending_payment','confirmed','offered'].includes(r.status)).reduce((sum,r)=>sum+(r.spots_reserved||1),0);
+  const waitlist=rows.filter(r=>r.game_id===game.id&&r.status==='waitlisted').reduce((sum,r)=>sum+(r.spots_reserved||1),0);
   return {...game,registered_count:active,waitlist_count:waitlist,spots_remaining:Math.max(0,game.capacity-active)};
  })},{headers:{'Cache-Control':'no-store'}});
 }
