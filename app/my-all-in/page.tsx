@@ -37,7 +37,7 @@ export default function MyAllInPage() {
       setSigningOut(false);
     }
   }
-  const [upcoming,setUpcoming]=useState<Array<{id:string;title:string;venue:string;starts_at:string;status:string;payment_status:string;payment_reference:string|null;game_id:string}>>([]);
+  const [upcoming,setUpcoming]=useState<Array<{id:string;title:string;venue:string;starts_at:string;status:string;payment_status:string;payment_reference:string|null;game_id:string;registration_type?:string;team_name?:string|null;spots_reserved?:number}>>([]);
   const [upcomingLoading,setUpcomingLoading]=useState(true);
   const [upcomingError,setUpcomingError]=useState(false);
   const [withdrawBusy,setWithdrawBusy]=useState<string|null>(null);
@@ -97,7 +97,7 @@ export default function MyAllInPage() {
           const regResponse=await fetch('/api/registrations',{headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
           if(!regResponse.ok)throw Error('Registrations unavailable');
           const regData=await regResponse.json();
-          const registrations=(regData.registrations||[]) as Array<{id:string;game_id:string;status:string;payment_status:string;payment_reference:string|null}>;
+          const registrations=(regData.registrations||[]) as Array<{id:string;game_id:string;status:string;payment_status:string;payment_reference:string|null;registration_type?:string;team_name?:string|null;spots_reserved?:number}>;
           const ids=[...new Set(registrations.map(reg=>reg.game_id))];
           if(ids.length){
             const gamesResponse=await fetch('/api/my-games',{headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
@@ -109,7 +109,7 @@ export default function MyAllInPage() {
             const upcomingGames=registrations.filter(reg=>!['cancelled','expired'].includes(reg.status))
               .map(reg=>({ ...reg,game:gameMap.get(reg.game_id) }))
               .filter(entry=>entry.game && new Date(entry.game.starts_at)>new Date())
-              .map(entry=>({...entry.game!,id:entry.id,game_id:entry.game_id,status:entry.status,payment_status:entry.payment_status,payment_reference:entry.payment_reference}))
+              .map(entry=>({...entry.game!,id:entry.id,game_id:entry.game_id,status:entry.status,payment_status:entry.payment_status,payment_reference:entry.payment_reference,registration_type:entry.registration_type,team_name:entry.team_name,spots_reserved:entry.spots_reserved}))
               .sort((a,b)=>new Date(a.starts_at).getTime()-new Date(b.starts_at).getTime());
             if(active)setUpcoming(upcomingGames);
           }
@@ -222,6 +222,7 @@ export default function MyAllInPage() {
                       <div style={{padding:'0 18px 18px',fontSize:14,lineHeight:1.6,color:'#d8e3ee'}}>
                         <p style={{margin:'0 0 8px'}}>📍 {game.venue}</p>
                         <p style={{margin:'0 0 8px'}}>{game.status==='waitlisted'?'Waitlisted — no spot reserved':game.payment_status==='pending_verification'?'Zelle reported — awaiting verification':game.status==='confirmed'?'Payment verified — reservation confirmed':'Payment due — reservation not yet confirmed'}</p>
+                        {game.registration_type==='team'&&<p style={{margin:'0 0 8px'}}>Team: <strong>{game.team_name}</strong> · 5 players reserved under your Player ID</p>}
                         {game.payment_reference&&<p style={{margin:'0 0 12px'}}>Payment reference: <strong>{game.payment_reference}</strong></p>}
                         {bucket.label==='PENDING PAYMENT'&&<a href={`/play?game=${encodeURIComponent(game.game_id)}`} style={{color:'#95d9ff',fontWeight:700,textDecoration:'none'}}>VIEW PAYMENT OPTIONS →</a>}
                         {game.payment_status==='paid'&&<p style={{color:'#ffd7a1',fontSize:13,margin:'10px 0'}}>Withdrawal does not automatically issue a refund. Contact All In Sports management regarding reimbursement.</p>}
