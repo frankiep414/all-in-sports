@@ -5,7 +5,7 @@ import {unsubscribeToken} from '../../../../lib/announcement-unsubscribe';
 export const dynamic='force-dynamic';
 
 // Called by a scheduler with Authorization: Bearer <CRON_SECRET>.
-// Intentionally email-only for the first rollout; SMS remains disabled.
+// Email and SMS are separately gated and disabled by default.
 export async function GET(request:Request){
  const cronSecret=process.env.CRON_SECRET;
  if(!cronSecret||request.headers.get('authorization')!=='Bearer '+cronSecret)
@@ -20,13 +20,13 @@ export async function GET(request:Request){
   return Response.json({error:'Activation time or site URL not configured'},{status:503});
  const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL;
  const secret=process.env.SUPABASE_SECRET_KEY,resend=process.env.RESEND_API_KEY;
- if(!url||!secret||(emailEnabled&&(!resend||!process.env.ANNOUNCEMENT_UNSUBSCRIBE_SECRET))||(smsEnabled&&(!process.env.TWILIO_ACCOUNT_SID||!process.env.TWILIO_AUTH_TOKEN||!process.env.TWILIO_PHONE_NUMBER)))
+ if(!url||!secret||(emailEnabled&&(!resend||!process.env.ANNOUNCEMENT_UNSUBSCRIBE_SECRET||process.env.ANNOUNCEMENT_UNSUBSCRIBE_SECRET.length<32))||(smsEnabled&&(!process.env.TWILIO_ACCOUNT_SID||!process.env.TWILIO_AUTH_TOKEN||!process.env.TWILIO_PHONE_NUMBER)))
   return Response.json({error:'Provider configuration incomplete'},{status:503});
  const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
  const {data:events,error:eventError}=await db.from('notification_events')
   .select('id,game_id,created_at').eq('event_type','game_published')
   .gte('created_at',new Date(activation).toISOString())
-  .order('created_at',{ascending:true}).limit(20);
+  .order('created_at',{ascending:false}).limit(20);
  if(eventError)return Response.json({error:'Unable to load publication events'},{status:503});
  const allow=(process.env.GAME_ALERTS_EMAIL_ALLOWLIST||'').split(',')
   .map(x=>x.trim().toLowerCase()).filter(Boolean);
@@ -120,6 +120,10 @@ export async function GET(request:Request){
     if(claimError){if(claimError.code!=='23505')smsFailed++;continue;}
     const when=new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'short',timeStyle:'short'});
     try{
+     const {data:{user:recipientUser},error:recipientError}=await db.auth.admin.getUserById(subscriber.user_id);
+     if(recipientError||!recipientUser?.email_confirmed_at)continue;
+     const {data:player}=await db.from('players').select('id').ilike('email',recipientUser.email||'').limit(1);
+     if(!player?.length)continue;
      const result=await client.messages.create({
       to:number,from:process.env.TWILIO_PHONE_NUMBER!,
       body:'All In Sports: New game! '+game.title+' | '+when+' | '+game.venue+
