@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { after } from 'next/server';
 
 async function getAdmin(request: Request) {
  const token=request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
@@ -206,6 +207,20 @@ export async function PATCH(request: Request) {
      console.error('Published game notification event failed',{gameId:id,code:eventError.code});
      return Response.json({status:next,notification_recorded:false,
       warning:'Game published, but notification history could not be recorded. Do not republish; contact an admin.'});
+    }
+    // Promptly kick the same consent-gated worker after publishing.
+    // The daily Hobby cron remains a fallback; no provider call occurs unless enabled.
+    if(process.env.CRON_SECRET &&
+       (process.env.GAME_PUBLISHED_AUTO_EMAIL_ENABLED==='true' ||
+        process.env.GAME_PUBLISHED_AUTO_SMS_ENABLED==='true')){
+     const workerUrl=new URL('/api/cron/game-announcements',request.url);
+     after(async()=>{
+      try{
+       const result=await fetch(workerUrl,{headers:{Authorization:'Bearer '+process.env.CRON_SECRET},
+        cache:'no-store',signal:AbortSignal.timeout(45000)});
+       if(!result.ok)console.error('Game alert worker returned',result.status);
+      }catch(error){console.error('Game alert worker invocation failed',error);}
+     });
     }
    }
    return Response.json({status:next,notification_recorded:next==='published'});
