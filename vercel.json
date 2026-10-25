@@ -1,1 +1,8 @@
-{"crons":[{"path":"/api/cron/game-announcements","schedule":"0 * * * *"}]}
+{
+  "crons": [
+    {
+      "path": "/api/cron/game-announcements",
+      "schedule": "0 12 * * *"
+    }
+  ]
+}
