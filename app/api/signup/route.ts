@@ -104,6 +104,21 @@ export async function POST(request: Request) {
       }, { status: 503 });
     }
 
+    // Mirror the SMS announcement preference into the channel-specific table.
+    // This table powers the member's My All In announcement settings.
+    const {error:announcementSmsError}=await supabase.from('player_announcement_preferences').upsert({
+      user_id:user.id,
+      sms_opt_in:smsConsent===true,
+      sms_updated_at:new Date().toISOString(),
+      updated_at:new Date().toISOString(),
+    },{onConflict:'user_id'});
+    if(announcementSmsError){
+      console.error('SMS channel preference save failed',announcementSmsError.code);
+      return Response.json({success:false,playerId:newPlayer.id,signupSaved:true,
+        error:'Player ID created, but SMS announcement consent could not be saved. Please contact support.'
+      },{status:503});
+    }
+
     // Notify the internal admin inbox once for each newly created Player ID.
     // This is an operational notification, not a marketing email.
     try {
