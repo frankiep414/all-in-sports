@@ -11,7 +11,7 @@ export async function GET(request:Request){
   return Response.json({error:'Unauthorized'},{status:401});
  if(process.env.GAME_PUBLISHED_AUTO_EMAIL_ENABLED!=='true')
   return Response.json({enabled:false,sent:0});
- const site=(process.env.NEXT_PUBLIC_SITE_URL||'').replace(/\\/$/,'');
+ const site=(process.env.NEXT_PUBLIC_SITE_URL||'').replace(/[/]$/,'');
  const activation=process.env.GAME_ALERTS_NOT_BEFORE;
  if(!activation||!Number.isFinite(Date.parse(activation))||!site.startsWith('https://')||
    (process.env.VERCEL_ENV==='production'&&site!=='https://allinsportsnj.com'))
