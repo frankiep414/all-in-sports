@@ -113,6 +113,13 @@ export async function GET(request:Request){
     const {data:current,error:currentError}=await db.from('notification_preferences')
      .select('sms_opted_in,sms_game_alerts,sms_opted_out_at').eq('user_id',subscriber.user_id).maybeSingle();
     if(currentError||!current?.sms_opted_in||!current.sms_game_alerts||current.sms_opted_out_at)continue;
+    // Validate the recipient before claiming a delivery, so invalid records do not
+    // become permanently stuck in the 'sending' state.
+    const {data:{user:recipientUser},error:recipientError}=await db.auth.admin.getUserById(subscriber.user_id);
+    if(recipientError||!recipientUser?.email_confirmed_at||!recipientUser.email)continue;
+    const {data:player,error:playerError}=await db.from('players').select('id')
+     .ilike('email',recipientUser.email).limit(1);
+    if(playerError||!player?.length)continue;
     const {data:claim,error:claimError}=await db.from('notification_deliveries').insert({
      event_id:event.id,recipient_user_id:subscriber.user_id,channel:'sms',
      destination:number,status:'sending',provider:'twilio',attempts:1
@@ -120,10 +127,6 @@ export async function GET(request:Request){
     if(claimError){if(claimError.code!=='23505')smsFailed++;continue;}
     const when=new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'short',timeStyle:'short'});
     try{
-     const {data:{user:recipientUser},error:recipientError}=await db.auth.admin.getUserById(subscriber.user_id);
-     if(recipientError||!recipientUser?.email_confirmed_at)continue;
-     const {data:player}=await db.from('players').select('id').ilike('email',recipientUser.email||'').limit(1);
-     if(!player?.length)continue;
      const result=await client.messages.create({
       to:number,from:process.env.TWILIO_PHONE_NUMBER!,
       body:'All In Sports: New game! '+game.title+' | '+when+' | '+game.venue+
