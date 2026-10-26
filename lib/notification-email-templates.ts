@@ -38,12 +38,32 @@ export function registrationEmail(input:{
   '<p style="margin:26px 0"><a href="'+profileUrl+'" style="display:inline-block;background:#a9dbff;color:#07111d;text-decoration:none;padding:15px 24px;border-radius:10px;font-size:17px;font-weight:700">VIEW MY REGISTRATION →</a></p>');
  return {subject,html,text};
 }
-export function gamePublishedEmail(input:{title:string;venue:string;startsAt:string}):EmailTemplate{
- const subject='New All In Sports game: '+input.title;
- const text=`A new game has been posted.\nGame: ${input.title}\nVenue: ${input.venue}\nStart: ${input.startsAt}\n\nAll In Sports NJ`;
- const html=shell('New game posted','<p>A new game has been posted.</p><p><strong>Game:</strong> '+
-  escapeHtml(input.title)+'<br><strong>Venue:</strong> '+escapeHtml(input.venue)+
-  '<br><strong>Start:</strong> '+escapeHtml(input.startsAt)+'</p>');
+export function gamePublishedEmail(input:{title:string;venue:string;startsAt:string;registerUrl?:string;unsubscribeUrl?:string}):EmailTemplate{
+ const subject='New game is live! ⚽ '+input.title;
+ const register=input.registerUrl||'https://allinsportsnj.com/play';
+ const unsubscribe=input.unsubscribeUrl;
+ const text='A new All In Sports pickup game is live!\\n\\nGame: '+input.title+
+  '\\nVenue: '+input.venue+'\\nWhen: '+input.startsAt+
+  '\\n\\nClaim your spot: '+register+
+  (unsubscribe?'\\nUnsubscribe: '+unsubscribe:'')+'\\n\\nHOW DARE YOU NOT GO ALL IN!';
+ const html='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'+
+ '<body style="margin:0;padding:24px 12px;background:#0b111b;font-family:Arial,Helvetica,sans-serif;color:#ffffff">'+
+ '<div style="max-width:560px;margin:0 auto;background:#121d2b;border:1px solid #2b4055;border-radius:16px;overflow:hidden">'+
+ '<div style="padding:30px 24px 24px;background:#0a1524;text-align:center;border-bottom:3px solid #49baff">'+
+ '<div style="font-size:15px;font-weight:800;letter-spacing:4px;color:#a9dbff">ALL IN SPORTS</div>'+
+ '<h1 style="margin:16px 0 8px;font-size:32px;line-height:1.15;color:#ffffff">NEW GAME JUST DROPPED ⚽</h1>'+
+ '<p style="margin:0;color:#b8ccdd;font-size:16px">The field is calling. Your spot is waiting.</p></div>'+
+ '<div style="padding:26px 24px">'+
+ '<div style="background:#1a2b3e;border:1px solid #38536b;border-radius:12px;padding:20px">'+
+ '<p style="margin:0 0 14px;font-size:21px;font-weight:800;color:#ffffff">'+escapeHtml(input.title)+'</p>'+
+ '<p style="margin:0 0 10px;line-height:1.5;color:#d8e5ef"><strong style="color:#a9dbff">WHEN</strong><br>'+escapeHtml(input.startsAt)+'</p>'+
+ '<p style="margin:0;line-height:1.5;color:#d8e5ef"><strong style="color:#a9dbff">WHERE</strong><br>'+escapeHtml(input.venue)+'</p></div>'+
+ '<div style="text-align:center;margin:28px 0 22px"><a href="'+escapeHtml(register)+'" style="display:inline-block;background:#49baff;color:#06121e;font-size:18px;font-weight:800;text-decoration:none;border-radius:10px;padding:17px 32px">CLAIM YOUR SPOT →</a></div>'+
+ '<p style="text-align:center;font-size:14px;font-weight:800;letter-spacing:1px;color:#a9dbff;margin:0">HOW DARE YOU NOT GO ALL IN!</p>'+
+ '</div><div style="padding:18px 24px;border-top:1px solid #304458;text-align:center;color:#a6b8c8;font-size:12px;line-height:1.6">'+
+ 'All In Sports NJ · You received this because you opted in to game alerts.'+
+ (unsubscribe?'<br><a href="'+escapeHtml(unsubscribe)+'" style="color:#a9dbff">Unsubscribe from announcements</a>':'')+
+ '</div></div></body></html>';
  return {subject,html,text};
 }
 

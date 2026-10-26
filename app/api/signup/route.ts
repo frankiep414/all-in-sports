@@ -75,6 +75,50 @@ export async function POST(request: Request) {
       );
     }
 
+    // Persist SMS announcement permission in the dedicated notification preferences table.
+    // Never treat a phone number alone as consent. Only a checked signup box opts in.
+    // US signup phone numbers are normalized to E.164 for Twilio delivery.
+    const digits = phone.replace(/\D/g, '');
+    const phoneE164 = digits.length === 10 ? '+1' + digits :
+      digits.length === 11 && digits.startsWith('1') ? '+' + digits : null;
+    if (smsConsent === true && !phoneE164) {
+      return Response.json({
+        success: false, playerId: newPlayer.id, signupSaved: true,
+        error: 'Player ID created, but the phone number could not be prepared for SMS announcements. Please contact support to update your number.'
+      }, { status: 422 });
+    }
+    const { error: smsPreferenceError } = await supabase.from('notification_preferences').upsert({
+      user_id: user.id,
+      sms_opted_in: smsConsent === true,
+      sms_game_alerts: smsConsent === true,
+      sms_transactional: false,
+      phone_e164: phoneE164,
+      sms_consented_at: smsConsent === true ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+    if (smsPreferenceError) {
+      console.error('SMS announcement preference save failed', smsPreferenceError.code);
+      return Response.json({
+        success: false, playerId: newPlayer.id, signupSaved: true,
+        error: 'Player ID created, but SMS notification preferences could not be saved. Please contact support before relying on text alerts.'
+      }, { status: 503 });
+    }
+
+    // Mirror the SMS announcement preference into the channel-specific table.
+    // This table powers the member's My All In announcement settings.
+    const {error:announcementSmsError}=await supabase.from('player_announcement_preferences').upsert({
+      user_id:user.id,
+      sms_opt_in:smsConsent===true,
+      sms_updated_at:new Date().toISOString(),
+      updated_at:new Date().toISOString(),
+    },{onConflict:'user_id'});
+    if(announcementSmsError){
+      console.error('SMS channel preference save failed',announcementSmsError.code);
+      return Response.json({success:false,playerId:newPlayer.id,signupSaved:true,
+        error:'Player ID created, but SMS announcement consent could not be saved. Please contact support.'
+      },{status:503});
+    }
+
     // Notify the internal admin inbox once for each newly created Player ID.
     // This is an operational notification, not a marketing email.
     try {
