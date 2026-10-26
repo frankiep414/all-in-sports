@@ -46,11 +46,3 @@ ALTER TABLE public.notification_preferences ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.notification_events,public.notification_deliveries,public.notification_preferences FROM PUBLIC,anon,authenticated;
 GRANT SELECT,INSERT,UPDATE ON public.notification_events,public.notification_deliveries,public.notification_preferences TO service_role;
 -- Delivery workers and consent capture must be implemented before any messages can be sent.
-)
-);
-ALTER TABLE public.notification_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.notification_deliveries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.notification_preferences ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.notification_events,public.notification_deliveries,public.notification_preferences FROM PUBLIC,anon,authenticated;
-GRANT SELECT,INSERT,UPDATE ON public.notification_events,public.notification_deliveries,public.notification_preferences TO service_role;
--- Delivery workers and consent capture must be implemented before any messages can be sent.
