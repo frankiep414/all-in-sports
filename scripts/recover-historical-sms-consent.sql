@@ -1,4 +1,5 @@
--- Historical SMS consent recovery, review before execution.
+-- Historical SMS consent recovery. Execute only after reviewing Twilio STOP records.
+-- STOP review confirmed by owner on 2026-10-26.
 -- Run ONLY after checking Twilio STOP / opt-out suppression for all candidates.
 -- Put any suppressed E.164 phone numbers into excluded_numbers below.
 -- This script deliberately never changes email consent.
@@ -35,22 +36,30 @@ SELECT count(*) AS eligible_to_restore FROM historical_sms_candidates;
 SELECT left(email,3)||'***' AS masked_email, right(phone_e164,4) AS phone_last4,
        sms_consent_at FROM historical_sms_candidates ORDER BY sms_consent_at;
 
--- Do not enable automatically. After Twilio STOP verification, uncomment the two
--- INSERT statements, and change ROLLBACK to COMMIT.
--- INSERT INTO public.notification_preferences
---   (user_id,phone_e164,sms_opted_in,sms_game_alerts,sms_transactional,sms_consented_at,updated_at)
--- SELECT user_id,phone_e164,true,true,false,sms_consent_at,now()
--- FROM historical_sms_candidates
--- ON CONFLICT (user_id) DO UPDATE SET
---   phone_e164=EXCLUDED.phone_e164,sms_opted_in=true,sms_game_alerts=true,
---   sms_consented_at=EXCLUDED.sms_consented_at,updated_at=now()
--- WHERE notification_preferences.sms_opted_out_at IS NULL;
---
--- INSERT INTO public.player_announcement_preferences
---   (user_id,sms_opt_in,sms_updated_at,updated_at)
--- SELECT user_id,true,now(),now() FROM historical_sms_candidates
--- ON CONFLICT (user_id) DO UPDATE SET
---   sms_opt_in=true,sms_updated_at=now(),updated_at=now()
--- WHERE player_announcement_preferences.sms_updated_at IS NULL;
+-- Apply both preferences in one transaction. No email opt-in is inferred.
+INSERT INTO public.notification_preferences
+  (user_id,phone_e164,sms_opted_in,sms_game_alerts,sms_transactional,sms_consented_at,updated_at)
+SELECT user_id,phone_e164,true,true,false,sms_consent_at,now()
+FROM historical_sms_candidates
+ON CONFLICT (user_id) DO UPDATE SET
+  phone_e164=EXCLUDED.phone_e164,sms_opted_in=true,sms_game_alerts=true,
+  sms_consented_at=EXCLUDED.sms_consented_at,updated_at=now()
+WHERE notification_preferences.sms_opted_out_at IS NULL
+  AND (notification_preferences.sms_consented_at IS NULL
+       OR notification_preferences.sms_consented_at <= EXCLUDED.sms_consented_at);
 
-ROLLBACK;
+INSERT INTO public.player_announcement_preferences
+  (user_id,sms_opt_in,sms_updated_at,updated_at)
+SELECT user_id,true,now(),now() FROM historical_sms_candidates
+ON CONFLICT (user_id) DO UPDATE SET
+  sms_opt_in=true,sms_updated_at=now(),updated_at=now()
+WHERE player_announcement_preferences.sms_updated_at IS NULL;
+
+-- Confirm updated subscriptions before committing.
+SELECT count(*) AS restored
+FROM historical_sms_candidates c
+JOIN public.notification_preferences n ON n.user_id=c.user_id
+JOIN public.player_announcement_preferences a ON a.user_id=c.user_id
+WHERE n.sms_opted_in=true AND n.sms_game_alerts=true AND a.sms_opt_in=true;
+
+COMMIT;
