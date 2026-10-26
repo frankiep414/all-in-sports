@@ -38,7 +38,15 @@ CREATE TABLE IF NOT EXISTS public.notification_preferences (
  sms_consented_at timestamptz,
  sms_opted_out_at timestamptz,
  updated_at timestamptz NOT NULL DEFAULT now(),
- CONSTRAINT sms_phone_format CHECK (phone_e164 IS NULL OR phone_e164 ~ '^\+[1-9][0-9]{7,14})
+ CONSTRAINT sms_phone_format CHECK (phone_e164 IS NULL OR phone_e164 ~ '^\+[1-9][0-9]{7,14}
+);
+ALTER TABLE public.notification_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification_deliveries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification_preferences ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.notification_events,public.notification_deliveries,public.notification_preferences FROM PUBLIC,anon,authenticated;
+GRANT SELECT,INSERT,UPDATE ON public.notification_events,public.notification_deliveries,public.notification_preferences TO service_role;
+-- Delivery workers and consent capture must be implemented before any messages can be sent.
+)
 );
 ALTER TABLE public.notification_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_deliveries ENABLE ROW LEVEL SECURITY;
