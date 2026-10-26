@@ -1,10 +1,12 @@
 'use client';
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import {createClient} from '@supabase/supabase-js';
 
 export default function PreviewAnnouncementTest(){
  const [busy,setBusy]=useState(false);
  const [result,setResult]=useState('');
+ const [signedIn,setSignedIn]=useState(false);
+ useEffect(()=>{const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;if(!url||!key)return;const client=createClient(url,key);client.auth.getSession().then(({data})=>setSignedIn(Boolean(data.session)));},[]);
  async function run(){
   if(busy)return;
   if(!window.confirm('Run the Preview notification worker now? Only allowlisted, opted-in recipients can receive notifications for eligible staging events.'))return;
@@ -28,6 +30,8 @@ export default function PreviewAnnouncementTest(){
    <h1>All In Sports</h1><h2>Preview notification test</h2>
    <p>This page works only in Preview. The server requires an authenticated administrator and the existing worker checks opt-in, allowlists, and duplicate deliveries.</p>
    <p>No message is sent unless there is a qualifying staging event that has not already been delivered.</p>
+   <p>{signedIn?'Signed in. You can run the test if your account has admin access.':'Not signed in on this Preview site.'}</p>
+   <a href="/?auth=1" style={{display:'inline-block',background:'#e8f1ff',color:'#07101b',padding:'15px 24px',borderRadius:9,fontWeight:700,textDecoration:'none',marginBottom:16,marginRight:12}}>Sign in as admin</a>
    <button onClick={run} disabled={busy} style={{background:'#38a9ff',color:'#07101b',padding:'15px 24px',border:0,borderRadius:9,fontWeight:700}}>{busy?'Running…':'Run staging notification test'}</button>
    {result&&<pre role="status" style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere',padding:20,background:'#172434',borderRadius:10,marginTop:24}}>{result}</pre>}
   </section>
