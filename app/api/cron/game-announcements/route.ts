@@ -1,5 +1,6 @@
 import {createClient} from '@supabase/supabase-js';
 import twilio from 'twilio';
+import {after} from 'next/server';
 import {gamePublishedEmail} from '../../../../lib/notification-email-templates';
 import {unsubscribeToken} from '../../../../lib/announcement-unsubscribe';
 export const dynamic='force-dynamic';
@@ -8,6 +9,8 @@ export const dynamic='force-dynamic';
 // Email and SMS are separately gated and disabled by default.
 export async function GET(request:Request){
  const cronSecret=process.env.CRON_SECRET;
+ const hop=Number(request.headers.get('x-game-alert-hop')||'0');
+ if(!Number.isInteger(hop)||hop<0||hop>20)return Response.json({error:'Invalid batch hop'},{status:400});
  if(!cronSecret||request.headers.get('authorization')!=='Bearer '+cronSecret)
   return Response.json({error:'Unauthorized'},{status:401});
  const emailEnabled=process.env.GAME_PUBLISHED_AUTO_EMAIL_ENABLED==='true';
@@ -143,5 +146,17 @@ export async function GET(request:Request){
   }
   if(sent+failed>=15||smsSent+smsFailed>=10)break;
  }
- return Response.json({enabled:true,sent,skipped,failed,smsSent,smsFailed,events_checked:events?.length||0});
+ // Continue promptly when this invocation reaches its safe per-run delivery cap.
+ // Reuse the same authenticated, idempotent worker; bounded hops prevent loops.
+ const capped=sent+failed>=15||smsSent+smsFailed>=10;
+ if(capped&&hop<20&&sent+smsSent>0){
+  const nextUrl=new URL('/api/cron/game-announcements',request.url);
+  after(async()=>{
+   try{
+    const response=await fetch(nextUrl,{headers:{authorization:'Bearer '+cronSecret,'x-game-alert-hop':String(hop+1)},cache:'no-store',signal:AbortSignal.timeout(45000)});
+    if(!response.ok)console.error('Follow-up game alert batch returned',response.status);
+   }catch(error){console.error('Follow-up game alert batch failed',error);}
+  });
+ }
+ return Response.json({enabled:true,sent,skipped,failed,smsSent,smsFailed,events_checked:events?.length||0,followup_queued:capped&&hop<20&&sent+smsSent>0});
 }
