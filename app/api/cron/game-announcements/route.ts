@@ -68,12 +68,12 @@ export async function GET(request:Request){
     destination:email,status:'sending',provider:'resend',attempts:1
    }).select('id').single();
    if(claimError){if(claimError.code!=='23505')failed++;continue;}
-   const template=gamePublishedEmail({title:game.title,venue:game.venue,
-    startsAt:new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'})});
    const register=site+'/play?game='+encodeURIComponent(game.id);
    const unsub=site+'/unsubscribe?token='+encodeURIComponent(unsubscribeToken(pref.user_id));
+   const template=gamePublishedEmail({title:game.title,venue:game.venue,
+    startsAt:new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'}),registerUrl:register,unsubscribeUrl:unsub});
    const oneClick=site+'/api/announcements/one-click?token='+encodeURIComponent(unsubscribeToken(pref.user_id));
-   const html=template.html.replace('</main>','<p><a href="'+register+'">REGISTER NOW</a></p><p><a href="'+unsub+'">Unsubscribe</a></p></main>');
+   const html=template.html;
    try{
     const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{
      Authorization:'Bearer '+resend,'Content-Type':'application/json','Idempotency-Key':'all-in-auto-game-'+claim.id
