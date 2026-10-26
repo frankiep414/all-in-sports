@@ -300,8 +300,8 @@ return (
     playedBefore: formData.get('playedBefore') === 'yes',
     teamName: formData.get('teamName'),
     divisions: formData.getAll('divisions'),
-    smsConsent: formData.get('smsConsent') === 'on',
-    emailConsent: formData.get('emailConsent') === 'on',
+    smsConsent: formData.get('announcementsConsent') === 'on',
+    emailConsent: formData.get('announcementsConsent') === 'on',
   };
 
   try {
@@ -429,23 +429,13 @@ if (pickupReturn) window.location.replace(pickupReturn);
             </div>
 
             <label className="smsConsent">
-              <input type="checkbox" name="smsConsent" />
+              <input type="checkbox" name="announcementsConsent" />
               <span>
-                Yes, keep me All In. I agree to receive recurring automated
-                texts from All In Sports about upcoming games, leagues,
-                tournaments, events, Player ID updates and other All In Sports
-                news. Message frequency varies. Message &amp; data rates may
-                apply. Reply STOP to opt out. Consent is not a condition of
-                participation.
-              </span>
-            </label>
-
-            <label className="smsConsent">
-              <input type="checkbox" name="emailConsent" />
-              <span>
-                Yes, email me All In Sports announcements about upcoming games,
-                leagues, tournaments and events. I can unsubscribe at any time.
-                This is optional and separate from text-message consent.
+                Yes, send me All In Sports game, league, tournament and event announcements
+                by email and recurring automated text messages at the phone number provided.
+                Message frequency varies. Message &amp; data rates may apply.
+                Reply STOP to opt out of texts; unsubscribe from emails using the link in each message.
+                Consent is optional and not required to participate.
               </span>
             </label>
 
