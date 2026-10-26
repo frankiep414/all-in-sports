@@ -51,9 +51,12 @@ export async function POST(request: Request) {
     const { data: existing, error: lookupError } = await supabase.from('players')
       .select('id').ilike('email', user.email).maybeSingle();
     if (lookupError) return Response.json({ error: 'Unable to check existing Player ID.' }, { status: 500 });
-    if (existing) return Response.json({ success: true, playerId: existing.id, existing: true });
-
-   const { data: newPlayer, error } = await supabase.from('players').insert({
+    // Existing players must still be able to save explicit notification consent.
+    // Do not create another Player ID or resend welcome messages.
+    const isExistingPlayer = Boolean(existing);
+    const { data: newPlayer, error } = existing
+      ? { data: existing, error: null }
+      : await supabase.from('players').insert({
       full_name: fullName,
       phone,
       email: user.email,
@@ -119,6 +122,7 @@ export async function POST(request: Request) {
       },{status:503});
     }
 
+    if (!isExistingPlayer) {
     // Notify the internal admin inbox once for each newly created Player ID.
     // This is an operational notification, not a marketing email.
     try {
@@ -153,7 +157,8 @@ export async function POST(request: Request) {
       console.error('New member admin notification error', notificationError);
     }
 
-    // Record optional email announcement consent only after Player ID creation.
+    }
+    // Record optional email announcement consent after Player ID lookup/creation.
     // If preference storage is not installed, do not infer consent from signup.
     if (emailConsent === true) {
       const { error: preferenceError } = await supabase.from('player_announcement_preferences').upsert({
@@ -176,7 +181,7 @@ export async function POST(request: Request) {
       }
     }
 
-        if (smsConsent) {
+        if (smsConsent && !isExistingPlayer) {
       try {
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
         const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -200,8 +205,8 @@ export async function POST(request: Request) {
 
     }
 
-    // Send welcome email
-  try {
+    // Send welcome email only to newly created players.
+  if (!isExistingPlayer) try {
     const resendApiKey = process.env.RESEND_API_KEY;
 
     if (!resendApiKey) {
@@ -241,6 +246,7 @@ export async function POST(request: Request) {
     return Response.json({
   success: true,
   playerId: newPlayer.id,
+  existing: isExistingPlayer,
 });
   } catch (error) {
     console.error('Signup API error:', error);
