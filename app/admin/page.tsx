@@ -47,6 +47,25 @@ export default function AdminPage() {
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update draft.');}
     finally{setDraftActionBusy(false);}
   }
+  const [notificationTestBusy,setNotificationTestBusy]=useState(false);
+  const [notificationTestResult,setNotificationTestResult]=useState('');
+  async function testNotifications(){
+    if(!window.confirm('Send one TEST email and one TEST text to your own opted-in, allowlisted contacts? No games will be changed.'))return;
+    setNotificationTestBusy(true);setNotificationTestResult('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw new Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw new Error('Please sign in again.');
+      const response=await fetch('/api/admin/notifications/test',{method:'POST',
+        headers:{Authorization:`Bearer ${session.access_token}`}});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Test failed.');
+      setNotificationTestResult(`Email: ${result.email}; SMS: ${result.sms}.${result.details?.length?' '+result.details.join('; '):''} Provider acceptance does not guarantee inbox delivery.`);
+    }catch(error){setNotificationTestResult(error instanceof Error?error.message:'Test failed.');}
+    finally{setNotificationTestBusy(false);}
+  }
   async function changeStatus(item:PickupGame,action:'publish'|'cancel'){
     const question=action==='publish'
       ?`Publish "${item.title}" to the public Play page? Registration and payment will remain closed.`
@@ -697,6 +716,15 @@ export default function AdminPage() {
               </article>)}
             </div>
           </section>
+          <div style={{marginTop:28,padding:18,border:'1px solid #445063',borderRadius:12}}>
+            <h3 style={{marginTop:0}}>TEST NOTIFICATIONS</h3>
+            <p style={{color:'#b8c1d0'}}>Send a sample email and SMS only to your own opted-in, allowlisted contacts. No game is published or changed.</p>
+            <button type="button" disabled={notificationTestBusy} onClick={()=>void testNotifications()}
+              style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'12px 18px',fontWeight:800}}>
+              {notificationTestBusy?'SENDING TEST…':'SEND TEST EMAIL + SMS'}
+            </button>
+            {notificationTestResult && <p role="status" style={{color:'#fff'}}>{notificationTestResult}</p>}
+          </div>
           <p style={{color:'#b8c1d0',marginTop:32}}>Published games can accept registration requests. Payment collection and confirmation are not enabled yet.</p>
         </>}
       </section>
