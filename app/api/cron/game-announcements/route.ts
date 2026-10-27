@@ -13,6 +13,12 @@ export async function GET(request:Request){
  if(!Number.isInteger(hop)||hop<0||hop>20)return Response.json({error:'Invalid batch hop'},{status:400});
  if(!cronSecret||request.headers.get('authorization')!=='Bearer '+cronSecret)
   return Response.json({error:'Unauthorized'},{status:401});
+ const testGameId=request.headers.get('x-game-alert-test-game');
+ const testMode=Boolean(testGameId);
+ if(testMode&&(!/^[0-9a-f-]{36}$/i.test(testGameId!)||
+    !(process.env.GAME_ALERTS_EMAIL_ALLOWLIST||'').trim()||
+    !(process.env.GAME_ALERTS_SMS_ALLOWLIST||'').trim()))
+  return Response.json({error:'Test mode requires an ID and both recipient allowlists'},{status:403});
  const emailEnabled=process.env.GAME_PUBLISHED_AUTO_EMAIL_ENABLED==='true';
  const smsEnabled=process.env.GAME_PUBLISHED_AUTO_SMS_ENABLED==='true';
  if(!emailEnabled&&!smsEnabled)return Response.json({enabled:false,sent:0});
@@ -40,11 +46,11 @@ export async function GET(request:Request){
  if(process.env.VERCEL_ENV!=='production'&&smsEnabled&&!smsAllow.length)return Response.json({error:'Preview SMS allowlist required'},{status:503});
  let sent=0,skipped=0,failed=0,smsSent=0,smsFailed=0;
  for(const event of events||[]){
-  if(!event.game_id)continue;
+  if(!event.game_id||(testMode&&event.game_id!==testGameId))continue;
   const {data:game,error:gameError}=await db.from('pickup_games')
    .select('id,title,venue,starts_at,status,is_test').eq('id',event.game_id).maybeSingle();
   if(gameError||!game||game.status!=='published'||new Date(game.starts_at)<=new Date()||
-     (process.env.VERCEL_ENV==='production'&&game.is_test))continue;
+     (process.env.VERCEL_ENV==='production'&&game.is_test&&!testMode))continue;
   // Bound the work per run; repeat scheduled invocations pick up unsent recipients.
   if(emailEnabled){
   const {data:prefs,error:prefError}=await db.from('player_announcement_preferences')
@@ -149,7 +155,7 @@ export async function GET(request:Request){
  // Continue promptly when this invocation reaches its safe per-run delivery cap.
  // Reuse the same authenticated, idempotent worker; bounded hops prevent loops.
  const capped=sent+failed>=15||smsSent+smsFailed>=10;
- if(capped&&hop<20&&sent+smsSent>0){
+ if(capped&&!testMode&&hop<20&&sent+smsSent>0){
   const nextUrl=new URL('/api/cron/game-announcements',request.url);
   after(async()=>{
    try{
