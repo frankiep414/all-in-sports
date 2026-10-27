@@ -208,19 +208,35 @@ export async function PATCH(request: Request) {
      return Response.json({status:next,notification_recorded:false,
       warning:'Game published, but notification history could not be recorded. Do not republish; contact an admin.'});
     }
-    // Promptly kick the same consent-gated worker after publishing.
-    // The daily Hobby cron remains a fallback; no provider call occurs unless enabled.
-    if(process.env.CRON_SECRET &&
-       (process.env.GAME_PUBLISHED_AUTO_EMAIL_ENABLED==='true' ||
-        process.env.GAME_PUBLISHED_AUTO_SMS_ENABLED==='true')){
-     const workerUrl=new URL('/api/cron/game-announcements',request.url);
-     after(async()=>{
-      try{
-       const result=await fetch(workerUrl,{headers:{Authorization:'Bearer '+process.env.CRON_SECRET},
-        cache:'no-store',signal:AbortSignal.timeout(45000)});
-       if(!result.ok)console.error('Game alert worker returned',result.status);
-      }catch(error){console.error('Game alert worker invocation failed',error);}
-     });
+    // Execute immediately and surface the result to the admin. A background
+    // after() invocation can fail after the publish request has already succeeded,
+    // leaving no visible indication that announcements were not sent.
+    const enabled=process.env.GAME_PUBLISHED_AUTO_EMAIL_ENABLED==='true' ||
+      process.env.GAME_PUBLISHED_AUTO_SMS_ENABLED==='true';
+    if(enabled){
+     if(!process.env.CRON_SECRET)
+      return Response.json({status:next,notification_recorded:true,notification_sent:false,
+       warning:'Game published, but notification worker is not configured.'});
+     try{
+      const workerUrl=new URL('/api/cron/game-announcements',request.url);
+      const result=await fetch(workerUrl,{headers:{Authorization:'Bearer '+process.env.CRON_SECRET},
+       cache:'no-store',signal:AbortSignal.timeout(45000)});
+      if(!result.ok){
+       console.error('Game alert worker returned',result.status);
+       return Response.json({status:next,notification_recorded:true,notification_sent:false,
+        warning:'Game published, but announcement delivery failed. Check notification deliveries.'});
+      }
+      const delivery=await result.json().catch(()=>({}));
+      return Response.json({status:next,notification_recorded:true,
+       notification_sent:(delivery.sent||0)+(delivery.smsSent||0)>0,
+       notification_results:{emails:delivery.sent||0,sms:delivery.smsSent||0,
+        email_failed:delivery.failed||0,sms_failed:delivery.smsFailed||0},
+       ...((delivery.failed||delivery.smsFailed)?{warning:'Some announcements failed. Check delivery records.'}:{})});
+     }catch(error){
+      console.error('Game alert worker invocation failed',error);
+      return Response.json({status:next,notification_recorded:true,notification_sent:false,
+       warning:'Game published, but notification delivery could not be confirmed.'});
+     }
     }
    }
    return Response.json({status:next,notification_recorded:next==='published'});
