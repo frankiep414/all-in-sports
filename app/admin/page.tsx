@@ -49,6 +49,26 @@ export default function AdminPage() {
   }
   const [notificationTestBusy,setNotificationTestBusy]=useState(false);
   const [notificationTestResult,setNotificationTestResult]=useState('');
+  const [publishTestBusy,setPublishTestBusy]=useState(false);
+  const [publishTestResult,setPublishTestResult]=useState('');
+  async function runPublishWorkflowTest(){
+    if(!window.confirm('Run a temporary test-game publish, send alerts only to your allowlisted contacts, then cancel the test game?'))return;
+    setPublishTestBusy(true);setPublishTestResult('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again');
+      const response=await fetch('/api/admin/notifications/publish-workflow-test',{method:'POST',
+        headers:{Authorization:`Bearer ${session.access_token}`}});
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'Workflow test failed');
+      const n=result.notification_results;
+      setPublishTestResult(`Publish trigger: ${result.notification_sent?'notifications accepted':'not confirmed'}. Email: ${n?.emails??'unknown'}, SMS: ${n?.sms??'unknown'}, failures: ${(n?.email_failed||0)+(n?.sms_failed||0)}. ${result.warning||''} Temporary game cancellation attempted.`);
+    }catch(error){setPublishTestResult(error instanceof Error?error.message:'Workflow test failed');}
+    finally{setPublishTestBusy(false);}
+  }
   async function testNotifications(){
     if(!window.confirm('Send one TEST email and one TEST text to your own opted-in, allowlisted contacts? No games will be changed.'))return;
     setNotificationTestBusy(true);setNotificationTestResult('');
@@ -724,6 +744,14 @@ export default function AdminPage() {
               {notificationTestBusy?'SENDING TEST…':'SEND TEST EMAIL + SMS'}
             </button>
             {notificationTestResult && <p role="status" style={{color:'#fff'}}>{notificationTestResult}</p>}
+            <div style={{marginTop:20,paddingTop:16,borderTop:'1px solid #445063'}}>
+              <p style={{color:'#b8c1d0'}}>Full publishing workflow test: creates a temporary test game, publishes it, attempts allowlisted alerts, then cancels it. Existing games are untouched.</p>
+              <button type="button" disabled={publishTestBusy} onClick={()=>void runPublishWorkflowTest()}
+                style={{background:'#a9e6b8',color:'#08101a',border:0,borderRadius:9,padding:'12px 18px',fontWeight:800}}>
+                {publishTestBusy?'RUNNING PUBLISH TEST…':'TEST AUTOMATIC PUBLISH ALERTS'}
+              </button>
+              {publishTestResult&&<p role="status" style={{color:'#fff'}}>{publishTestResult}</p>}
+            </div>
           </div>
           <p style={{color:'#b8c1d0',marginTop:32}}>Published games can accept registration requests. Payment collection and confirmation are not enabled yet.</p>
         </>}
