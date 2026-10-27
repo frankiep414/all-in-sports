@@ -184,7 +184,7 @@ export async function PATCH(request: Request) {
   }
   if(body.action==='publish'||body.action==='cancel'){
    const {data:game,error:lookupError}=await access.admin.from('pickup_games')
-    .select('id,status,starts_at').eq('id',id).maybeSingle();
+    .select('id,status,starts_at,is_test').eq('id',id).maybeSingle();
    if(lookupError)return Response.json({error:'Unable to verify game.'},{status:500});
    if(!game)return Response.json({error:'Game not found.'},{status:404});
    const next=body.action==='publish'?'published':'cancelled';
@@ -219,7 +219,7 @@ export async function PATCH(request: Request) {
        warning:'Game published, but notification worker is not configured.'});
      try{
       const workerUrl=new URL('/api/cron/game-announcements',request.url);
-      const result=await fetch(workerUrl,{headers:{Authorization:'Bearer '+process.env.CRON_SECRET},
+      const result=await fetch(workerUrl,{headers:{Authorization:'Bearer '+process.env.CRON_SECRET,...(game.is_test?{'x-game-alert-test-game':id}:{})},
        cache:'no-store',signal:AbortSignal.timeout(45000)});
       if(!result.ok){
        console.error('Game alert worker returned',result.status);
