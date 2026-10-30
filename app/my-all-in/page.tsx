@@ -68,6 +68,7 @@ export default function MyAllInPage() {
   const [player, setPlayer] = useState<{
     id: number;
     full_name: string;
+    stats: null | { sessions: number; fixtures_played: number; goals: number; assists: number; saves: number; tackles: number; interceptions: number; latest_street_rating: number | null; latest_session_date: string; };
   } | null>(null);
 
   useEffect(() => {
@@ -177,7 +178,7 @@ export default function MyAllInPage() {
 
             <div className="aiRating">
               <span>AI RATING</span>
-              <strong>UNRATED</strong>
+              <strong>{player?.stats?.latest_street_rating != null ? Number(player.stats.latest_street_rating).toFixed(1) : 'UNRATED'}</strong>
             </div>
           </div>
 
@@ -248,28 +249,18 @@ export default function MyAllInPage() {
               <BarChart3 size={22} />
             </div>
 
-            <p className="cardEyebrow">MY SEASON</p>
-            <h3>Your stats start here.</h3>
-            <p>Stats are recorded from the launch of Player IDs onward. Previous games, goals, assists, and wins are not backfilled.</p>
-
+            <p className="cardEyebrow">MY RECORDED STATS</p>
+            <h3>{player?.stats ? 'Your All In career starts here.' : 'Your stats start here.'}</h3>
+            <p>{player?.stats ? 'Verified STREET match data · latest session October 27, 2026. Ratings are STREET ratings, not All In weighted scores.' : 'Play in a tracked All In Sports game to start building your verified career statistics.'}</p>
             <div className="seasonStats">
-              <div>
-                <strong>0</strong>
-                <span>RECORDED GAMES</span>
-              </div>
-              <div>
-                <strong>—</strong>
-                <span>GOALS</span>
-              </div>
-              <div>
-                <strong>—</strong>
-                <span>ASSISTS</span>
-              </div>
-              <div>
-                <strong>0</strong>
-                <span>RECORDED WINS</span>
-              </div>
+              <div><strong>{player?.stats?.sessions ?? 0}</strong><span>RECORDED SESSIONS</span></div>
+              <div><strong>{player?.stats?.goals ?? 0}</strong><span>GOALS</span></div>
+              <div><strong>{player?.stats?.assists ?? 0}</strong><span>ASSISTS</span></div>
+              <div><strong>{player?.stats?.saves ?? 0}</strong><span>SAVES</span></div>
+              <div><strong>{player?.stats?.tackles ?? 0}</strong><span>TACKLES</span></div>
+              <div><strong>{player?.stats?.interceptions ?? 0}</strong><span>INTERCEPTIONS</span></div>
             </div>
+            {player?.stats && <p style={{fontSize:12,opacity:.75,marginTop:14}}>1 recorded pickup session can contain several short fixtures. {player.stats.fixtures_played} fixture appearances tracked.</p>}
           </section>
         </div>
 
