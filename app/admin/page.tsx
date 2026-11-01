@@ -484,6 +484,7 @@ export default function AdminPage() {
         {status==='authorized' && <>
           <p style={{color:'#95d9ff',letterSpacing:3,fontWeight:800}}>ALL IN SPORTS // ADMIN</p>
           <h1 style={{fontSize:'clamp(38px,7vw,72px)',margin:'12px 0'}}>Command Center</h1>
+          <Link href="/admin/test-center" style={{display:'inline-block',background:'#92d9ff',color:'#08101a',padding:'13px 20px',borderRadius:10,fontWeight:900,margin:'10px 0'}}>🧪 OPEN ADMIN TEST CENTER →</Link>
           <p style={{color:'#b8c1d0',fontSize:18}}>Manage your games, registrations, and payments in one place.</p>
           <Link href="/admin/members" style={{display:'inline-block',marginTop:12,padding:'13px 20px',borderRadius:10,background:'#95d9ff',color:'#07111d',fontWeight:800,textDecoration:'none'}}>VIEW WEBSITE MEMBERS & OPT-INS →</Link>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',gap:16,marginTop:40}}>
