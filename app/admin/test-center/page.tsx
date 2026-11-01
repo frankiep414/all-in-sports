@@ -7,6 +7,22 @@ export default function AdminTestCenter(){
  const [games,setGames]=useState<TestGame[]>([]);
  const [state,setState]=useState<'idle'|'loading'|'ready'|'error'>('idle');
  const [message,setMessage]=useState('');
+ const [simulation,setSimulation]=useState('');
+ const [simulating,setSimulating]=useState(false);
+ async function simulate(gameId:string,registrationType:'solo'|'team'){
+  setSimulating(true);setSimulation('');
+  try{
+   const client=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
+   const {data:{session}}=await client.auth.getSession();
+   if(!session?.access_token)throw Error('Sign in as an administrator.');
+   const response=await fetch('/api/admin/test-center',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({game_id:gameId,registration_type:registrationType})});
+   const result=await response.json();
+   if(!response.ok)throw Error(result.error||'Simulation failed.');
+   setSimulation(`${registrationType==='team'?'Five-player team':'Individual'}: ${result.would_be_eligible?'eligible':'not eligible'} · ${result.seats} spots · ${(result.amount_cents/100).toFixed(2)} · ${result.remaining} available. No charge or registration created.`);
+  }catch(e){setSimulation(e instanceof Error?e.message:'Simulation failed.');}
+  finally{setSimulating(false);}
+ }
+
  async function load(){
   setState('loading');setMessage('');
   try{
@@ -29,6 +45,7 @@ export default function AdminTestCenter(){
   <button onClick={()=>void load()} disabled={state==='loading'} style={{padding:'14px 22px',border:0,borderRadius:10,background:'#92d9ff',fontWeight:800,cursor:'pointer'}}>
    {state==='loading'?'CHECKING…':'RUN TEST-GAME CAPACITY CHECK'}
   </button>
+  {simulation&&<p role="status" style={{background:'#172e27',padding:16,borderRadius:8}}>{simulation}</p>}
   {message&&<p role="status" style={{marginTop:20,padding:15,background:'#25202b',borderRadius:8}}>{message}</p>}
   {state==='ready'&&(games.length===0?<p>No test games found.</p>:<div style={{display:'grid',gap:14,marginTop:24,maxWidth:850}}>
    {games.map(g=><article key={g.id} style={{border:'1px solid #3a4858',borderRadius:12,padding:20}}>
@@ -36,6 +53,7 @@ export default function AdminTestCenter(){
     <p>Game status: {g.status} · {g.occupied} of {g.capacity} spots reserved · {g.remaining} available</p>
     <p>Individual: ${(g.solo_price_cents/100).toFixed(2)} — {g.solo_fits?'capacity available':'no capacity'}</p>
     <p>Team (5 players): ${(g.team_price_cents/100).toFixed(2)} — {g.team_fits?'capacity available':'no capacity'}</p>
+    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:14}}><button disabled={simulating} onClick={()=>void simulate(g.id,'solo')}>SIMULATE $16 SOLO</button><button disabled={simulating} onClick={()=>void simulate(g.id,'team')}>SIMULATE $80 TEAM</button></div>
     <small style={{color:'#b8c1d0'}}>Capacity and prices are calculated from current test-game data. This does not verify a Stripe transaction.</small>
    </article>)}
   </div>)}
