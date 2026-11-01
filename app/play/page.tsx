@@ -121,7 +121,7 @@ export default function PlayPage() {
     fetch('/api/games',{cache:'no-store'}).then(async response=>{
       if(!response.ok)throw new Error('Unavailable');
       return response.json();
-    }).then(result=>{if(active)setGames(result.games||[]);})
+    }).then(result=>{if(active)setGames(current=>[...(result.games||[]),...current.filter(game=>!(result.games||[]).some((publicGame:{id:string})=>publicGame.id===game.id))]);})
       .catch(()=>{if(active)setGamesError(true);})
       .finally(()=>{if(active)setGamesLoading(false);});
     return ()=>{active=false;};
