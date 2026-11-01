@@ -28,21 +28,24 @@ export async function POST(request:Request){
   }
   const body=await request.json().catch(()=>null);
   if(!body||typeof body.registration_id!=='string'||!uuid.test(body.registration_id))
-   return Response.json({error:'Invalid registration.'},{status:400});
+   return Response.json({error:'Invalid reg.'},{status:400});
   const {data:registration,error:regError}=await db.from('pickup_registrations')
-   .select('id,user_id,game_id,status,payment_status,payment_reference')
+   .select(process.env.TEAM_REGISTRATION_ENABLED==='true'?'id,user_id,game_id,status,payment_status,payment_reference,spots_reserved,registration_type,team_name':'id,user_id,game_id,status,payment_status,payment_reference')
    .eq('id',body.registration_id).eq('user_id',user.id).maybeSingle();
   if(regError||!registration)return Response.json({error:'Registration unavailable.'},{status:404});
-  if(!['pending_payment','offered'].includes(registration.status)||registration.payment_status!=='unpaid')
+  const reg=registration as unknown as {id:string;user_id:string;game_id:string;status:string;payment_status:string;payment_reference:string;spots_reserved?:number;registration_type?:string;team_name?:string|null};
+  if(!['pending_payment','offered'].includes(reg.status)||reg.payment_status!=='unpaid')
    return Response.json({error:'Registration is not eligible for checkout.'},{status:409});
   const {data:game,error:gameError}=await db.from('pickup_games')
-   .select('id,title,starts_at,status,price_cents,is_test').eq('id',registration.game_id).maybeSingle();
+   .select('id,title,starts_at,status,price_cents,is_test').eq('id',reg.game_id).maybeSingle();
   if(gameError||!game||game.is_test===live||game.status!=='published'||new Date(game.starts_at)<=new Date())
    return Response.json({error:'Test game unavailable.'},{status:409});
   if(!Number.isSafeInteger(game.price_cents)||game.price_cents<50||game.price_cents>100000)
    return Response.json({error:'Test game price must be between $0.50 and $1,000.'},{status:409});
+  const totalCents=game.price_cents*(reg.spots_reserved||1);
+  if(!Number.isSafeInteger(totalCents)||totalCents>100000)return Response.json({error:'Invalid checkout total.'},{status:409});
   const {data:prior,error:priorError}=await db.from('pickup_stripe_checkout_sessions')
-   .select('stripe_checkout_session_id,status').eq('registration_id',registration.id)
+   .select('stripe_checkout_session_id,status').eq('registration_id',reg.id)
    .eq('status','open').order('created_at',{ascending:false}).limit(1);
   if(priorError)return Response.json({error:'Checkout history unavailable.'},{status:503});
   if(prior?.length){
@@ -59,12 +62,12 @@ export async function POST(request:Request){
     return Response.json({error:'Unable to verify your existing checkout. Please try again later.'},{status:503});
    const belongsToRegistration=existing.id===existingId&&existing.object==='checkout.session'&&
     existing.livemode===live&&existing.mode==='payment'&&
-    existing.client_reference_id===registration.id&&
-    existing.metadata?.registration_id===registration.id&&
+    existing.client_reference_id===reg.id&&
+    existing.metadata?.registration_id===reg.id&&
     existing.metadata?.game_id===game.id&&
-    existing.currency==='usd'&&existing.amount_total===game.price_cents;
+    existing.currency==='usd'&&existing.amount_total===totalCents;
    if(!belongsToRegistration)
-    return Response.json({error:'Existing checkout details do not match this registration. Contact an admin.'},{status:409});
+    return Response.json({error:'Existing checkout details do not match this reg. Contact an admin.'},{status:409});
    if(existing.status==='open'&&existing.payment_status==='unpaid'&&
       typeof existing.expires_at==='number'&&existing.expires_at>Math.floor(Date.now()/1000)&&
       typeof existing.url==='string'&&existing.url.startsWith('https://checkout.stripe.com/'))
@@ -77,20 +80,20 @@ export async function POST(request:Request){
   const origin=live?'https://allinsportsnj.com':(host&&/^[a-z0-9.-]+\.vercel\.app$/i.test(host)?'https://'+host:'');
   if(!origin)return Response.json({error:'Checkout return URL unavailable.'},{status:503});
   const form=new URLSearchParams({
-   mode:'payment',success_url:origin+'/payment/confirmation?registration_id='+encodeURIComponent(registration.id),cancel_url:origin+'/play?stripe=cancel',
-   customer_email:user.email,'client_reference_id':registration.id,
-   'metadata[registration_id]':registration.id,'metadata[game_id]':game.id,
-   'metadata[payment_reference]':registration.payment_reference,
+   mode:'payment',success_url:origin+'/payment/confirmation?registration_id='+encodeURIComponent(reg.id),cancel_url:origin+'/play?stripe=cancel',
+   customer_email:user.email,'client_reference_id':reg.id,
+   'metadata[registration_id]':reg.id,'metadata[game_id]':game.id,
+   'metadata[payment_reference]':reg.payment_reference,
    'line_items[0][price_data][currency]':'usd',
    'line_items[0][price_data][unit_amount]':String(game.price_cents),
-   'line_items[0][price_data][product_data][name]':game.title,
-   'line_items[0][quantity]':'1',
+   'line_items[0][price_data][product_data][name]':reg.registration_type==='team'?game.title+' — '+reg.team_name:game.title,
+   'line_items[0][quantity]':String(reg.spots_reserved||1),
    'payment_method_types[0]':'card',
    'expires_at':String(Math.floor(Date.now()/1000)+1800)
   });
   const stripeResponse=await fetch('https://api.stripe.com/v1/checkout/sessions',{
    method:'POST',headers:{Authorization:'Bearer '+stripeKey,'Content-Type':'application/x-www-form-urlencoded',
-    'Idempotency-Key':(live?'ais-live-checkout-':'ais-preview-checkout-')+registration.id},
+    'Idempotency-Key':(live?'ais-live-checkout-':'ais-preview-checkout-')+reg.id},
    body:form.toString(),signal:AbortSignal.timeout(12000)
   });
   const checkout=await stripeResponse.json().catch(()=>null);
@@ -99,8 +102,8 @@ export async function POST(request:Request){
    return Response.json({error:'Unable to start test checkout.'},{status:503});
   }
   const {error:saveError}=await db.from('pickup_stripe_checkout_sessions').insert({
-   registration_id:registration.id,stripe_checkout_session_id:checkout.id,
-   amount_cents:game.price_cents,currency:'usd',status:'open'
+   registration_id:reg.id,stripe_checkout_session_id:checkout.id,
+   amount_cents:totalCents,currency:'usd',status:'open'
   });
   if(saveError){
    await fetch('https://api.stripe.com/v1/checkout/sessions/'+encodeURIComponent(checkout.id)+'/expire',{
