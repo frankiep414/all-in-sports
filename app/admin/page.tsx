@@ -159,6 +159,24 @@ export default function AdminPage() {
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to send reminder.');}
     finally{setReminderBusy(false);}
   }
+  async function viewReminderHistory(gameId:string){
+    setReminderBusy(true);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again.');
+      const response=await fetch('/api/admin/notifications/manual',{method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({action:'history',game_id:gameId})});
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'Unable to load reminder history.');
+      const entries=(result.history||[]) as Array<{created_at:string;subject:string;email_sent:number;sms_sent:number;failed:number;pending:number}>;
+      setEditMessage(entries.length?entries.map(x=>`${new Date(x.created_at).toLocaleString()}: ${x.subject||'Game reminder'} — ${x.email_sent} emails, ${x.sms_sent} texts, ${x.failed} failed, ${x.pending} pending`).join(' | '):'No manual reminders have been sent for this game.');
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to load reminder history.');}
+    finally{setReminderBusy(false);}
+  }
   async function previewReminder(gameId:string){
     setReminderBusy(true);setReminderPreview(null);setEditMessage('');
     try{
