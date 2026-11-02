@@ -1,3 +1,4 @@
+import {friendlyGamePath} from '../../../../lib/friendly-game-link';
 import {createClient} from '@supabase/supabase-js';
 import twilio from 'twilio';
 import {after} from 'next/server';
@@ -77,7 +78,7 @@ export async function GET(request:Request){
     destination:email,status:'sending',provider:'resend',attempts:1
    }).select('id').single();
    if(claimError){if(claimError.code!=='23505')failed++;continue;}
-   const register=site+'/play?game='+encodeURIComponent(game.id);
+   const register=site+(friendlyGamePath(game.title,game.starts_at)||'/play?game='+encodeURIComponent(game.id));
    const unsub=site+'/unsubscribe?token='+encodeURIComponent(unsubscribeToken(pref.user_id));
    const template=gamePublishedEmail({title:game.title,venue:game.venue,
     startsAt:new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'}),registerUrl:register,unsubscribeUrl:unsub});
@@ -139,7 +140,7 @@ export async function GET(request:Request){
      const result=await client.messages.create({
       to:number,from:process.env.TWILIO_PHONE_NUMBER!,
       body:'All In Sports: New game! '+game.title+' | '+when+' | '+game.venue+
-       '. Sign up: '+site+'/play?game='+encodeURIComponent(game.id)+' Reply STOP to opt out.'
+       '. Sign up: '+site+(friendlyGamePath(game.title,game.starts_at)||'/play?game='+encodeURIComponent(game.id))+' Reply STOP to opt out.'
      });
      await db.from('notification_deliveries').update({status:'sent',provider_message_id:result.sid,
       updated_at:new Date().toISOString()}).eq('id',claim.id);
