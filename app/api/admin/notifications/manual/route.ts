@@ -161,8 +161,6 @@ export async function POST(request:Request){
   }catch{failed++;/* Uncertain provider outcome: retain sending to avoid duplicates. */}
  }
  for(const pref of smsBatch){
-  const email=await verifiedEmail(pref.user_id);
-  if(!email){skipped++;continue;}
   const {data:latest}=await db.from('player_announcement_preferences').select('sms_opt_in').eq('user_id',pref.user_id).maybeSingle();
   const {data:latestPref}=await db.from('notification_preferences').select('sms_opted_in,sms_game_alerts,sms_opted_out_at,phone_e164').eq('user_id',pref.user_id).maybeSingle();
   if(!latest?.sms_opt_in||!latestPref?.sms_opted_in||!latestPref.sms_game_alerts||latestPref.sms_opted_out_at||latestPref.phone_e164!==pref.phone_e164){skipped++;continue;}
