@@ -67,6 +67,8 @@ export async function POST(request:Request){
  if(body.action==='preview')return Response.json({game_title:game.title,email_count:emailUsers.length,sms_count:smsUsers.length});
  if(body.action!=='send')return Response.json({error:'Unknown action.'},{status:400});
 
+ if(process.env.VERCEL_ENV!=='production')
+  return Response.json({error:'Preview mode: real notifications are disabled.'},{status:403});
  const message=typeof body.message==='string'?body.message.trim():'';
  const subject=typeof body.subject==='string'?body.subject.trim():'';
  const sendEmail=body.email===true,sendSms=body.sms===true;
@@ -78,10 +80,6 @@ export async function POST(request:Request){
   return Response.json({error:'Selected notification provider is not configured.'},{status:503});
  const offset=Number(body.offset??0);
  if(!Number.isSafeInteger(offset)||offset<0||offset>100000)return Response.json({error:'Invalid batch offset.'},{status:400});
- // Preview deployments must never message the production member audience.
- if(process.env.VERCEL_ENV!=='production'){
-  return Response.json({error:'Real notifications are disabled on preview deployments. Use Preview Recipients to inspect the audience; sending requires the approved production release.'},{status:403});
- }
  const batchSize=10;
  // Stable user-id cursor: opt-out changes must not shift an offset into a changing audience.
  const cursor=typeof body.cursor==='string'?body.cursor:'';
