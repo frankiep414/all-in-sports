@@ -127,13 +127,27 @@ export default function AdminPage() {
       const {data:{session}}=await client.auth.getSession();
       if(!session?.access_token)throw Error('Please sign in again.');
       const requestId=crypto.randomUUID();
-      const response=await fetch('/api/admin/notifications/manual',{method:'POST',
-        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
-        body:JSON.stringify({action:'send',game_id:gameId,message:reminderMessage,subject:reminderSubject,
-          email:reminderEmail,sms:reminderSms,request_id:requestId,confirm:'SEND_GAME_NOTIFICATION'})});
-      const result=await response.json();
-      if(!response.ok)throw Error(result.error||'Unable to send reminder.');
-      setEditMessage(`Reminder processed: ${result.email_sent} emails, ${result.sms_sent} texts sent; ${result.failed} failed; ${result.skipped} skipped. Send ID: ${result.event_id}`);
+      let offset=0,emailSent=0,smsSent=0,failed=0,skipped=0,eventId='';
+      for(let batch=0;batch<250;batch++){
+        const response=await fetch('/api/admin/notifications/manual',{method:'POST',
+          headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+          body:JSON.stringify({action:'send',game_id:gameId,message:reminderMessage,subject:reminderSubject,
+            email:reminderEmail,sms:reminderSms,request_id:requestId,offset,confirm:'SEND_GAME_NOTIFICATION'})});
+        const result=await response.json();
+        if(!response.ok)throw Error((result.error||'Unable to send reminder.')+
+          ` Completed so far: ${emailSent} emails, ${smsSent} SMS. Send ID: ${eventId||requestId}. Contact support before restarting.`);
+        emailSent+=Number(result.email_sent||0);smsSent+=Number(result.sms_sent||0);
+        failed+=Number(result.failed||0);skipped+=Number(result.skipped||0);
+        eventId=result.event_id;
+        setEditMessage(`Sending notifications... ${emailSent} emails, ${smsSent} SMS sent so far.`);
+        if(result.complete){
+          setEditMessage(`Reminder completed: ${emailSent} emails, ${smsSent} texts sent; ${failed} failed; ${skipped} skipped. Send ID: ${eventId}`);
+          break;
+        }
+        if(!Number.isSafeInteger(result.next_offset)||result.next_offset<=offset)throw Error('Invalid batch progress. Please contact support.');
+        offset=result.next_offset;
+        if(batch===249)throw Error('Batch safety limit reached. Contact support with send ID: '+eventId);
+      }
       setReminderGame(null);setReminderPreview(null);
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to send reminder.');}
     finally{setReminderBusy(false);}
