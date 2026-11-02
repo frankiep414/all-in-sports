@@ -61,7 +61,7 @@ export async function POST(request:Request){
   activeEvent=existing;
  }
  const register=process.env.NEXT_PUBLIC_SITE_URL||'https://allinsportsnj.com';
- const gameLink=register.replace(/\\/$/,'')+'/play?game='+encodeURIComponent(gameId);
+ const gameLink=(register.endsWith('/')?register.slice(0,-1):register)+'/play?game='+encodeURIComponent(gameId);
  const when=new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'});
  const emailHtml='<div style="font-family:Arial,sans-serif;white-space:pre-wrap">'+escapeHtml(message)+'</div><p><a href="'+gameLink+'">View game / sign up</a></p>';
  const smsBody='All In Sports: '+message+' | '+game.title+' '+when+' '+gameLink+' Reply STOP to opt out.';
