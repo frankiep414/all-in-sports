@@ -1,3 +1,4 @@
+import {unsubscribeToken} from '../../../../../lib/announcement-unsubscribe';
 import {createClient} from '@supabase/supabase-js';
 import twilio from 'twilio';
 export const dynamic='force-dynamic';
@@ -55,7 +56,7 @@ export async function POST(request:Request){
  if(message.length<5||message.length>800||subject.length>120||!sendEmail&&!sendSms||
     !/^[0-9a-f-]{36}$/i.test(requestId)||body.confirm!=='SEND_GAME_NOTIFICATION')
   return Response.json({error:'Provide a message, channel, request ID, and explicit confirmation.'},{status:400});
- if(sendEmail&&!process.env.RESEND_API_KEY||sendSms&&(!process.env.TWILIO_ACCOUNT_SID||!process.env.TWILIO_AUTH_TOKEN||!process.env.TWILIO_PHONE_NUMBER))
+ if(sendEmail&&(!process.env.RESEND_API_KEY||!process.env.ANNOUNCEMENT_UNSUBSCRIBE_SECRET)||sendSms&&(!process.env.TWILIO_ACCOUNT_SID||!process.env.TWILIO_AUTH_TOKEN||!process.env.TWILIO_PHONE_NUMBER))
   return Response.json({error:'Selected notification provider is not configured.'},{status:503});
  const offset=Number(body.offset??0);
  if(!Number.isSafeInteger(offset)||offset<0||offset>100000)return Response.json({error:'Invalid batch offset.'},{status:400});
@@ -81,7 +82,7 @@ export async function POST(request:Request){
  const register=process.env.NEXT_PUBLIC_SITE_URL||'https://allinsportsnj.com';
  const gameLink=(register.endsWith('/')?register.slice(0,-1):register)+'/play?game='+encodeURIComponent(gameId);
  const when=new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'});
- const emailHtml='<div style="font-family:Arial,sans-serif;white-space:pre-wrap">'+escapeHtml(message)+'</div><p><a href="'+gameLink+'">View game / sign up</a></p>';
+ const emailHtml=(userId:string)=>'<div style="font-family:Arial,sans-serif;white-space:pre-wrap">'+escapeHtml(message)+'</div><p><a href="'+gameLink+'">View game / sign up</a></p><p><a href="'+register.replace(/[/]$/,'')+'/unsubscribe?token='+encodeURIComponent(unsubscribeToken(userId))+'">Unsubscribe from announcements</a></p>';
  const smsBody='All In Sports: '+message+' | '+game.title+' '+when+' '+gameLink+' Reply STOP to opt out.';
  if(sendSms&&smsBody.length>1200)return Response.json({error:'SMS message too long. Shorten the message.'},{status:400});
  let emailSent=0,smsSent=0,failed=0,skipped=0;
@@ -114,7 +115,7 @@ export async function POST(request:Request){
     Authorization:'Bearer '+process.env.RESEND_API_KEY,'Content-Type':'application/json',
     'Idempotency-Key':'all-in-manual-'+deliveryId
    },body:JSON.stringify({from:'All In Sports <noreply@allinsportsnj.com>',to:[email],
-    subject:subject||'All In Sports game reminder',html:emailHtml,text:message+'\\n'+gameLink}),
+    subject:subject||'All In Sports game reminder',html:emailHtml(pref.user_id),text:message+'\\n'+gameLink+'\\nUnsubscribe: '+register.replace(/[/]$/,'')+'/unsubscribe?token='+encodeURIComponent(unsubscribeToken(pref.user_id))}),
     signal:AbortSignal.timeout(10000)});
    const result=await response.json().catch(()=>({}));
    if(!response.ok||typeof result.id!=='string'){
