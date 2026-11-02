@@ -659,6 +659,11 @@ export default function AdminPage() {
                   style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#c4f25d',color:'#101b13',border:0,fontWeight:800}}>
                   {reminderGame===item.id?'CLOSE NOTIFICATION':'SEND NOTIFICATION'}
                 </button>}
+                {item.status==='published' && <button type="button" disabled={reminderBusy}
+                  onClick={()=>viewReminderHistory(item.id)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#243b34',color:'#fff',border:'1px solid #668174',fontWeight:700}}>
+                  VIEW NOTIFICATION HISTORY
+                </button>}
                 {item.status==='published' && reminderGame===item.id && <section style={{marginTop:14,padding:16,border:'1px solid #64754c',borderRadius:10,display:'grid',gap:10}}>
                   <strong>Custom reminder for {item.title}</strong>
                   <label>Email subject <input value={reminderSubject} maxLength={120} onChange={e=>setReminderSubject(e.target.value)} placeholder="Game reminder" style={{display:'block',width:'100%',padding:10}} /></label>
