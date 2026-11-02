@@ -115,6 +115,29 @@ export default function AdminPage() {
   const [reminderSms,setReminderSms]=useState(true);
   const [reminderPreview,setReminderPreview]=useState<{email:number;sms:number}|null>(null);
   const [reminderBusy,setReminderBusy]=useState(false);
+  async function sendManualReminder(gameId:string){
+    if(!reminderPreview||!reminderMessage.trim()||(!reminderEmail&&!reminderSms))return;
+    const recipients=(reminderEmail?reminderPreview.email:0)+(reminderSms?reminderPreview.sms:0);
+    if(!window.confirm(`Send this custom notification to up to ${recipients} opted-in email/SMS recipients? This sends REAL messages and cannot be undone.`))return;
+    setReminderBusy(true);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again.');
+      const requestId=crypto.randomUUID();
+      const response=await fetch('/api/admin/notifications/manual',{method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({action:'send',game_id:gameId,message:reminderMessage,subject:reminderSubject,
+          email:reminderEmail,sms:reminderSms,request_id:requestId,confirm:'SEND_GAME_NOTIFICATION'})});
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'Unable to send reminder.');
+      setEditMessage(`Reminder processed: ${result.email_sent} emails, ${result.sms_sent} texts sent; ${result.failed} failed; ${result.skipped} skipped. Send ID: ${result.event_id}`);
+      setReminderGame(null);setReminderPreview(null);
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to send reminder.');}
+    finally{setReminderBusy(false);}
+  }
   async function previewReminder(gameId:string){
     setReminderBusy(true);setReminderPreview(null);setEditMessage('');
     try{
@@ -604,8 +627,8 @@ export default function AdminPage() {
                   <div><label><input type="checkbox" checked={reminderEmail} onChange={e=>setReminderEmail(e.target.checked)}/> Email</label> &nbsp; <label><input type="checkbox" checked={reminderSms} onChange={e=>setReminderSms(e.target.checked)}/> SMS</label></div>
                   <button type="button" disabled={reminderBusy} onClick={()=>void previewReminder(item.id)} style={{padding:10,fontWeight:700}}>CHECK OPTED-IN RECIPIENTS</button>
                   {reminderPreview && <p role="status">Eligible recipients: {reminderPreview.email} email · {reminderPreview.sms} SMS. Recipient counts are estimates.</p>}
-                  <p style={{color:'#eecf8c',fontSize:13,margin:0}}>Sending is disabled until the secure delivery endpoint and duplicate protection are implemented and tested.</p>
-                  <button type="button" disabled style={{padding:10,opacity:.5}}>CONFIRM & SEND (COMING SOON)</button>
+                  <p style={{color:'#eecf8c',fontSize:13,margin:0}}>Only opted-in members will receive messages. Confirm before sending. Messages cannot be recalled.</p>
+                  <button type="button" disabled={reminderBusy||!reminderPreview||reminderMessage.trim().length<5||(!reminderEmail&&!reminderSms)} onClick={()=>void sendManualReminder(item.id)} style={{padding:10,fontWeight:800,background:'#c4f25d',color:'#101b13'}}>CONFIRM & SEND NOTIFICATION</button>
                 </section>}
                 {item.status==='published' && <button type="button" disabled={audienceBusy}
                   onClick={()=>void checkGameAudience(item.id)}
