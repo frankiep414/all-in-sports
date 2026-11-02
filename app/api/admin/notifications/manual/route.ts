@@ -69,6 +69,7 @@ export async function POST(request:Request){
 
  if(process.env.VERCEL_ENV!=='production')
   return Response.json({error:'Preview mode: real notifications are disabled.'},{status:403});
+ if(game.is_test)return Response.json({error:'Test games cannot send member-wide notifications.'},{status:403});
  const message=typeof body.message==='string'?body.message.trim():'';
  const subject=typeof body.subject==='string'?body.subject.trim():'';
  const sendEmail=body.email===true,sendSms=body.sms===true;
@@ -78,8 +79,6 @@ export async function POST(request:Request){
   return Response.json({error:'Provide a message, channel, request ID, and explicit confirmation.'},{status:400});
  if(sendEmail&&(!process.env.RESEND_API_KEY||!process.env.ANNOUNCEMENT_UNSUBSCRIBE_SECRET)||sendSms&&(!process.env.TWILIO_ACCOUNT_SID||!process.env.TWILIO_AUTH_TOKEN||!process.env.TWILIO_PHONE_NUMBER))
   return Response.json({error:'Selected notification provider is not configured.'},{status:503});
- const offset=Number(body.offset??0);
- if(!Number.isSafeInteger(offset)||offset<0||offset>100000)return Response.json({error:'Invalid batch offset.'},{status:400});
  const batchSize=10;
  // Stable user-id cursor: opt-out changes must not shift an offset into a changing audience.
  const cursor=typeof body.cursor==='string'?body.cursor:'';
