@@ -35,3 +35,28 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Something went wrong.' }, { status: 500 });
   }
 }
+
+export async function PATCH(request: Request) {
+ try {
+  const token=request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
+  if(!token)return Response.json({error:'Sign in required.'},{status:401});
+  const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publicKey=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const secretKey=process.env.SUPABASE_SECRET_KEY;
+  if(!url||!publicKey||!secretKey)return Response.json({error:'Configuration unavailable.'},{status:503});
+  const auth=createClient(url,publicKey,{auth:{persistSession:false,autoRefreshToken:false}});
+  const {data:{user},error:authError}=await auth.auth.getUser(token);
+  if(authError||!user?.email||!user.email_confirmed_at)return Response.json({error:'Sign in required.'},{status:401});
+  const body=await request.json().catch(()=>null);
+  const fullName=typeof body?.full_name==='string'?body.full_name.trim().replace(/\s+/g,' '):'';
+  if(fullName.length<3||fullName.length>100||!fullName.includes(' '))
+   return Response.json({error:'Enter your first and last name (3–100 characters).'},{status:400});
+  if(/[<>\r\n]/.test(fullName))return Response.json({error:'Invalid characters in name.'},{status:400});
+  const db=createClient(url,secretKey,{auth:{persistSession:false,autoRefreshToken:false}});
+  const {data:player,error:lookupError}=await db.from('players').select('id').ilike('email',user.email).maybeSingle();
+  if(lookupError||!player)return Response.json({error:'Player profile unavailable.'},{status:404});
+  const {data:updated,error:updateError}=await db.from('players').update({full_name:fullName}).eq('id',player.id).ilike('email',user.email).select('id,full_name').single();
+  if(updateError||!updated)return Response.json({error:'Unable to save name.'},{status:503});
+  return Response.json({player:updated},{headers:{'Cache-Control':'no-store'}});
+ }catch{return Response.json({error:'Unable to update profile.'},{status:503});}
+}

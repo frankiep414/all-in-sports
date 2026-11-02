@@ -70,6 +70,27 @@ export default function MyAllInPage() {
     full_name: string;
   } | null>(null);
 
+  const [editingName,setEditingName]=useState(false);
+  const [nameDraft,setNameDraft]=useState('');
+  const [savingName,setSavingName]=useState(false);
+  const [nameMessage,setNameMessage]=useState('');
+  async function saveName(){
+   setSavingName(true);setNameMessage('');
+   try{
+    const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if(!url||!key)throw new Error('Sign-in unavailable.');
+    const client=createClient(url,key);
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.access_token)throw new Error('Please sign in again.');
+    const response=await fetch('/api/player',{method:'PATCH',headers:{Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({full_name:nameDraft})});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||'Unable to save name.');
+    setPlayer(current=>current?{...current,full_name:result.player.full_name}:current);
+    setEditingName(false);setNameMessage('Name updated successfully.');
+   }catch(error){setNameMessage(error instanceof Error?error.message:'Unable to update name.');}
+   finally{setSavingName(false);}
+  }
+
   useEffect(() => {
     let active = true;
     async function loadPlayer() {
@@ -161,6 +182,9 @@ export default function MyAllInPage() {
             <div>
               <span className="playerIdLabel">ALL IN // PLAYER ID</span>
             <h2>{player?.full_name || 'PLAYER'}</h2>
+              <button type="button" onClick={()=>{setNameDraft(player?.full_name||'');setNameMessage('');setEditingName(true);}} style={{marginTop:8,padding:'8px 12px',border:'1px solid #95d9ff',borderRadius:8,background:'#152638',color:'#b4e6ff',fontWeight:700}}>EDIT NAME</button>
+              {editingName&&<div style={{marginTop:10,display:'flex',flexWrap:'wrap',gap:8,alignItems:'center'}}><input aria-label="Full name" value={nameDraft} onChange={e=>setNameDraft(e.target.value)} maxLength={100} style={{padding:10,borderRadius:8,border:'1px solid #7a93aa',background:'#101820',color:'#fff',minWidth:220}}/><button type="button" disabled={savingName} onClick={()=>void saveName()} style={{padding:10,borderRadius:8,background:'#b4e6ff',color:'#111',fontWeight:700}}>{savingName?'SAVING…':'SAVE'}</button><button type="button" disabled={savingName} onClick={()=>setEditingName(false)} style={{padding:10,borderRadius:8}}>CANCEL</button></div>}
+              {nameMessage&&<p role="status" style={{color:'#b4e6ff',marginTop:8}}>{nameMessage}</p>}
               <p>YOUR ALL IN PROFILE</p>
             </div>
 
