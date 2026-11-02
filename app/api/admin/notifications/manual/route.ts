@@ -28,8 +28,8 @@ export async function POST(request:Request){
   .select('user_id,email_opt_in,sms_opt_in').limit(2000);
  if(prefError||announceError)return Response.json({error:'Unable to verify consent.'},{status:503});
  const byUser=new Map((announcements||[]).map(p=>[p.user_id,p]));
- const emailUsers=(preferences||[]).filter(p=>p.email_game_alerts&&byUser.get(p.user_id)?.email_opt_in===true);
- const smsUsers=(preferences||[]).filter(p=>p.sms_opted_in&&p.sms_game_alerts&&!p.sms_opted_out_at&&p.phone_e164?.startsWith('+')&&byUser.get(p.user_id)?.sms_opt_in===true);
+ const emailUsers=(preferences||[]).filter(p=>p.email_game_alerts&&byUser.get(p.user_id)?.email_opt_in===true).sort((a,b)=>a.user_id.localeCompare(b.user_id));
+ const smsUsers=(preferences||[]).filter(p=>p.sms_opted_in&&p.sms_game_alerts&&!p.sms_opted_out_at&&p.phone_e164?.startsWith('+')&&byUser.get(p.user_id)?.sms_opt_in===true).sort((a,b)=>a.user_id.localeCompare(b.user_id));
  if(body.action==='preview')return Response.json({game_title:game.title,email_count:emailUsers.length,sms_count:smsUsers.length});
  if(body.action!=='send')return Response.json({error:'Unknown action.'},{status:400});
 
@@ -42,8 +42,11 @@ export async function POST(request:Request){
   return Response.json({error:'Provide a message, channel, request ID, and explicit confirmation.'},{status:400});
  if(sendEmail&&!process.env.RESEND_API_KEY||sendSms&&(!process.env.TWILIO_ACCOUNT_SID||!process.env.TWILIO_AUTH_TOKEN||!process.env.TWILIO_PHONE_NUMBER))
   return Response.json({error:'Selected notification provider is not configured.'},{status:503});
- if((sendEmail&&emailUsers.length>20)||(sendSms&&smsUsers.length>20))
-  return Response.json({error:'Recipient count exceeds the safe 20-recipient per-channel limit. No messages sent.'},{status:409});
+ const offset=Number(body.offset??0);
+ if(!Number.isSafeInteger(offset)||offset<0||offset>100000)return Response.json({error:'Invalid batch offset.'},{status:400});
+ const batchSize=10;
+ const emailBatch=sendEmail?emailUsers.slice(offset,offset+batchSize):[];
+ const smsBatch=sendSms?smsUsers.slice(offset,offset+batchSize):[];
  const eventKey='admin_reminder:'+gameId+':'+requestId;
  const {data:event,error:eventError}=await db.from('notification_events').upsert({
    event_key:eventKey,event_type:'admin_reminder',game_id:gameId,
@@ -83,7 +86,7 @@ export async function POST(request:Request){
   if(playerError||!players?.length)return null;
   return recipient.email;
  }
- for(const pref of sendEmail?emailUsers:[]){
+ for(const pref of emailBatch){
   const email=await verifiedEmail(pref.user_id);
   if(!email){skipped++;continue;}
   const {data:latest}=await db.from('player_announcement_preferences').select('email_opt_in').eq('user_id',pref.user_id).maybeSingle();
@@ -108,7 +111,7 @@ export async function POST(request:Request){
    }
   }catch{failed++;/* Uncertain provider outcome: retain sending to avoid duplicates. */}
  }
- for(const pref of sendSms?smsUsers:[]){
+ for(const pref of smsBatch){
   const email=await verifiedEmail(pref.user_id);
   if(!email){skipped++;continue;}
   const {data:latest}=await db.from('player_announcement_preferences').select('sms_opt_in').eq('user_id',pref.user_id).maybeSingle();
@@ -122,6 +125,6 @@ export async function POST(request:Request){
    await db.from('notification_deliveries').update({status:'sent',provider_message_id:result.sid}).eq('id',deliveryId);
   }catch{failed++;/* Uncertain provider outcome: retain sending to avoid duplicates. */}
  }
- return Response.json({event_id:activeEvent.id,email_sent:emailSent,sms_sent:smsSent,failed,skipped});
+ return Response.json({event_id:activeEvent.id,email_sent:emailSent,sms_sent:smsSent,failed,skipped,next_offset:offset+batchSize,complete:offset+batchSize>=Math.max(sendEmail?emailUsers.length:0,sendSms?smsUsers.length:0)});
 }
 function escapeHtml(value:string){return value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));}
