@@ -27,7 +27,7 @@ export default function PlayPage() {
   const [checkoutAlert,setCheckoutAlert]=useState<{gameTitle:string;message:string}|null>(null);
   const [reporting,setReporting]=useState<string|null>(null);
   const reportingEnabled=process.env.NEXT_PUBLIC_PICKUP_ZELLE_REPORTING_ENABLED==='true';
-  const teamRegistrationEnabled=process.env.NEXT_PUBLIC_TEAM_REGISTRATION_ENABLED==='true';
+  const teamRegistrationEnabled=true;
   const liveCardEnabled=process.env.NEXT_PUBLIC_PICKUP_STRIPE_LIVE_ENABLED==='true';
   const [registrationTypes,setRegistrationTypes]=useState<Record<string,'solo'|'team'>>({});
   const [teamNames,setTeamNames]=useState<Record<string,string>>({});
@@ -165,11 +165,11 @@ export default function PlayPage() {
                 <span style={{fontSize:13,color:'#b8c1d0'}}>{label}</span>
               </div>)}
             </div>
-            {!registrations[item.id] && <div style={{margin:'12px 0',display:'flex',flexWrap:'wrap',gap:12,alignItems:'center'}}><label><input type="radio" name={'registration-type-'+item.id} checked={(registrationTypes[item.id]||'solo')==='solo'} onChange={()=>setRegistrationTypes(current=>({...current,[item.id]:'solo'}))}/> Register Solo — ${(item.price_cents/100).toFixed(2)}</label>{teamRegistrationEnabled&&<label><input type="radio" name={'registration-type-'+item.id} checked={registrationTypes[item.id]==='team'} onChange={()=>setRegistrationTypes(current=>({...current,[item.id]:'team'}))}/> Register a Team — ${(item.price_cents*5/100).toFixed(2)} (5 players)</label>}{teamRegistrationEnabled&&registrationTypes[item.id]==='team'&&<input aria-label="Team name" placeholder="Team name" maxLength={80} value={teamNames[item.id]||''} onChange={event=>setTeamNames(current=>({...current,[item.id]:event.target.value}))} style={{padding:10,borderRadius:8}}/>}</div>}
+            {!registrations[item.id] && <div style={{margin:'12px 0',display:'flex',flexWrap:'wrap',gap:12,alignItems:'center'}}><label><input type="radio" name={'registration-type-'+item.id} checked={(registrationTypes[item.id]||'solo')==='solo'} onChange={()=>setRegistrationTypes(current=>({...current,[item.id]:'solo'}))}/> Sign Up Solo — ${(item.price_cents/100).toFixed(2)}</label>{teamRegistrationEnabled&&<label><input type="radio" name={'registration-type-'+item.id} checked={registrationTypes[item.id]==='team'} onChange={()=>setRegistrationTypes(current=>({...current,[item.id]:'team'}))}/> Sign Up a Team — ${(item.price_cents*5/100).toFixed(2)} (5 players)</label>}{teamRegistrationEnabled&&registrationTypes[item.id]==='team'&&<input aria-label="Team name" placeholder="Team name" maxLength={80} value={teamNames[item.id]||''} onChange={event=>setTeamNames(current=>({...current,[item.id]:event.target.value}))} style={{padding:10,borderRadius:8}}/>}</div>}
             {registrations[item.id] ? <strong style={{color:'#9ee6bb'}}>Your registration: {registrations[item.id].status==='confirmed'?'Confirmed — You’re in!':registrations[item.id].payment_status==='pending_verification'?'Payment submitted — Awaiting verification':registrations[item.id].status==='waitlisted'?'Waitlisted':registrations[item.id].status==='offered'?'Waitlist offer':registrations[item.id].status==='expired'?'Expired':'Registered — Payment due'}</strong> :
               <button type="button" disabled={registering!==null||(registrationTypes[item.id]==='team'&&(teamNames[item.id]||'').trim().length<2)} onClick={()=>void register(item.id)}
                 style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800,cursor:'pointer'}}>
-                {registering===item.id?'Registering…':'REQUEST A SPOT'}
+                {registering===item.id?'Registering…':(registrationTypes[item.id]==='team'?'SIGN UP A TEAM':'SIGN UP SOLO')}
               </button>}
             {registrations[item.id]?.payment_reference && <p style={{margin:'12px 0',fontSize:14}}>Zelle memo reference: <strong style={{color:'#95d9ff'}}>{registrations[item.id].payment_reference}</strong> <button type="button" onClick={()=>void navigator.clipboard?.writeText(registrations[item.id].payment_reference||'')} style={{marginLeft:8,padding:'4px 9px',borderRadius:6}}>COPY</button></p>}
             {(item.title.startsWith('TEST')||liveCardEnabled) && registrations[item.id] &&
@@ -189,7 +189,7 @@ export default function PlayPage() {
             {!signedIn && <p style={{color:'#b8c1d0',fontSize:14}}><Link href="/?auth=1&returnTo=%2Fplay" style={{color:'#95d9ff'}}>Sign in or create your Player ID</Link> before registering.</p>}
           </article>)}
           {registrationMessage && <p role="status" style={{color:'#95d9ff',fontWeight:700}}>{registrationMessage}</p>}
-          <p style={{color:'#95d9ff',fontWeight:700}}>Request a spot to register. Your spot is provisional until payment is verified. Follow the payment instructions shown for your registration; do not send money before you receive them.</p>
+          <p style={{color:'#95d9ff',fontWeight:700}}>Choose Sign Up Solo or Sign Up a Team. Your registration is provisional until payment is verified. Follow the payment instructions shown for your registration; do not send money before you receive them.</p>
         </div>
         {!focusedGameId&&<><h2 style={{marginTop:52}}>How payment will work</h2>
         <p style={{color:'#b8c1d0'}}>Learn about payment methods below. Actual payment instructions are provided after your registration request.</p>
