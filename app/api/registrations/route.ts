@@ -78,13 +78,13 @@ export async function POST(request:Request){
    if(claimError)console.error('Admin pickup alert claim failed',claimError.code);
    if(!claimError && eventRows?.length){
     const [{data:details},{data:playerDetails}]=await Promise.all([
-     access.db.from('pickup_games').select('title,venue,starts_at').eq('id',body.game_id).maybeSingle(),
+     access.db.from('pickup_games').select('title,venue,starts_at,price_cents').eq('id',body.game_id).maybeSingle(),
      access.db.from('players').select('full_name').eq('id',player.id).maybeSingle()
     ]);
     await sendAdminRegistrationAlert({kind:'pickup',id:String(row.registration_id),
      name:playerDetails?.full_name||'Player',email:access.user.email!,
      title:details?.title||'Pickup game',status:row.registration_status,
-     details:[`Registration type: ${referenceRow?.registration_type==='team'?'TEAM':'SOLO'}`,`Team name: ${referenceRow?.registration_type==='team'?(referenceRow.team_name||'Not provided'):'N/A'}`,`Spots reserved: ${referenceRow?.spots_reserved||1}`,`Total due: ${((referenceRow?.spots_reserved||1)*(game.price_cents||0)/100).toFixed(2)}`,`Venue: ${details?.venue||'Not provided'}`,`Starts: ${details?.starts_at||'Not provided'}`,
+     details:[`Registration type: ${referenceRow?.registration_type==='team'?'TEAM':'SOLO'}`,`Team name: ${referenceRow?.registration_type==='team'?(referenceRow.team_name||'Not provided'):'N/A'}`,`Spots reserved: ${referenceRow?.spots_reserved||1}`,`Total due: ${((referenceRow?.spots_reserved||1)*(details?.price_cents||0)/100).toFixed(2)}`,`Venue: ${details?.venue||'Not provided'}`,`Starts: ${details?.starts_at||'Not provided'}`,
       `Payment reference: ${referenceRow?.payment_reference||'Not assigned'}`]});
    }
   }
