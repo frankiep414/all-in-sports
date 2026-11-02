@@ -1,3 +1,4 @@
+import {friendlyGamePath} from '../../../../../lib/friendly-game-link';
 import {unsubscribeToken} from '../../../../../lib/announcement-unsubscribe';
 import {createClient} from '@supabase/supabase-js';
 import twilio from 'twilio';
@@ -113,7 +114,7 @@ export async function POST(request:Request){
   activeEvent=existing;
  }
  const register=process.env.NEXT_PUBLIC_SITE_URL||'https://allinsportsnj.com';
- const gameLink=(register.endsWith('/')?register.slice(0,-1):register)+'/play?game='+encodeURIComponent(gameId);
+ const gameLink=(register.endsWith('/')?register.slice(0,-1):register)+(friendlyGamePath(game.title,game.starts_at)||'/play?game='+encodeURIComponent(gameId));
  const when=new Date(game.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'});
  const emailHtml=(userId:string)=>'<div style="font-family:Arial,sans-serif;white-space:pre-wrap">'+escapeHtml(message)+'</div><p><a href="'+gameLink+'">View game / sign up</a></p><p><a href="'+register.replace(/[/]$/,'')+'/unsubscribe?token='+encodeURIComponent(unsubscribeToken(userId))+'">Unsubscribe from announcements</a></p>';
  const smsBody='All In Sports: '+message+' | '+game.title+' '+when+' '+gameLink+' Reply STOP to opt out.';
