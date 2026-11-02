@@ -127,12 +127,12 @@ export default function AdminPage() {
       const {data:{session}}=await client.auth.getSession();
       if(!session?.access_token)throw Error('Please sign in again.');
       const requestId=crypto.randomUUID();
-      let offset=0,emailSent=0,smsSent=0,failed=0,skipped=0,eventId='';
+      let cursor='',emailSent=0,smsSent=0,failed=0,skipped=0,eventId='';
       for(let batch=0;batch<250;batch++){
         const response=await fetch('/api/admin/notifications/manual',{method:'POST',
           headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
           body:JSON.stringify({action:'send',game_id:gameId,message:reminderMessage,subject:reminderSubject,
-            email:reminderEmail,sms:reminderSms,request_id:requestId,offset,confirm:'SEND_GAME_NOTIFICATION'})});
+            email:reminderEmail,sms:reminderSms,request_id:requestId,cursor,confirm:'SEND_GAME_NOTIFICATION'})});
         const result=await response.json();
         if(!response.ok)throw Error((result.error||'Unable to send reminder.')+
           ` Completed so far: ${emailSent} emails, ${smsSent} SMS. Send ID: ${eventId||requestId}. Contact support before restarting.`);
@@ -144,8 +144,8 @@ export default function AdminPage() {
           setEditMessage(`Reminder completed: ${emailSent} emails, ${smsSent} texts sent; ${failed} failed; ${skipped} skipped. Send ID: ${eventId}`);
           break;
         }
-        if(!Number.isSafeInteger(result.next_offset)||result.next_offset<=offset)throw Error('Invalid batch progress. Please contact support.');
-        offset=result.next_offset;
+        if(typeof result.next_cursor!=='string'||result.next_cursor<=cursor)throw Error('Invalid batch progress. Please contact support.');
+        cursor=result.next_cursor;
         if(batch===249)throw Error('Batch safety limit reached. Contact support with send ID: '+eventId);
       }
       setReminderGame(null);setReminderPreview(null);
