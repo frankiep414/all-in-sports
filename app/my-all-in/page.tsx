@@ -85,7 +85,11 @@ export default function MyAllInPage() {
     const response=await fetch('/api/player',{method:'PATCH',headers:{Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({full_name:nameDraft})});
     const result=await response.json();
     if(!response.ok)throw new Error(result.error||'Unable to save name.');
-    setPlayer(current=>current?{...current,full_name:result.player.full_name}:current);
+    const verify=await fetch('/api/player',{headers:{Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
+    if(!verify.ok)throw new Error('Name saved, but verification failed. Refresh to check your profile.');
+    const savedProfile=await verify.json();
+    if(savedProfile.full_name!==result.player.full_name)throw new Error('Name update could not be verified. Please try again.');
+    setPlayer(current=>current?{...current,full_name:savedProfile.full_name}:current);
     setEditingName(false);setNameMessage('Name updated successfully.');
    }catch(error){setNameMessage(error instanceof Error?error.message:'Unable to update name.');}
    finally{setSavingName(false);}
