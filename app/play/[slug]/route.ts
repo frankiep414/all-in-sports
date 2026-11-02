@@ -26,7 +26,7 @@ export async function GET(request:Request,context:{params:Promise<{slug:string}>
  if(error)return new Response('Service unavailable',{status:503});
  const matching=(data||[]).filter(game=>{
   const local=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(game.starts_at));
-  const target=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
+  const target=new Intl.DateTimeFormat('en-US',{timeZone:'UTC',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
   const category=match[1]==='mens'?/\b(mens|men's|men)\b/i:/\b(coed|co-ed)\b/i;
   return local===target&&category.test(game.title);
  });
