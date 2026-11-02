@@ -61,8 +61,21 @@ export async function POST(request:Request){
  const offset=Number(body.offset??0);
  if(!Number.isSafeInteger(offset)||offset<0||offset>100000)return Response.json({error:'Invalid batch offset.'},{status:400});
  const batchSize=10;
- const emailBatch=sendEmail?emailUsers.slice(offset,offset+batchSize):[];
- const smsBatch=sendSms?smsUsers.slice(offset,offset+batchSize):[];
+ // Stable user-id cursor: opt-out changes must not shift an offset into a changing audience.
+ const cursor=typeof body.cursor==='string'?body.cursor:'';
+ if(cursor&&!/^[0-9a-f-]{36}$/i.test(cursor))return Response.json({error:'Invalid recipient cursor.'},{status:400});
+ const nextUsers=Array.from(new Set([
+  ...(sendEmail?emailUsers.map(p=>p.user_id):[]),
+  ...(sendSms?smsUsers.map(p=>p.user_id):[])
+ ])).sort().filter(id=>id>cursor).slice(0,batchSize);
+ const selected=new Set(nextUsers);
+ const emailBatch=sendEmail?emailUsers.filter(p=>selected.has(p.user_id)):[];
+ const smsBatch=sendSms?smsUsers.filter(p=>selected.has(p.user_id)):[];
+ const nextCursor=nextUsers[nextUsers.length-1]||cursor;
+ const complete=!Array.from(new Set([
+  ...(sendEmail?emailUsers.map(p=>p.user_id):[]),
+  ...(sendSms?smsUsers.map(p=>p.user_id):[])
+ ])).some(id=>id>nextCursor);
  const eventKey='admin_reminder:'+gameId+':'+requestId;
  const {data:event,error:eventError}=await db.from('notification_events').upsert({
    event_key:eventKey,event_type:'admin_reminder',game_id:gameId,
@@ -141,6 +154,6 @@ export async function POST(request:Request){
    await db.from('notification_deliveries').update({status:'sent',provider_message_id:result.sid}).eq('id',deliveryId);
   }catch{failed++;/* Uncertain provider outcome: retain sending to avoid duplicates. */}
  }
- return Response.json({event_id:activeEvent.id,email_sent:emailSent,sms_sent:smsSent,failed,skipped,next_offset:offset+batchSize,complete:offset+batchSize>=Math.max(sendEmail?emailUsers.length:0,sendSms?smsUsers.length:0)});
+ return Response.json({event_id:activeEvent.id,email_sent:emailSent,sms_sent:smsSent,failed,skipped,next_cursor:nextCursor,complete});
 }
 function escapeHtml(value:string){return value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));}
