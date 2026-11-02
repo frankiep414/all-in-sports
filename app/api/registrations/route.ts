@@ -55,7 +55,7 @@ export async function POST(request:Request){
    return Response.json({error:'Unable to register. Please try again.'},{status:503});
   }
   const row=data?.[0];
-  const {data:referenceRow}=await access.db.from('pickup_registrations').select('payment_reference').eq('id',row?.registration_id).eq('user_id',access.user.id).maybeSingle();
+  const {data:referenceRow}=await access.db.from('pickup_registrations').select('payment_reference,registration_type,team_name,spots_reserved').eq('id',row?.registration_id).eq('user_id',access.user.id).maybeSingle();
   // Idempotent event record only; no delivery is scheduled or sent.
   if(row?.registration_id && ['pending_payment','waitlisted','offered'].includes(row.registration_status)){
    const eventType=row.registration_status==='waitlisted'?'waitlist_joined':'registration_received';
@@ -78,13 +78,13 @@ export async function POST(request:Request){
    if(claimError)console.error('Admin pickup alert claim failed',claimError.code);
    if(!claimError && eventRows?.length){
     const [{data:details},{data:playerDetails}]=await Promise.all([
-     access.db.from('pickup_games').select('title,venue,starts_at').eq('id',body.game_id).maybeSingle(),
+     access.db.from('pickup_games').select('title,venue,starts_at,price_cents').eq('id',body.game_id).maybeSingle(),
      access.db.from('players').select('full_name').eq('id',player.id).maybeSingle()
     ]);
     await sendAdminRegistrationAlert({kind:'pickup',id:String(row.registration_id),
      name:playerDetails?.full_name||'Player',email:access.user.email!,
      title:details?.title||'Pickup game',status:row.registration_status,
-     details:[`Venue: ${details?.venue||'Not provided'}`,`Starts: ${details?.starts_at||'Not provided'}`,
+     details:[`Registration type: ${referenceRow?.registration_type==='team'?'TEAM':'SOLO'}`,`Team name: ${referenceRow?.registration_type==='team'?(referenceRow.team_name||'Not provided'):'N/A'}`,`Spots reserved: ${referenceRow?.spots_reserved||1}`,`Total due: ${((referenceRow?.spots_reserved||1)*(details?.price_cents||0)/100).toFixed(2)}`,`Venue: ${details?.venue||'Not provided'}`,`Starts: ${details?.starts_at||'Not provided'}`,
       `Payment reference: ${referenceRow?.payment_reference||'Not assigned'}`]});
    }
   }
