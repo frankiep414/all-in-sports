@@ -14,8 +14,8 @@ export default function Page() {
         <p style={{fontSize:19,lineHeight:1.7,color:'#b8c1d0',maxWidth:730}}>Explore competitive soccer with All In Sports. Two upcoming league opportunities are being planned for November at Sofive Carlstadt. Registration will open soon; details are subject to confirmation.</p>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:20,marginTop:40}}>
           {[
-            {name:"Men's Tuesday League",day:"Tuesdays",date:"November 3, 2026"},
-            {name:"Coed Wednesday League",day:"Wednesdays",date:"November 4, 2026"}
+            {name:"Men's Tuesday League",day:"Tuesdays",date:"November 17, 2026"},
+            {name:"Coed Wednesday League",day:"Wednesdays",date:"November 18, 2026"}
           ].map(league=><article key={league.name} style={{border:'1px solid #38536a',borderRadius:18,padding:28,background:'#111820'}}>
             <p style={{color:'#95d9ff',fontWeight:800,fontSize:13,letterSpacing:1.5,marginTop:0}}>REGISTRATION OPEN SOON</p>
             <h3 style={{fontSize:25,margin:'8px 0 20px'}}>{league.name}</h3>
