@@ -46,6 +46,24 @@ export async function POST(request:Request){
  const byUser=new Map((announcements||[]).map(p=>[p.user_id,p]));
  const emailUsers=(preferences||[]).filter(p=>p.email_game_alerts&&byUser.get(p.user_id)?.email_opt_in===true).sort((a,b)=>a.user_id.localeCompare(b.user_id));
  const smsUsers=(preferences||[]).filter(p=>p.sms_opted_in&&p.sms_game_alerts&&!p.sms_opted_out_at&&p.phone_e164?.startsWith('+')&&byUser.get(p.user_id)?.sms_opt_in===true).sort((a,b)=>a.user_id.localeCompare(b.user_id));
+ if(body.action==='history'){
+  const {data:events,error}=await db.from('notification_events')
+   .select('id,created_at,payload').eq('game_id',gameId).eq('event_type','admin_reminder')
+   .order('created_at',{ascending:false}).limit(20);
+  if(error)return Response.json({error:'Unable to load reminder history.'},{status:503});
+  const history=[];
+  for(const event of events||[]){
+   const {data:deliveries,error:deliveryError}=await db.from('notification_deliveries')
+    .select('channel,status').eq('event_id',event.id).limit(5000);
+   if(deliveryError)return Response.json({error:'Unable to load reminder deliveries.'},{status:503});
+   history.push({id:event.id,created_at:event.created_at,subject:event.payload?.subject||'',
+    message:event.payload?.message||'',email_sent:(deliveries||[]).filter(d=>d.channel==='email'&&d.status==='sent').length,
+    sms_sent:(deliveries||[]).filter(d=>d.channel==='sms'&&d.status==='sent').length,
+    pending:(deliveries||[]).filter(d=>d.status==='sending'||d.status==='queued').length,
+    failed:(deliveries||[]).filter(d=>d.status==='failed').length});
+  }
+  return Response.json({history});
+ }
  if(body.action==='preview')return Response.json({game_title:game.title,email_count:emailUsers.length,sms_count:smsUsers.length});
  if(body.action!=='send')return Response.json({error:'Unknown action.'},{status:400});
 
