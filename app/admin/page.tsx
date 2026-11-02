@@ -108,6 +108,92 @@ export default function AdminPage() {
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update game.');}
     finally{setDraftActionBusy(false);}
   }
+  const [reminderGame,setReminderGame]=useState<string|null>(null);
+  const [reminderMessage,setReminderMessage]=useState('');
+  const [reminderSubject,setReminderSubject]=useState('');
+  const [reminderEmail,setReminderEmail]=useState(true);
+  const [reminderSms,setReminderSms]=useState(true);
+  const [reminderPreview,setReminderPreview]=useState<{email:number;sms:number}|null>(null);
+  const [reminderBusy,setReminderBusy]=useState(false);
+  async function sendManualReminder(gameId:string){
+    if(!reminderPreview||!reminderMessage.trim()||(!reminderEmail&&!reminderSms))return;
+    const recipients=(reminderEmail?reminderPreview.email:0)+(reminderSms?reminderPreview.sms:0);
+    if(!window.confirm(`Send this custom notification to up to ${recipients} opted-in email/SMS recipients? This sends REAL messages and cannot be undone.`))return;
+    setReminderBusy(true);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again.');
+      const storageKey='ais-manual-send-'+gameId;
+      const fingerprint=JSON.stringify({gameId,message:reminderMessage,subject:reminderSubject,email:reminderEmail,sms:reminderSms});
+      const saved=JSON.parse(sessionStorage.getItem(storageKey)||'null');
+      const requestId=saved?.fingerprint===fingerprint&&typeof saved.requestId==='string'?saved.requestId:crypto.randomUUID();
+      let cursor=saved?.fingerprint===fingerprint&&typeof saved.cursor==='string'?saved.cursor:'';
+      sessionStorage.setItem(storageKey,JSON.stringify({fingerprint,requestId,cursor}));
+      let emailSent=0,smsSent=0,failed=0,skipped=0,eventId='';
+      for(let batch=0;batch<250;batch++){
+        const response=await fetch('/api/admin/notifications/manual',{method:'POST',
+          headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+          body:JSON.stringify({action:'send',game_id:gameId,message:reminderMessage,subject:reminderSubject,
+            email:reminderEmail,sms:reminderSms,request_id:requestId,cursor,confirm:'SEND_GAME_NOTIFICATION'})});
+        const result=await response.json();
+        if(!response.ok)throw Error((result.error||'Unable to send reminder.')+
+          ` Completed so far: ${emailSent} emails, ${smsSent} SMS. Send ID: ${eventId||requestId}. Contact support before restarting.`);
+        emailSent+=Number(result.email_sent||0);smsSent+=Number(result.sms_sent||0);
+        failed+=Number(result.failed||0);skipped+=Number(result.skipped||0);
+        eventId=result.event_id;
+        setEditMessage(`Sending notifications... ${emailSent} emails, ${smsSent} SMS sent so far.`);
+        if(result.complete){
+          sessionStorage.removeItem(storageKey);
+          setEditMessage(`Reminder completed: ${emailSent} emails, ${smsSent} texts sent; ${failed} failed; ${skipped} skipped. Send ID: ${eventId}`);
+          break;
+        }
+        if(typeof result.next_cursor!=='string'||result.next_cursor<=cursor)throw Error('Invalid batch progress. Please contact support.');
+        cursor=result.next_cursor;
+        sessionStorage.setItem(storageKey,JSON.stringify({fingerprint,requestId,cursor}));
+        if(batch===249)throw Error('Batch safety limit reached. Contact support with send ID: '+eventId);
+      }
+      setReminderGame(null);setReminderPreview(null);
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to send reminder.');}
+    finally{setReminderBusy(false);}
+  }
+  async function viewReminderHistory(gameId:string){
+    setReminderBusy(true);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again.');
+      const response=await fetch('/api/admin/notifications/manual',{method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({action:'history',game_id:gameId})});
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'Unable to load reminder history.');
+      const entries=(result.history||[]) as Array<{created_at:string;subject:string;email_sent:number;sms_sent:number;failed:number;pending:number}>;
+      setEditMessage(entries.length?entries.map(x=>`${new Date(x.created_at).toLocaleString()}: ${x.subject||'Game reminder'} — ${x.email_sent} emails, ${x.sms_sent} texts, ${x.failed} failed, ${x.pending} pending`).join(' | '):'No manual reminders have been sent for this game.');
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to load reminder history.');}
+    finally{setReminderBusy(false);}
+  }
+  async function previewReminder(gameId:string){
+    setReminderBusy(true);setReminderPreview(null);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again.');
+      const response=await fetch('/api/admin/notifications/manual',{method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({action:'preview',game_id:gameId})});
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'Unable to preview recipients.');
+      setReminderPreview({email:result.email_count||0,sms:result.sms_count||0});
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to preview recipients.');}
+    finally{setReminderBusy(false);}
+  }
   const [audienceBusy,setAudienceBusy]=useState(false);
   async function checkGameAudience(gameId:string){
     setAudienceBusy(true);setEditMessage('');
@@ -569,6 +655,25 @@ export default function AdminPage() {
                 <p style={{color:'#b8c1d0'}}>{item.venue} · {new Date(item.starts_at).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'})}</p>
                 {item.series_id && <p style={{color:'#95d9ff',marginBottom:8}}>Weekly series · Game {item.occurrence_index}</p>}
                 <p style={{marginBottom:0}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players · <strong style={{color:'#95d9ff'}}>Registered: {item.registered_count}/{item.capacity}</strong> · <strong style={{color:'#b8f3cf'}}>Paid: {item.paid_count}</strong></p>
+                {item.status==='published' && <button type="button" onClick={()=>{setReminderGame(reminderGame===item.id?null:item.id);setReminderPreview(null);setReminderMessage('');setReminderSubject('');}}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#c4f25d',color:'#101b13',border:0,fontWeight:800}}>
+                  {reminderGame===item.id?'CLOSE NOTIFICATION':'SEND NOTIFICATION'}
+                </button>}
+                {item.status==='published' && <button type="button" disabled={reminderBusy}
+                  onClick={()=>viewReminderHistory(item.id)}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#243b34',color:'#fff',border:'1px solid #668174',fontWeight:700}}>
+                  VIEW NOTIFICATION HISTORY
+                </button>}
+                {item.status==='published' && reminderGame===item.id && <section style={{marginTop:14,padding:16,border:'1px solid #64754c',borderRadius:10,display:'grid',gap:10}}>
+                  <strong>Custom reminder for {item.title}</strong>
+                  <label>Email subject <input value={reminderSubject} maxLength={120} onChange={e=>setReminderSubject(e.target.value)} placeholder="Game reminder" style={{display:'block',width:'100%',padding:10}} /></label>
+                  <label>Message <textarea value={reminderMessage} maxLength={800} onChange={e=>setReminderMessage(e.target.value)} placeholder="Write the message your members will receive..." rows={4} style={{display:'block',width:'100%',padding:10}} /></label>
+                  <div><label><input type="checkbox" checked={reminderEmail} onChange={e=>setReminderEmail(e.target.checked)}/> Email</label> &nbsp; <label><input type="checkbox" checked={reminderSms} onChange={e=>setReminderSms(e.target.checked)}/> SMS</label></div>
+                  <button type="button" disabled={reminderBusy} onClick={()=>void previewReminder(item.id)} style={{padding:10,fontWeight:700}}>CHECK OPTED-IN RECIPIENTS</button>
+                  {reminderPreview && <p role="status">Eligible recipients: {reminderPreview.email} email · {reminderPreview.sms} SMS. Recipient counts are estimates.</p>}
+                  <p style={{color:'#eecf8c',fontSize:13,margin:0}}>Only opted-in members will receive messages. Confirm before sending. Messages cannot be recalled.</p>
+                  <button type="button" disabled={reminderBusy||!reminderPreview||reminderMessage.trim().length<5||(!reminderEmail&&!reminderSms)} onClick={()=>void sendManualReminder(item.id)} style={{padding:10,fontWeight:800,background:'#c4f25d',color:'#101b13'}}>CONFIRM & SEND NOTIFICATION</button>
+                </section>}
                 {item.status==='published' && <button type="button" disabled={audienceBusy}
                   onClick={()=>void checkGameAudience(item.id)}
                   style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#273b29',color:'#c7f3d0',border:'1px solid #527b59',fontWeight:800}}>
