@@ -46,7 +46,7 @@ export async function PATCH(request: Request) {
   if(!url||!publicKey||!secretKey)return Response.json({error:'Configuration unavailable.'},{status:503});
   const auth=createClient(url,publicKey,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data:{user},error:authError}=await auth.auth.getUser(token);
-  if(authError||!user?.email||!user.email_confirmed_at)return Response.json({error:'Sign in required.'},{status:401});
+  if(authError||!user?.email)return Response.json({error:'Sign in required.'},{status:401});
   const body=await request.json().catch(()=>null);
   const fullName=typeof body?.full_name==='string'?body.full_name.trim().replace(/\s+/g,' '):'';
   if(fullName.length<3||fullName.length>100||!fullName.includes(' '))
@@ -56,7 +56,8 @@ export async function PATCH(request: Request) {
   const {data:player,error:lookupError}=await db.from('players').select('id').ilike('email',user.email).maybeSingle();
   if(lookupError||!player)return Response.json({error:'Player profile unavailable.'},{status:404});
   const {data:updated,error:updateError}=await db.from('players').update({full_name:fullName}).eq('id',player.id).ilike('email',user.email).select('id,full_name').single();
-  if(updateError||!updated)return Response.json({error:'Unable to save name.'},{status:503});
+  if(updateError){console.error('Player name update failed:',{code:updateError.code,message:updateError.message});return Response.json({error:'Unable to save name. Please try again or contact All In Sports.'},{status:503});}
+  if(!updated)return Response.json({error:'No player record was updated.'},{status:409});
   return Response.json({player:updated},{headers:{'Cache-Control':'no-store'}});
  }catch{return Response.json({error:'Unable to update profile.'},{status:503});}
 }

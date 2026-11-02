@@ -241,7 +241,10 @@ export default function Home() {
         setShowAuthWelcome(false);
       }
     });
-    return () => subscription.unsubscribe();
+    const refreshProfile = () => { if (document.visibilityState === 'visible') void loadVerifiedPlayer(); };
+    window.addEventListener('pageshow', refreshProfile);
+    window.addEventListener('focus', refreshProfile);
+    return () => { subscription.unsubscribe(); window.removeEventListener('pageshow', refreshProfile); window.removeEventListener('focus', refreshProfile); };
   }, []);
 
   if (authChecking) return <main style={{ minHeight: '100vh', background: '#050505', color: '#fff', display: 'grid', placeItems: 'center' }}>Loading All In Sports…</main>;
