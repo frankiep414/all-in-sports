@@ -15,8 +15,15 @@ export default function AdminPage() {
   const [testGame,setTestGame]=useState(false);
   const [weeks,setWeeks]=useState(8);
   const [games,setGames] = useState<PickupGame[]>([]);
-  const [gameView,setGameView] = useState<'active'|'published'|'draft'|'all'>('active');
-  const visibleGames = games.filter(game => gameView === 'all' || (gameView === 'active' ? game.status === 'published' || game.status === 'draft' : game.status === gameView));
+  const [gameView,setGameView] = useState<'active'|'published'|'draft'|'past'|'all'>('active');
+  const [gameFilterNow,setGameFilterNow]=useState(()=>Date.now());
+  useEffect(()=>{const timer=window.setInterval(()=>setGameFilterNow(Date.now()),60000);return ()=>window.clearInterval(timer);},[]);
+  const isPastGame=(game:PickupGame)=>new Date(game.ends_at).getTime()<gameFilterNow;
+  const visibleGames = games.filter(game => gameView === 'all' ||
+    (gameView === 'past' ? isPastGame(game) :
+     gameView === 'draft' ? game.status==='draft'&&!isPastGame(game) :
+     gameView === 'published' ? game.status==='published'&&!isPastGame(game) :
+     (game.status==='published'||game.status==='draft')&&!isPastGame(game)));
   const [editingId,setEditingId]=useState<string|null>(null);
   const [editGame,setEditGame]=useState({title:'',venue:'',date:'',start:'',end:'',price:'',capacity:''});
   const [editSaving,setEditSaving]=useState(false);
@@ -115,6 +122,8 @@ export default function AdminPage() {
   const [reminderSms,setReminderSms]=useState(true);
   const [reminderPreview,setReminderPreview]=useState<{email:number;sms:number}|null>(null);
   const [reminderBusy,setReminderBusy]=useState(false);
+  const [notificationSummary,setNotificationSummary]=useState<{gameId:string;email:number;sms:number;failed:number;skipped:number;eventId:string}|null>(null);
+  const [notificationHistory,setNotificationHistory]=useState<{gameId:string;entries:Array<{created_at:string;subject:string;email_sent:number;sms_sent:number;failed:number;pending:number}>}|null>(null);
   async function sendManualReminder(gameId:string){
     if(!reminderPreview||!reminderMessage.trim()||(!reminderEmail&&!reminderSms))return;
     const recipients=(reminderEmail?reminderPreview.email:0)+(reminderSms?reminderPreview.sms:0);
@@ -148,6 +157,7 @@ export default function AdminPage() {
         if(result.complete){
           sessionStorage.removeItem(storageKey);
           setEditMessage(`Reminder completed: ${emailSent} emails, ${smsSent} texts sent; ${failed} failed; ${skipped} skipped. Send ID: ${eventId}`);
+          setNotificationSummary({gameId,email:emailSent,sms:smsSent,failed,skipped,eventId});
           break;
         }
         if(typeof result.next_cursor!=='string'||result.next_cursor<=cursor)throw Error('Invalid batch progress. Please contact support.');
@@ -173,6 +183,7 @@ export default function AdminPage() {
       const result=await response.json();
       if(!response.ok)throw Error(result.error||'Unable to load reminder history.');
       const entries=(result.history||[]) as Array<{created_at:string;subject:string;email_sent:number;sms_sent:number;failed:number;pending:number}>;
+      setNotificationHistory({gameId,entries});
       setEditMessage(entries.length?entries.map(x=>`${new Date(x.created_at).toLocaleString()}: ${x.subject||'Game reminder'} — ${x.email_sent} emails, ${x.sms_sent} texts, ${x.failed} failed, ${x.pending} pending`).join(' | '):'No manual reminders have been sent for this game.');
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to load reminder history.');}
     finally{setReminderBusy(false);}
@@ -633,9 +644,10 @@ export default function AdminPage() {
             <h2>Saved games</h2>
             <div role="group" aria-label="Filter saved games by status" style={{display:'flex',gap:10,flexWrap:'wrap',margin:'16px 0 20px'}}>
               {([
-                ['active','Published + Drafts',games.filter(g=>g.status==='published'||g.status==='draft').length],
-                ['published','Published',games.filter(g=>g.status==='published').length],
-                ['draft','Drafts',games.filter(g=>g.status==='draft').length],
+                ['active','Active + Drafts',games.filter(g=>(g.status==='published'||g.status==='draft')&&!isPastGame(g)).length],
+                ['published','Published (Upcoming)',games.filter(g=>g.status==='published'&&!isPastGame(g)).length],
+                ['draft','Drafts (Upcoming)',games.filter(g=>g.status==='draft'&&!isPastGame(g)).length],
+                ['past','Past Events',games.filter(isPastGame).length],
                 ['all','All Games',games.length]
               ] as const).map(([value,label,count])=><button key={value} type="button" aria-pressed={gameView===value}
                 onClick={()=>{setGameView(value);setEditingId(null);}}
@@ -673,6 +685,15 @@ export default function AdminPage() {
                   {reminderPreview && <p role="status">Eligible recipients: {reminderPreview.email} email · {reminderPreview.sms} SMS. Recipient counts are estimates.</p>}
                   <p style={{color:'#eecf8c',fontSize:13,margin:0}}>Only opted-in members will receive messages. Confirm before sending. Messages cannot be recalled.</p>
                   <button type="button" disabled={reminderBusy||!reminderPreview||reminderMessage.trim().length<5||(!reminderEmail&&!reminderSms)} onClick={()=>void sendManualReminder(item.id)} style={{padding:10,fontWeight:800,background:'#c4f25d',color:'#101b13'}}>CONFIRM & SEND NOTIFICATION</button>
+                </section>}
+                {notificationSummary?.gameId===item.id && <section role="status" style={{marginTop:14,padding:16,border:'1px solid #7ba84c',borderRadius:10,background:'#203121'}}>
+                  <strong>Notification sent — provider accepted</strong>
+                  <p style={{margin:'10px 0'}}>📧 {notificationSummary.email} emails sent · 📱 {notificationSummary.sms} SMS sent · {notificationSummary.failed} failed · {notificationSummary.skipped} skipped</p>
+                  <small>Send ID: {notificationSummary.eventId}. Sent does not guarantee final delivery to the recipient.</small>
+                </section>}
+                {notificationHistory?.gameId===item.id && <section style={{marginTop:14,padding:16,border:'1px solid #536577',borderRadius:10,background:'#17232e'}}>
+                  <strong>Notification history</strong>
+                  {notificationHistory.entries.length===0?<p>No reminders sent yet.</p>:notificationHistory.entries.map((entry,index)=><p key={index} style={{margin:'10px 0'}}>{new Date(entry.created_at).toLocaleString()} — {entry.subject||'Game reminder'}: {entry.email_sent} emails, {entry.sms_sent} SMS, {entry.failed} failed, {entry.pending} pending</p>)}
                 </section>}
                 {item.status==='published' && <button type="button" disabled={audienceBusy}
                   onClick={()=>void checkGameAudience(item.id)}
