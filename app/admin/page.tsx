@@ -737,12 +737,12 @@ export default function AdminPage() {
                   <h3 style={{marginTop:0}}>Registration & waitlist tracker</h3>
                   <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(135px,1fr))',gap:10,marginBottom:16}}>
                     {([
-                      ['Confirmed',roster.filter(r=>r.status==='confirmed').length],
-                      ['Pending payment',roster.filter(r=>r.status==='pending_payment').length],
-                      ['Awaiting verification',roster.filter(r=>r.payment_status==='pending_verification').length],
-                      ['Waitlisted',roster.filter(r=>r.status==='waitlisted').length],
-                      ['Offers active',roster.filter(r=>r.status==='offered').length],
-                      ['Available capacity',Math.max(0,item.capacity-roster.filter(r=>['confirmed','pending_payment','offered'].includes(r.status)).length)]
+                      ['Confirmed',roster.filter(r=>r.status==='confirmed').reduce((sum,r)=>sum+(r.spots_reserved||1),0)],
+                      ['Pending payment',roster.filter(r=>r.status==='pending_payment').reduce((sum,r)=>sum+(r.spots_reserved||1),0)],
+                      ['Awaiting verification',roster.filter(r=>r.payment_status==='pending_verification').reduce((sum,r)=>sum+(r.spots_reserved||1),0)],
+                      ['Waitlisted',roster.filter(r=>r.status==='waitlisted').reduce((sum,r)=>sum+(r.spots_reserved||1),0)],
+                      ['Offers active',roster.filter(r=>r.status==='offered').reduce((sum,r)=>sum+(r.spots_reserved||1),0)],
+                      ['Available capacity',Math.max(0,item.capacity-roster.filter(r=>['confirmed','pending_payment','offered'].includes(r.status)).reduce((sum,r)=>sum+(r.spots_reserved||1),0))]
                     ] as const).map(([label,count])=><div key={label} style={{border:'1px solid #303945',borderRadius:9,padding:12}}>
                       <strong style={{display:'block',fontSize:23,color:'#95d9ff'}}>{count}</strong>
                       <span style={{fontSize:13,color:'#b8c1d0'}}>{label}</span>
