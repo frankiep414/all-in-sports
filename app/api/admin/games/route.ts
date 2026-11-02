@@ -32,13 +32,13 @@ export async function GET(request: Request) {
    // Paginate all registrations so the quick view cannot silently undercount.
    for(let offset=0;offset<100000;offset+=500){
     const {data:registrations,error:registrationError}=await access.admin.from('pickup_registrations')
-     .select('game_id,status,payment_status').in('game_id',ids)
+     .select('game_id,status,payment_status,spots_reserved').in('game_id',ids)
      .range(offset,offset+499);
     if(registrationError)return Response.json({error:'Unable to load registration counts.'},{status:503});
     for(const row of registrations||[]){
      const count=counts.get(row.game_id)||{registered:0,paid:0};
-     if(['confirmed','pending_payment','offered'].includes(row.status))count.registered++;
-     if(row.payment_status==='paid'&&row.status!=='cancelled')count.paid++;
+     if(['confirmed','pending_payment','offered'].includes(row.status))count.registered+=Math.max(1,row.spots_reserved||1);
+     if(row.payment_status==='paid'&&row.status!=='cancelled')count.paid+=Math.max(1,row.spots_reserved||1);
      counts.set(row.game_id,count);
     }
     if((registrations||[]).length<500)break;
