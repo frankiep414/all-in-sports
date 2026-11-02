@@ -22,11 +22,26 @@ export async function POST(request:Request){
  const {data:game}=await db.from('pickup_games').select('id,title,venue,starts_at,status,is_test').eq('id',gameId).maybeSingle();
  if(!game||game.status!=='published'||new Date(game.starts_at).getTime()<=Date.now())
   return Response.json({error:'Choose an upcoming published game.'},{status:409});
- const {data:preferences,error:prefError}=await db.from('notification_preferences')
-  .select('user_id,email_game_alerts,sms_opted_in,sms_game_alerts,sms_opted_out_at,phone_e164').limit(2000);
- const {data:announcements,error:announceError}=await db.from('player_announcement_preferences')
-  .select('user_id,email_opt_in,sms_opt_in').limit(2000);
- if(prefError||announceError)return Response.json({error:'Unable to verify consent.'},{status:503});
+ const preferences: Array<{user_id:string;email_game_alerts:boolean;sms_opted_in:boolean;sms_game_alerts:boolean;sms_opted_out_at:string|null;phone_e164:string|null}>=[];
+ const announcements: Array<{user_id:string;email_opt_in:boolean;sms_opt_in:boolean}>=[];
+ const pageSize=500;
+ for(let offset=0;offset<100000;offset+=pageSize){
+  const {data,error}=await db.from('notification_preferences')
+   .select('user_id,email_game_alerts,sms_opted_in,sms_game_alerts,sms_opted_out_at,phone_e164')
+   .order('user_id').range(offset,offset+pageSize-1);
+  if(error)return Response.json({error:'Unable to verify notification preferences.'},{status:503});
+  preferences.push(...(data||[]));
+  if((data||[]).length<pageSize)break;
+  if(offset+pageSize>=100000)return Response.json({error:'Audience safety limit reached.'},{status:503});
+ }
+ for(let offset=0;offset<100000;offset+=pageSize){
+  const {data,error}=await db.from('player_announcement_preferences')
+   .select('user_id,email_opt_in,sms_opt_in').order('user_id').range(offset,offset+pageSize-1);
+  if(error)return Response.json({error:'Unable to verify announcement preferences.'},{status:503});
+  announcements.push(...(data||[]));
+  if((data||[]).length<pageSize)break;
+  if(offset+pageSize>=100000)return Response.json({error:'Audience safety limit reached.'},{status:503});
+ }
  const byUser=new Map((announcements||[]).map(p=>[p.user_id,p]));
  const emailUsers=(preferences||[]).filter(p=>p.email_game_alerts&&byUser.get(p.user_id)?.email_opt_in===true).sort((a,b)=>a.user_id.localeCompare(b.user_id));
  const smsUsers=(preferences||[]).filter(p=>p.sms_opted_in&&p.sms_game_alerts&&!p.sms_opted_out_at&&p.phone_e164?.startsWith('+')&&byUser.get(p.user_id)?.sms_opt_in===true).sort((a,b)=>a.user_id.localeCompare(b.user_id));
