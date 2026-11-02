@@ -42,8 +42,8 @@ export async function POST(request:Request){
   return Response.json({error:'Provide a message, channel, request ID, and explicit confirmation.'},{status:400});
  if(sendEmail&&!process.env.RESEND_API_KEY||sendSms&&(!process.env.TWILIO_ACCOUNT_SID||!process.env.TWILIO_AUTH_TOKEN||!process.env.TWILIO_PHONE_NUMBER))
   return Response.json({error:'Selected notification provider is not configured.'},{status:503});
- if(sendEmail&&emailUsers.length>100||sendSms&&smsUsers.length>100)
-  return Response.json({error:'Recipient count exceeds safe single-send limit. No messages sent.'},{status:409});
+ if((sendEmail&&emailUsers.length>20)||(sendSms&&smsUsers.length>20))
+  return Response.json({error:'Recipient count exceeds the safe 20-recipient per-channel limit. No messages sent.'},{status:409});
  const eventKey='admin_reminder:'+gameId+':'+requestId;
  const {data:event,error:eventError}=await db.from('notification_events').upsert({
    event_key:eventKey,event_type:'admin_reminder',game_id:gameId,
