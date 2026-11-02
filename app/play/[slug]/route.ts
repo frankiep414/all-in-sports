@@ -16,7 +16,8 @@ export async function GET(request:Request,context:{params:Promise<{slug:string}>
  const date=new Date(Date.UTC(year,month,day));
  if(date.getUTCFullYear()!==year||date.getUTCMonth()!==month||date.getUTCDate()!==day)return new Response('Game not found',{status:404});
  const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL;
- const key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+ // This server-only lookup uses the same configured secret as the admin notification API.
+ const key=process.env.SUPABASE_SECRET_KEY;
  if(!url||!key)return new Response('Service unavailable',{status:503});
  const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
  // Query a two-day UTC window to accommodate local evening games and DST.
