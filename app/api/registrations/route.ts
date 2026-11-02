@@ -128,7 +128,7 @@ export async function DELETE(request:Request){
    .select('id,status,payment_status').eq('id',body.registration_id).eq('user_id',access.user.id).maybeSingle();
   if(lookupError)return Response.json({error:'Unable to verify registration.'},{status:503});
   if(!registration)return Response.json({error:'Registration not found.'},{status:404});
-  if(!['pending_payment','offered','confirmed','waitlisted'].includes(registration.status))
+  if(!['pending_payment','offered','waitlisted'].includes(registration.status) || registration.payment_status!=='unpaid')
    return Response.json({error:'This registration is no longer active.'},{status:409});
   // Do not modify payment_status, references, or Stripe records. Withdrawals are not refunds.
   // Conditional status update prevents a second withdrawal from changing an already cancelled record.
