@@ -42,6 +42,23 @@ export default function PlayPage() {
     const {data:{session}}=await client.auth.getSession();
     return session?.access_token||null;
   }
+  const [cancelling,setCancelling]=useState<string|null>(null);
+  async function cancelRegistration(gameId:string){
+    const current=registrations[gameId];
+    if(!current||!window.confirm('Cancel this registration and release its reserved spot(s)?'))return;
+    setCancelling(gameId);setRegistrationMessage('');
+    try{
+      const token=await getToken();
+      if(!token)throw new Error('Please sign in again.');
+      const response=await fetch('/api/registrations',{method:'DELETE',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({registration_id:current.id})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Cancellation failed.');
+      setRegistrations(previous=>({...previous,[gameId]:{...current,status:'cancelled'}}));
+      setRegistrationMessage('Registration cancelled. Your reserved spot(s) have been released.');
+      window.location.reload();
+    }catch(error){setRegistrationMessage(error instanceof Error?error.message:'Cancellation failed.');}
+    finally{setCancelling(null);}
+  }
   function openSignIn() {
     window.location.assign('/?auth=1&returnTo='+encodeURIComponent(window.location.pathname+window.location.search));
   }
@@ -171,6 +188,8 @@ export default function PlayPage() {
                 style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800,cursor:'pointer'}}>
                 {registering===item.id?'Registering…':(registrationTypes[item.id]==='team'?'SIGN UP A TEAM':'SIGN UP SOLO')}
               </button>}
+            {registrations[item.id] && ['pending_payment','offered','waitlisted'].includes(registrations[item.id].status) && registrations[item.id].payment_status==='unpaid' && <button type="button" disabled={cancelling!==null} onClick={()=>void cancelRegistration(item.id)} style={{display:'block',marginTop:12,padding:'10px 16px',borderRadius:8,border:'1px solid #e89b9b',background:'transparent',color:'#ffc2c2',fontWeight:700}}>{cancelling===item.id?'Cancelling…':'CANCEL REGISTRATION'}</button>}
+            {registrations[item.id] && (registrations[item.id].status==='confirmed'||registrations[item.id].payment_status!=='unpaid') && <p style={{color:'#ffc2c2',fontSize:14}}>Need to cancel? Contact All In Sports management. Paid or confirmed registrations cannot be cancelled here.</p>}
             {registrations[item.id]?.payment_reference && <p style={{margin:'12px 0',fontSize:14}}>Zelle memo reference: <strong style={{color:'#95d9ff'}}>{registrations[item.id].payment_reference}</strong> <button type="button" onClick={()=>void navigator.clipboard?.writeText(registrations[item.id].payment_reference||'')} style={{marginLeft:8,padding:'4px 9px',borderRadius:6}}>COPY</button></p>}
             {(item.title.startsWith('TEST')||liveCardEnabled) && registrations[item.id] &&
               ['pending_payment','offered'].includes(registrations[item.id].status) &&
