@@ -27,7 +27,10 @@ export default function PlayPage() {
   const [checkoutAlert,setCheckoutAlert]=useState<{gameTitle:string;message:string}|null>(null);
   const [reporting,setReporting]=useState<string|null>(null);
   const reportingEnabled=process.env.NEXT_PUBLIC_PICKUP_ZELLE_REPORTING_ENABLED==='true';
+  const teamRegistrationEnabled=true;
   const liveCardEnabled=process.env.NEXT_PUBLIC_PICKUP_STRIPE_LIVE_ENABLED==='true';
+  const [registrationTypes,setRegistrationTypes]=useState<Record<string,'solo'|'team'>>({});
+  const [teamNames,setTeamNames]=useState<Record<string,string>>({});
   const [registering,setRegistering]=useState<string|null>(null);
   const [registrationMessage,setRegistrationMessage]=useState('');
   const [signedIn,setSignedIn]=useState(false);
@@ -39,6 +42,23 @@ export default function PlayPage() {
     const {data:{session}}=await client.auth.getSession();
     return session?.access_token||null;
   }
+  const [cancelling,setCancelling]=useState<string|null>(null);
+  async function cancelRegistration(gameId:string){
+    const current=registrations[gameId];
+    if(!current||!window.confirm('Cancel this registration and release its reserved spot(s)?'))return;
+    setCancelling(gameId);setRegistrationMessage('');
+    try{
+      const token=await getToken();
+      if(!token)throw new Error('Please sign in again.');
+      const response=await fetch('/api/registrations',{method:'DELETE',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({registration_id:current.id})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'Cancellation failed.');
+      setRegistrations(previous=>({...previous,[gameId]:{...current,status:'cancelled'}}));
+      setRegistrationMessage('Registration cancelled. Your reserved spot(s) have been released.');
+      window.location.reload();
+    }catch(error){setRegistrationMessage(error instanceof Error?error.message:'Cancellation failed.');}
+    finally{setCancelling(null);}
+  }
   function openSignIn() {
     window.location.assign('/?auth=1&returnTo='+encodeURIComponent(window.location.pathname+window.location.search));
   }
@@ -49,11 +69,11 @@ export default function PlayPage() {
       if(!token){openSignIn();return;}
       const response=await fetch('/api/registrations',{method:'POST',
         headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
-        body:JSON.stringify({game_id:gameId})});
+        body:JSON.stringify({game_id:gameId,registration_type:registrationTypes[gameId]||'solo',team_name:registrationTypes[gameId]==='team'?teamNames[gameId]||'':null})});
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'Registration failed.');
       setRegistrations(current=>({...current,[gameId]:{id:result.registration_id,status:result.status,payment_status:'unpaid',payment_reference:result.payment_reference}}));
-      setGames(current=>current.map(game=>game.id===gameId?{...game,registered_count:game.registered_count+(result.status==='waitlisted'?0:1),waitlist_count:game.waitlist_count+(result.status==='waitlisted'?1:0),spots_remaining:Math.max(0,game.spots_remaining-(result.status==='waitlisted'?0:1))}:game));
+      setGames(current=>current.map(game=>game.id===gameId?{...game,registered_count:game.registered_count+(result.status==='waitlisted'?0:(registrationTypes[gameId]==='team'?5:1)),waitlist_count:game.waitlist_count+(result.status==='waitlisted'?(registrationTypes[gameId]==='team'?5:1):0),spots_remaining:Math.max(0,game.spots_remaining-(result.status==='waitlisted'?0:(registrationTypes[gameId]==='team'?5:1)))}:game));
       setRegistrationMessage('Registration received. Your spot is provisional; payment has not been collected. Do not send money yet.');
     }catch(error){setRegistrationMessage(error instanceof Error?error.message:'Registration failed.');}
     finally{setRegistering(null);}
@@ -118,7 +138,7 @@ export default function PlayPage() {
     fetch('/api/games',{cache:'no-store'}).then(async response=>{
       if(!response.ok)throw new Error('Unavailable');
       return response.json();
-    }).then(result=>{if(active)setGames(result.games||[]);})
+    }).then(result=>{if(active)setGames(current=>[...(result.games||[]),...current.filter(game=>!(result.games||[]).some((publicGame:{id:string})=>publicGame.id===game.id))]);})
       .catch(()=>{if(active)setGamesError(true);})
       .finally(()=>{if(active)setGamesLoading(false);});
     return ()=>{active=false;};
@@ -162,11 +182,14 @@ export default function PlayPage() {
                 <span style={{fontSize:13,color:'#b8c1d0'}}>{label}</span>
               </div>)}
             </div>
+            {!registrations[item.id] && <div style={{margin:'12px 0',display:'flex',flexWrap:'wrap',gap:12,alignItems:'center'}}><label><input type="radio" name={'registration-type-'+item.id} checked={(registrationTypes[item.id]||'solo')==='solo'} onChange={()=>setRegistrationTypes(current=>({...current,[item.id]:'solo'}))}/> Sign Up Solo — ${(item.price_cents/100).toFixed(2)}</label>{teamRegistrationEnabled&&<label><input type="radio" name={'registration-type-'+item.id} checked={registrationTypes[item.id]==='team'} onChange={()=>setRegistrationTypes(current=>({...current,[item.id]:'team'}))}/> Sign Up a Team — ${(item.price_cents*5/100).toFixed(2)} (5 players)</label>}{teamRegistrationEnabled&&registrationTypes[item.id]==='team'&&<input aria-label="Team name" placeholder="Team name" maxLength={80} value={teamNames[item.id]||''} onChange={event=>setTeamNames(current=>({...current,[item.id]:event.target.value}))} style={{padding:10,borderRadius:8}}/>}</div>}
             {registrations[item.id] ? <strong style={{color:'#9ee6bb'}}>Your registration: {registrations[item.id].status==='confirmed'?'Confirmed — You’re in!':registrations[item.id].payment_status==='pending_verification'?'Payment submitted — Awaiting verification':registrations[item.id].status==='waitlisted'?'Waitlisted':registrations[item.id].status==='offered'?'Waitlist offer':registrations[item.id].status==='expired'?'Expired':'Registered — Payment due'}</strong> :
-              <button type="button" disabled={registering!==null} onClick={()=>void register(item.id)}
+              <button type="button" disabled={registering!==null||(registrationTypes[item.id]==='team'&&(teamNames[item.id]||'').trim().length<2)} onClick={()=>void register(item.id)}
                 style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800,cursor:'pointer'}}>
-                {registering===item.id?'Registering…':'REQUEST A SPOT'}
+                {registering===item.id?'Registering…':(registrationTypes[item.id]==='team'?'SIGN UP A TEAM':'SIGN UP SOLO')}
               </button>}
+            {registrations[item.id] && ['pending_payment','offered','waitlisted'].includes(registrations[item.id].status) && registrations[item.id].payment_status==='unpaid' && <button type="button" disabled={cancelling!==null} onClick={()=>void cancelRegistration(item.id)} style={{display:'block',marginTop:12,padding:'10px 16px',borderRadius:8,border:'1px solid #e89b9b',background:'transparent',color:'#ffc2c2',fontWeight:700}}>{cancelling===item.id?'Cancelling…':'CANCEL REGISTRATION'}</button>}
+            {registrations[item.id] && (registrations[item.id].status==='confirmed'||registrations[item.id].payment_status!=='unpaid') && <p style={{color:'#ffc2c2',fontSize:14}}>Need to cancel? Contact All In Sports management. Paid or confirmed registrations cannot be cancelled here.</p>}
             {registrations[item.id]?.payment_reference && <p style={{margin:'12px 0',fontSize:14}}>Zelle memo reference: <strong style={{color:'#95d9ff'}}>{registrations[item.id].payment_reference}</strong> <button type="button" onClick={()=>void navigator.clipboard?.writeText(registrations[item.id].payment_reference||'')} style={{marginLeft:8,padding:'4px 9px',borderRadius:6}}>COPY</button></p>}
             {(item.title.startsWith('TEST')||liveCardEnabled) && registrations[item.id] &&
               ['pending_payment','offered'].includes(registrations[item.id].status) &&
@@ -185,7 +208,7 @@ export default function PlayPage() {
             {!signedIn && <p style={{color:'#b8c1d0',fontSize:14}}><Link href="/?auth=1&returnTo=%2Fplay" style={{color:'#95d9ff'}}>Sign in or create your Player ID</Link> before registering.</p>}
           </article>)}
           {registrationMessage && <p role="status" style={{color:'#95d9ff',fontWeight:700}}>{registrationMessage}</p>}
-          <p style={{color:'#95d9ff',fontWeight:700}}>Request a spot to register. Your spot is provisional until payment is verified. Follow the payment instructions shown for your registration; do not send money before you receive them.</p>
+          <p style={{color:'#95d9ff',fontWeight:700}}>Choose Sign Up Solo or Sign Up a Team. Your registration is provisional until payment is verified. Follow the payment instructions shown for your registration; do not send money before you receive them.</p>
         </div>
         {!focusedGameId&&<><h2 style={{marginTop:52}}>How payment will work</h2>
         <p style={{color:'#b8c1d0'}}>Learn about payment methods below. Actual payment instructions are provided after your registration request.</p>
