@@ -21,7 +21,8 @@ export async function POST(request:Request){
  const gameId=typeof body.game_id==='string'?body.game_id:'';
  if(!/^[0-9a-f-]{36}$/i.test(gameId))return Response.json({error:'Invalid game.'},{status:400});
  const {data:game}=await db.from('pickup_games').select('id,title,venue,starts_at,status,is_test').eq('id',gameId).maybeSingle();
- if(!game||game.status!=='published'||new Date(game.starts_at).getTime()<=Date.now())
+ if(!game)return Response.json({error:'Game not found.'},{status:404});
+ if(body.action!=='history'&&(game.status!=='published'||new Date(game.starts_at).getTime()<=Date.now()))
   return Response.json({error:'Choose an upcoming published game.'},{status:409});
  const preferences: Array<{user_id:string;email_game_alerts:boolean;sms_opted_in:boolean;sms_game_alerts:boolean;sms_opted_out_at:string|null;phone_e164:string|null}>=[];
  const announcements: Array<{user_id:string;email_opt_in:boolean;sms_opt_in:boolean}>=[];
