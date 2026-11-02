@@ -184,7 +184,7 @@ export default function MyAllInPage() {
             <h2>{player?.full_name || 'PLAYER'}</h2>
               <button type="button" onClick={()=>{setNameDraft(player?.full_name||'');setNameMessage('');setEditingName(true);}} style={{marginTop:8,padding:'8px 12px',border:'1px solid #95d9ff',borderRadius:8,background:'#152638',color:'#b4e6ff',fontWeight:700}}>EDIT NAME</button>
               {editingName&&<div style={{marginTop:10,display:'flex',flexWrap:'wrap',gap:8,alignItems:'center'}}><input aria-label="Full name" value={nameDraft} onChange={e=>setNameDraft(e.target.value)} maxLength={100} style={{padding:10,borderRadius:8,border:'1px solid #7a93aa',background:'#101820',color:'#fff',minWidth:220}}/><button type="button" disabled={savingName} onClick={()=>void saveName()} style={{padding:10,borderRadius:8,background:'#b4e6ff',color:'#111',fontWeight:700}}>{savingName?'SAVING…':'SAVE'}</button><button type="button" disabled={savingName} onClick={()=>setEditingName(false)} style={{padding:10,borderRadius:8}}>CANCEL</button></div>}
-              {nameMessage&&<p role="status" style={{color:'#b4e6ff',marginTop:8}}>{nameMessage}</p>
+              {nameMessage&&<p role="status" style={{color:'#b4e6ff',marginTop:8}}>{nameMessage}</p>}
               <p>YOUR ALL IN PROFILE</p>
             </div>
 
