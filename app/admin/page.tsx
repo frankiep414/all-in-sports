@@ -126,8 +126,13 @@ export default function AdminPage() {
       const client=createClient(url,key);
       const {data:{session}}=await client.auth.getSession();
       if(!session?.access_token)throw Error('Please sign in again.');
-      const requestId=crypto.randomUUID();
-      let cursor='',emailSent=0,smsSent=0,failed=0,skipped=0,eventId='';
+      const storageKey='ais-manual-send-'+gameId;
+      const fingerprint=JSON.stringify({gameId,message:reminderMessage,subject:reminderSubject,email:reminderEmail,sms:reminderSms});
+      const saved=JSON.parse(sessionStorage.getItem(storageKey)||'null');
+      const requestId=saved?.fingerprint===fingerprint&&typeof saved.requestId==='string'?saved.requestId:crypto.randomUUID();
+      let cursor=saved?.fingerprint===fingerprint&&typeof saved.cursor==='string'?saved.cursor:'';
+      sessionStorage.setItem(storageKey,JSON.stringify({fingerprint,requestId,cursor}));
+      let emailSent=0,smsSent=0,failed=0,skipped=0,eventId='';
       for(let batch=0;batch<250;batch++){
         const response=await fetch('/api/admin/notifications/manual',{method:'POST',
           headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
@@ -141,11 +146,13 @@ export default function AdminPage() {
         eventId=result.event_id;
         setEditMessage(`Sending notifications... ${emailSent} emails, ${smsSent} SMS sent so far.`);
         if(result.complete){
+          sessionStorage.removeItem(storageKey);
           setEditMessage(`Reminder completed: ${emailSent} emails, ${smsSent} texts sent; ${failed} failed; ${skipped} skipped. Send ID: ${eventId}`);
           break;
         }
         if(typeof result.next_cursor!=='string'||result.next_cursor<=cursor)throw Error('Invalid batch progress. Please contact support.');
         cursor=result.next_cursor;
+        sessionStorage.setItem(storageKey,JSON.stringify({fingerprint,requestId,cursor}));
         if(batch===249)throw Error('Batch safety limit reached. Contact support with send ID: '+eventId);
       }
       setReminderGame(null);setReminderPreview(null);
