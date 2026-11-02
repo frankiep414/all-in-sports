@@ -108,6 +108,30 @@ export default function AdminPage() {
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update game.');}
     finally{setDraftActionBusy(false);}
   }
+  const [reminderGame,setReminderGame]=useState<string|null>(null);
+  const [reminderMessage,setReminderMessage]=useState('');
+  const [reminderSubject,setReminderSubject]=useState('');
+  const [reminderEmail,setReminderEmail]=useState(true);
+  const [reminderSms,setReminderSms]=useState(true);
+  const [reminderPreview,setReminderPreview]=useState<{email:number;sms:number}|null>(null);
+  const [reminderBusy,setReminderBusy]=useState(false);
+  async function previewReminder(gameId:string){
+    setReminderBusy(true);setReminderPreview(null);setEditMessage('');
+    try{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)throw Error('Authentication unavailable.');
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)throw Error('Please sign in again.');
+      const response=await fetch('/api/admin/notifications/manual',{method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({action:'preview',game_id:gameId})});
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'Unable to preview recipients.');
+      setReminderPreview({email:result.email_count||0,sms:result.sms_count||0});
+    }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to preview recipients.');}
+    finally{setReminderBusy(false);}
+  }
   const [audienceBusy,setAudienceBusy]=useState(false);
   async function checkGameAudience(gameId:string){
     setAudienceBusy(true);setEditMessage('');
@@ -569,6 +593,20 @@ export default function AdminPage() {
                 <p style={{color:'#b8c1d0'}}>{item.venue} · {new Date(item.starts_at).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'})}</p>
                 {item.series_id && <p style={{color:'#95d9ff',marginBottom:8}}>Weekly series · Game {item.occurrence_index}</p>}
                 <p style={{marginBottom:0}}>Price: ${(item.price_cents/100).toFixed(2)} · Capacity: {item.capacity} players · <strong style={{color:'#95d9ff'}}>Registered: {item.registered_count}/{item.capacity}</strong> · <strong style={{color:'#b8f3cf'}}>Paid: {item.paid_count}</strong></p>
+                {item.status==='published' && <button type="button" onClick={()=>{setReminderGame(reminderGame===item.id?null:item.id);setReminderPreview(null);setReminderMessage('');setReminderSubject('');}}
+                  style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#c4f25d',color:'#101b13',border:0,fontWeight:800}}>
+                  {reminderGame===item.id?'CLOSE NOTIFICATION':'SEND NOTIFICATION'}
+                </button>}
+                {item.status==='published' && reminderGame===item.id && <section style={{marginTop:14,padding:16,border:'1px solid #64754c',borderRadius:10,display:'grid',gap:10}}>
+                  <strong>Custom reminder for {item.title}</strong>
+                  <label>Email subject <input value={reminderSubject} maxLength={120} onChange={e=>setReminderSubject(e.target.value)} placeholder="Game reminder" style={{display:'block',width:'100%',padding:10}} /></label>
+                  <label>Message <textarea value={reminderMessage} maxLength={800} onChange={e=>setReminderMessage(e.target.value)} placeholder="Write the message your members will receive..." rows={4} style={{display:'block',width:'100%',padding:10}} /></label>
+                  <div><label><input type="checkbox" checked={reminderEmail} onChange={e=>setReminderEmail(e.target.checked)}/> Email</label> &nbsp; <label><input type="checkbox" checked={reminderSms} onChange={e=>setReminderSms(e.target.checked)}/> SMS</label></div>
+                  <button type="button" disabled={reminderBusy} onClick={()=>void previewReminder(item.id)} style={{padding:10,fontWeight:700}}>CHECK OPTED-IN RECIPIENTS</button>
+                  {reminderPreview && <p role="status">Eligible recipients: {reminderPreview.email} email · {reminderPreview.sms} SMS. Recipient counts are estimates.</p>}
+                  <p style={{color:'#eecf8c',fontSize:13,margin:0}}>Sending is disabled until the secure delivery endpoint and duplicate protection are implemented and tested.</p>
+                  <button type="button" disabled style={{padding:10,opacity:.5}}>CONFIRM & SEND (COMING SOON)</button>
+                </section>}
                 {item.status==='published' && <button type="button" disabled={audienceBusy}
                   onClick={()=>void checkGameAudience(item.id)}
                   style={{marginTop:14,marginRight:12,padding:'10px 18px',borderRadius:9,background:'#273b29',color:'#c7f3d0',border:'1px solid #527b59',fontWeight:800}}>
