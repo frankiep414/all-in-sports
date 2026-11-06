@@ -214,10 +214,10 @@ export default function PlayPage() {
         <p style={{color:'#b8c1d0'}}>Learn about payment methods below. Actual payment instructions are provided after your registration request.</p>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:16,marginTop:20}}>
           <button type="button" onClick={()=>setMethod('zelle')} aria-pressed={method==='zelle'} style={{textAlign:'left',cursor:'pointer',border:method==='zelle'?'2px solid #95d9ff':'1px solid #303945',background:'#111820',color:'#fff',borderRadius:16,padding:24}}>
-            <strong style={{fontSize:21}}>Zelle</strong><p style={{color:'#9ee6bb'}}>No added checkout fee</p><span style={{color:'#b8c1d0'}}>Payment confirmed manually by our team.</span>
+            <strong style={{fontSize:21}}>Zelle — Preferred</strong><p style={{color:'#9ee6bb'}}>No added checkout fee · $16 solo / $80 team at current game prices</p><span style={{color:'#b8c1d0'}}>Payment confirmed manually by our team.</span>
           </button>
           <button type="button" onClick={()=>setMethod('card')} aria-pressed={method==='card'} style={{textAlign:'left',cursor:'pointer',border:method==='card'?'2px solid #95d9ff':'1px solid #303945',background:'#111820',color:'#fff',borderRadius:16,padding:24}}>
-            <strong style={{fontSize:21}}>Card / Digital Wallet</strong><p style={{color:'#95d9ff'}}>Stripe secure checkout</p><span style={{color:'#b8c1d0'}}>Card, Apple Pay or Google Pay where supported.</span>
+            <strong style={{fontSize:21}}>Card / Digital Wallet</strong><p style={{color:'#95d9ff'}}>Stripe secure checkout · processing costs apply to All In Sports at present</p><span style={{color:'#b8c1d0'}}>Card, Apple Pay or Google Pay where supported.</span>
           </button>
         </div>
         <div style={{background:'#151d27',border:'1px solid #303945',borderRadius:16,padding:24,marginTop:16,lineHeight:1.7}}>
@@ -228,17 +228,17 @@ export default function PlayPage() {
               <div style={{maxWidth:340,margin:'18px 0',padding:12,background:'#fff',borderRadius:12}}>
                 <img src="/all-in-sports-zelle-original-uncropped.png" alt="Official Chase Zelle QR code for ALL IN SPORTS IMOM LLC" style={{display:'block',width:'100%',height:'auto',objectFit:'contain'}} />
               </div>
-              <p style={{color:'#b8c1d0',fontSize:14}}>Preview only. Scan to verify the recipient is ALL IN SPORTS IMOM LLC, but do not send a payment during testing.</p>
-              <p style={{color:'#b8c1d0',marginBottom:0}}>Payment instructions and references are not active. Please do not send payment until All In Sports explicitly provides instructions. Spots are confirmed only after we verify payment.</p>
+              <p style={{color:'#b8c1d0',fontSize:14}}>Verify the recipient is ALL IN SPORTS IMOM LLC before sending payment. Only pay for an eligible registration using its payment reference.</p>
+              <p style={{color:'#b8c1d0',marginBottom:0}}>Use the unique Zelle memo reference shown on your registration. After sending, click “I SENT MY ZELLE PAYMENT” for that game. Your spot is confirmed after our team verifies the payment.</p>
             </>
           ) : (
             <>
               <strong>Secure online checkout</strong>
-              <p style={{color:'#b8c1d0',marginBottom:0}}>When registration opens, you’ll see the final card price before paying. Any differences between payment methods will follow applicable rules. Your spot will be confirmed only after successful payment verification. Stripe checkout is not active yet.</p>
+              <p style={{color:'#b8c1d0',marginBottom:0}}>Stripe card checkout is available for eligible registrations. The full amount is displayed before you pay. Currently, All In Sports absorbs Stripe processing fees; any future pricing changes will be clearly disclosed before payment. Your spot is confirmed after successful payment verification.</p>
             </>
           )}
         </div>
-        <p style={{color:'#9aa8ba',fontSize:14,marginTop:25}}>Registration requests are not payment confirmations. Do not send payment until All In Sports provides instructions.</p></>}
+        <p style={{color:'#9aa8ba',fontSize:14,marginTop:25}}>Registration requests are not payment confirmations. Pay only when your registration is eligible and follow its payment reference or card checkout instructions.</p></>}
       </section>
     </main>
   );
