@@ -214,7 +214,7 @@ export default function PlayPage() {
         <p style={{color:'#b8c1d0'}}>Learn about payment methods below. Actual payment instructions are provided after your registration request.</p>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:16,marginTop:20}}>
           <button type="button" onClick={()=>setMethod('zelle')} aria-pressed={method==='zelle'} style={{textAlign:'left',cursor:'pointer',border:method==='zelle'?'2px solid #95d9ff':'1px solid #303945',background:'#111820',color:'#fff',borderRadius:16,padding:24}}>
-            <strong style={{fontSize:21}}>Zelle — Preferred</strong><p style={{color:'#9ee6bb'}}>No added checkout fee · $16 solo / $80 team at current game prices</p><span style={{color:'#b8c1d0'}}>Payment confirmed manually by our team.</span>
+            <strong style={{fontSize:21}}>Zelle — Preferred</strong><p style={{color:'#9ee6bb'}}>No added checkout fee · pay the game price shown above</p><span style={{color:'#b8c1d0'}}>Payment confirmed manually by our team.</span>
           </button>
           <button type="button" onClick={()=>setMethod('card')} aria-pressed={method==='card'} style={{textAlign:'left',cursor:'pointer',border:method==='card'?'2px solid #95d9ff':'1px solid #303945',background:'#111820',color:'#fff',borderRadius:16,padding:24}}>
             <strong style={{fontSize:21}}>Card / Digital Wallet</strong><p style={{color:'#95d9ff'}}>Stripe secure checkout · processing costs apply to All In Sports at present</p><span style={{color:'#b8c1d0'}}>Card, Apple Pay or Google Pay where supported.</span>
