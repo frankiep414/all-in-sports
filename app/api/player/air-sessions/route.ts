@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     const weighted = verified.length > 0 && verified.every(row => Number.isInteger(row.fixtures_played) && row.fixtures_played > 0);
     const totalWeight = verified.reduce((sum,row) => sum + (weighted ? row.fixtures_played : 1), 0);
     const overall = totalWeight ? verified.reduce((sum,row) => sum + Number(row.air_rating) * (weighted ? row.fixtures_played : 1), 0) / totalWeight : null;
-    return Response.json({ sessions, overall_air: overall === null ? null : Math.round(overall * 100) / 100, overall_status: overall === null ? 'unrated' : weighted && verified.length >= 2 ? 'established' : 'provisional', rating_sessions: verified.length, weighting: weighted ? 'games' : 'sessions' }, { headers: { 'Cache-Control': 'private, no-store' } });
+    return Response.json({ sessions, overall_air: overall === null ? null : Math.round(overall * 100) / 100, overall_status: overall === null ? 'unrated' : weighted && verified.length >= 2 ? 'established' : 'provisional', rating_sessions: verified.length, games_played: verified.reduce((sum,row) => sum + (Number.isInteger(row.fixtures_played) && row.fixtures_played > 0 ? row.fixtures_played : 0), 0), games_complete: verified.every(row => Number.isInteger(row.fixtures_played) && row.fixtures_played > 0), weighting: weighted ? 'games' : 'sessions' }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     console.error('AIR session lookup failed', error);
     return Response.json({ error: 'Unable to load AIR ratings.' }, { status: 503 });
