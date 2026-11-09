@@ -77,6 +77,7 @@ export default function MyAllInPage() {
   const [careerGoals,setCareerGoals]=useState<number|null>(null);
   const [careerAssists,setCareerAssists]=useState<number|null>(null);
   const [careerSaves,setCareerSaves]=useState<number|null>(null);
+  const [careerShotsAgainst,setCareerShotsAgainst]=useState<number|null>(null);
   const [isGoalkeeper,setIsGoalkeeper]=useState(false);
   const [airLoading,setAirLoading]=useState(true);
   const [airError,setAirError]=useState(false);
@@ -90,7 +91,7 @@ export default function MyAllInPage() {
       if(!session?.access_token)throw new Error('AIR sign-in unavailable');
       const response=await fetch('/api/player/air-sessions',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});
       if(!response.ok)throw new Error('AIR history unavailable');
-      const result=await response.json();if(active){setAirSessions(result.sessions||[]);setOverallAir(result.overall_air);setOverallStatus(result.overall_status||'unrated');setCareerGames(result.games_complete && typeof result.games_played==='number'?result.games_played:null);setCareerGoals(typeof result.career_goals==='number'?result.career_goals:null);setCareerAssists(typeof result.career_assists==='number'?result.career_assists:null);setCareerSaves(typeof result.career_saves==='number'?result.career_saves:null);setIsGoalkeeper(result.player_position==='goalkeeper');}
+      const result=await response.json();if(active){setAirSessions(result.sessions||[]);setOverallAir(result.overall_air);setOverallStatus(result.overall_status||'unrated');setCareerGames(result.games_complete && typeof result.games_played==='number'?result.games_played:null);setCareerGoals(typeof result.career_goals==='number'?result.career_goals:null);setCareerAssists(typeof result.career_assists==='number'?result.career_assists:null);setCareerSaves(typeof result.career_saves==='number'?result.career_saves:null);setCareerShotsAgainst(typeof result.career_shots_against==='number'?result.career_shots_against:null);setIsGoalkeeper(result.player_position==='goalkeeper');}
     })().catch(()=>{if(active)setAirError(true);}).finally(()=>{if(active)setAirLoading(false);});
     return()=>{active=false;};
   },[]);
@@ -316,8 +317,8 @@ export default function MyAllInPage() {
                 <span>{isGoalkeeper?'SAVES':'GOALS'}</span>
               </div>
               <div>
-                <strong>{airLoading?'…':airError?'—':careerAssists??'—'}</strong>
-                <span>ASSISTS</span>
+                <strong>{airLoading?'…':airError?'—':(isGoalkeeper?careerShotsAgainst:careerAssists)??'—'}</strong>
+                <span>{isGoalkeeper?'SHOTS AGAINST':'ASSISTS'}</span>
               </div>
               <div>
                 <strong>—</strong>
