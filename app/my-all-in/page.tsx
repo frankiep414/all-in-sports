@@ -71,6 +71,8 @@ export default function MyAllInPage() {
   } | null>(null);
 
   const [airSessions,setAirSessions]=useState<Array<{session_date:string;air_rating:number;source_label:string}>>([]);
+  const [overallAir,setOverallAir]=useState<number|null>(null);
+  const [overallStatus,setOverallStatus]=useState('unrated');
   useEffect(()=>{
     let active=true;
     (async()=>{
@@ -80,11 +82,11 @@ export default function MyAllInPage() {
       const {data:{session}}=await client.auth.getSession();
       if(!session?.access_token)return;
       const response=await fetch('/api/player/air-sessions',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});
-      if(response.ok){const result=await response.json();if(active)setAirSessions(result.sessions||[]);}
+      if(response.ok){const result=await response.json();if(active){setAirSessions(result.sessions||[]);setOverallAir(result.overall_air);setOverallStatus(result.overall_status||'unrated');}}
     })().catch(()=>{});
     return()=>{active=false;};
   },[]);
-  const latestAir=airSessions[0];
+  const overallAirLabel=overallAir===null?'UNRATED':Number(overallAir).toFixed(2);
   const [editingName,setEditingName]=useState(false);
   const [nameDraft,setNameDraft]=useState('');
   const [savingName,setSavingName]=useState(false);
@@ -219,8 +221,8 @@ export default function MyAllInPage() {
             </div>
 
             <div className="aiRating">
-              <span>AIR RATING</span>
-              <strong>{latestAir?Number(latestAir.air_rating).toFixed(2):'UNRATED'}</strong>
+              <span>OVERALL AIR</span>
+              <strong>{overallAirLabel}</strong>
             </div>
           </div>
 
@@ -318,7 +320,7 @@ export default function MyAllInPage() {
         </div>
 
         <section className="dashboardWideCard">
-          <div className="wideCardHeading"><div className="dashboardCardIcon"><BarChart3 size={22}/></div><div><p className="cardEyebrow">AIR · ALL IN RATING</p><h3>My session ratings</h3></div></div>
+          <div className="wideCardHeading"><div className="dashboardCardIcon"><BarChart3 size={22}/></div><div><p className="cardEyebrow">AIR · ALL IN RATING</p><h3>My session ratings</h3><p>{overallStatus==='provisional'?'Overall AIR is provisional until more verified sessions and game counts are recorded.':overallStatus==='established'?'Overall AIR uses a games-weighted average of verified sessions.':'Your overall rating will appear after a verified session.'}</p></div></div>
           {airSessions.length===0?<p>No verified AIR sessions linked to your profile yet.</p>:
             <div style={{display:'grid',gap:12,marginTop:16}}>
               {airSessions.map(session=><div key={session.session_date+'-'+session.source_label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:16,border:'1px solid #36516a',borderRadius:12}}>
@@ -369,8 +371,8 @@ export default function MyAllInPage() {
 
           <div className="intelligenceStatus">
             <Zap size={25} />
-            <span>AIR RATING</span>
-            <strong>{latestAir?Number(latestAir.air_rating).toFixed(2):'UNRATED'}</strong>
+            <span>OVERALL AIR</span>
+            <strong>{overallAirLabel}</strong>
             <small>PLAY TO BUILD YOUR PROFILE</small>
           </div>
         </section>
