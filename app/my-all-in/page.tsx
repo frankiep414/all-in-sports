@@ -73,6 +73,9 @@ export default function MyAllInPage() {
   const [airSessions,setAirSessions]=useState<Array<{session_date:string;air_rating:number;source_label:string}>>([]);
   const [overallAir,setOverallAir]=useState<number|null>(null);
   const [overallStatus,setOverallStatus]=useState('unrated');
+  const [careerGames,setCareerGames]=useState<number|null>(null);
+  const [careerGoals,setCareerGoals]=useState<number|null>(null);
+  const [careerAssists,setCareerAssists]=useState<number|null>(null);
   const [airLoading,setAirLoading]=useState(true);
   const [airError,setAirError]=useState(false);
   useEffect(()=>{
@@ -85,7 +88,7 @@ export default function MyAllInPage() {
       if(!session?.access_token)throw new Error('AIR sign-in unavailable');
       const response=await fetch('/api/player/air-sessions',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});
       if(!response.ok)throw new Error('AIR history unavailable');
-      const result=await response.json();if(active){setAirSessions(result.sessions||[]);setOverallAir(result.overall_air);setOverallStatus(result.overall_status||'unrated');}
+      const result=await response.json();if(active){setAirSessions(result.sessions||[]);setOverallAir(result.overall_air);setOverallStatus(result.overall_status||'unrated');setCareerGames(result.games_complete && typeof result.games_played==='number'?result.games_played:null);setCareerGoals(typeof result.career_goals==='number'?result.career_goals:null);setCareerAssists(typeof result.career_assists==='number'?result.career_assists:null);}
     })().catch(()=>{if(active)setAirError(true);}).finally(()=>{if(active)setAirLoading(false);});
     return()=>{active=false;};
   },[]);
@@ -298,24 +301,24 @@ export default function MyAllInPage() {
             </div>
 
             <p className="cardEyebrow">MY SEASON</p>
-            <h3>Your stats start here.</h3>
-            <p>Stats are recorded from the launch of Player IDs onward. Previous games, goals, assists, and wins are not backfilled.</p>
+            <h3>Your career stats</h3>
+            <p>Career totals from verified AIR sessions. A dash means the statistic has not yet been fully verified.</p>
 
             <div className="seasonStats">
               <div>
-                <strong>0</strong>
+                <strong>{airLoading?'…':airError?'—':careerGames??'—'}</strong>
                 <span>RECORDED GAMES</span>
               </div>
               <div>
-                <strong>—</strong>
+                <strong>{airLoading?'…':airError?'—':careerGoals??'—'}</strong>
                 <span>GOALS</span>
               </div>
               <div>
-                <strong>—</strong>
+                <strong>{airLoading?'…':airError?'—':careerAssists??'—'}</strong>
                 <span>ASSISTS</span>
               </div>
               <div>
-                <strong>0</strong>
+                <strong>—</strong>
                 <span>RECORDED WINS</span>
               </div>
             </div>
