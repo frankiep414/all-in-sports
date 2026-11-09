@@ -70,6 +70,21 @@ export default function MyAllInPage() {
     full_name: string;
   } | null>(null);
 
+  const [airSessions,setAirSessions]=useState<Array<{session_date:string;air_rating:number;source_label:string}>>([]);
+  useEffect(()=>{
+    let active=true;
+    (async()=>{
+      const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      if(!url||!key)return;
+      const client=createClient(url,key);
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.access_token)return;
+      const response=await fetch('/api/player/air-sessions',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});
+      if(response.ok){const result=await response.json();if(active)setAirSessions(result.sessions||[]);}
+    })().catch(()=>{});
+    return()=>{active=false;};
+  },[]);
+  const latestAir=airSessions[0];
   const [editingName,setEditingName]=useState(false);
   const [nameDraft,setNameDraft]=useState('');
   const [savingName,setSavingName]=useState(false);
@@ -204,8 +219,8 @@ export default function MyAllInPage() {
             </div>
 
             <div className="aiRating">
-              <span>AI RATING</span>
-              <strong>UNRATED</strong>
+              <span>AIR RATING</span>
+              <strong>{latestAir?Number(latestAir.air_rating).toFixed(2):'UNRATED'}</strong>
             </div>
           </div>
 
@@ -303,6 +318,16 @@ export default function MyAllInPage() {
         </div>
 
         <section className="dashboardWideCard">
+          <div className="wideCardHeading"><div className="dashboardCardIcon"><BarChart3 size={22}/></div><div><p className="cardEyebrow">AIR · ALL IN RATING</p><h3>My session ratings</h3></div></div>
+          {airSessions.length===0?<p>No verified AIR sessions linked to your profile yet.</p>:
+            <div style={{display:'grid',gap:12,marginTop:16}}>
+              {airSessions.map(session=><div key={session.session_date+'-'+session.source_label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:16,border:'1px solid #36516a',borderRadius:12}}>
+                <strong>{new Date(session.session_date+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</strong>
+                <strong style={{fontSize:26,color:'#65df9c'}}>{Number(session.air_rating).toFixed(2)}</strong>
+              </div>)}
+            </div>}
+        </section>
+        <section className="dashboardWideCard">
           <div className="wideCardHeading">
             <div className="dashboardCardIcon">
               <Users size={22} />
@@ -344,8 +369,8 @@ export default function MyAllInPage() {
 
           <div className="intelligenceStatus">
             <Zap size={25} />
-            <span>AI RATING</span>
-            <strong>UNRATED</strong>
+            <span>AIR RATING</span>
+            <strong>{latestAir?Number(latestAir.air_rating).toFixed(2):'UNRATED'}</strong>
             <small>PLAY TO BUILD YOUR PROFILE</small>
           </div>
         </section>
