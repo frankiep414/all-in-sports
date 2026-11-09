@@ -169,6 +169,9 @@ export default function Home() {
   const [verifiedEmail, setVerifiedEmail] = useState('');
   const [homeAir, setHomeAir] = useState<number | null>(null);
   const [homeAirLoading, setHomeAirLoading] = useState(false);
+  const [homeGamesPlayed, setHomeGamesPlayed] = useState<number | null>(null);
+  const [homeGoals, setHomeGoals] = useState<number | null>(null);
+  const [homeAssists, setHomeAssists] = useState<number | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
   const [playerLoadError, setPlayerLoadError] = useState('');
@@ -187,6 +190,9 @@ export default function Home() {
       localStorage.removeItem('allInPlayerId');
       setCurrentPlayer(null);
       setHomeAir(null);
+      setHomeGamesPlayed(null);
+      setHomeGoals(null);
+      setHomeAssists(null);
       setHomeAirLoading(false);
       setIsAdmin(false);
       if (new URLSearchParams(window.location.search).get('auth') === '1') setShowAuthWelcome(true);
@@ -211,9 +217,12 @@ export default function Home() {
           setCurrentPlayer(player);
           setHomeAirLoading(true);
           setHomeAir(null);
+          setHomeGamesPlayed(null);
+      setHomeGoals(null);
+      setHomeAssists(null);
           void fetch('/api/player/air-sessions', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' })
             .then(async response => { if (!response.ok) throw new Error('AIR unavailable'); return response.json(); })
-            .then(data => setHomeAir(typeof data.overall_air === 'number' ? data.overall_air : null))
+            .then(data => { setHomeAir(typeof data.overall_air === 'number' ? data.overall_air : null); setHomeGamesPlayed(data.games_complete && typeof data.games_played === 'number' ? data.games_played : null); setHomeGoals(typeof data.career_goals === 'number' ? data.career_goals : null); setHomeAssists(typeof data.career_assists === 'number' ? data.career_assists : null); })
             .catch(() => setHomeAir(null))
             .finally(() => setHomeAirLoading(false));
           setShowPlayerSignup(false);
@@ -627,17 +636,17 @@ if (pickupReturn) window.location.replace(pickupReturn);
     </small>
     <div className="launchpadMiniStats">
   <div>
-    <strong>0</strong>
+    <strong>{homeAirLoading ? '…' : homeGamesPlayed ?? '—'}</strong>
     <span>GP</span>
   </div>
 
   <div>
-    <strong>0</strong>
+    <strong>{homeAirLoading ? '…' : homeGoals ?? '—'}</strong>
     <span>G</span>
   </div>
 
   <div>
-    <strong>0</strong>
+    <strong>{homeAirLoading ? '…' : homeAssists ?? '—'}</strong>
     <span>A</span>
   </div>
 
@@ -675,17 +684,17 @@ if (pickupReturn) window.location.replace(pickupReturn);
 
     <div className="mobilePlayerStats">
       <div>
-        <strong>0</strong>
+        <strong>{homeAirLoading ? '…' : homeGamesPlayed ?? '—'}</strong>
         <span>GP</span>
       </div>
 
       <div>
-        <strong>0</strong>
+        <strong>{homeAirLoading ? '…' : homeGoals ?? '—'}</strong>
         <span>G</span>
       </div>
 
       <div>
-        <strong>0</strong>
+        <strong>{homeAirLoading ? '…' : homeAssists ?? '—'}</strong>
         <span>A</span>
       </div>
 
