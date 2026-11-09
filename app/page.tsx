@@ -167,6 +167,8 @@ export default function Home() {
   full_name: string;
 } | null>(null);
   const [verifiedEmail, setVerifiedEmail] = useState('');
+  const [homeAir, setHomeAir] = useState<number | null>(null);
+  const [homeAirLoading, setHomeAirLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
   const [playerLoadError, setPlayerLoadError] = useState('');
@@ -184,6 +186,8 @@ export default function Home() {
     if (sessionError || !session?.user?.email) {
       localStorage.removeItem('allInPlayerId');
       setCurrentPlayer(null);
+      setHomeAir(null);
+      setHomeAirLoading(false);
       setIsAdmin(false);
       if (new URLSearchParams(window.location.search).get('auth') === '1') setShowAuthWelcome(true);
       setAuthChecking(false);
@@ -205,6 +209,13 @@ export default function Home() {
         if (player?.id) {
           localStorage.setItem('allInPlayerId', String(player.id));
           setCurrentPlayer(player);
+          setHomeAirLoading(true);
+          setHomeAir(null);
+          void fetch('/api/player/air-sessions', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' })
+            .then(async response => { if (!response.ok) throw new Error('AIR unavailable'); return response.json(); })
+            .then(data => setHomeAir(typeof data.overall_air === 'number' ? data.overall_air : null))
+            .catch(() => setHomeAir(null))
+            .finally(() => setHomeAirLoading(false));
           setShowPlayerSignup(false);
           setShowAuthWelcome(false);
           const pickupReturn = getPickupReturnPath();
@@ -631,8 +642,8 @@ if (pickupReturn) window.location.replace(pickupReturn);
   </div>
 
   <div>
-    <strong>—</strong>
-    <span>AI RATING</span>
+    <strong>{homeAirLoading ? '…' : homeAir === null ? '—' : homeAir.toFixed(2)}</strong>
+    <span>OVERALL AIR</span>
   </div>
 </div>
   </div>
@@ -679,8 +690,8 @@ if (pickupReturn) window.location.replace(pickupReturn);
       </div>
 
       <div>
-        <strong>—</strong>
-        <span>AI RATING</span>
+        <strong>{homeAirLoading ? '…' : homeAir === null ? '—' : homeAir.toFixed(2)}</strong>
+        <span>OVERALL AIR</span>
       </div>
     </div>
   </div>
