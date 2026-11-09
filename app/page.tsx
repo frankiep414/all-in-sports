@@ -172,6 +172,8 @@ export default function Home() {
   const [homeGamesPlayed, setHomeGamesPlayed] = useState<number | null>(null);
   const [homeGoals, setHomeGoals] = useState<number | null>(null);
   const [homeAssists, setHomeAssists] = useState<number | null>(null);
+  const [homeSaves, setHomeSaves] = useState<number | null>(null);
+  const [homeIsGoalkeeper, setHomeIsGoalkeeper] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
   const [playerLoadError, setPlayerLoadError] = useState('');
@@ -193,6 +195,8 @@ export default function Home() {
       setHomeGamesPlayed(null);
       setHomeGoals(null);
       setHomeAssists(null);
+      setHomeSaves(null);
+      setHomeIsGoalkeeper(false);
       setHomeAirLoading(false);
       setIsAdmin(false);
       if (new URLSearchParams(window.location.search).get('auth') === '1') setShowAuthWelcome(true);
@@ -220,9 +224,11 @@ export default function Home() {
           setHomeGamesPlayed(null);
       setHomeGoals(null);
       setHomeAssists(null);
+      setHomeSaves(null);
+      setHomeIsGoalkeeper(false);
           void fetch('/api/player/air-sessions', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' })
             .then(async response => { if (!response.ok) throw new Error('AIR unavailable'); return response.json(); })
-            .then(data => { setHomeAir(typeof data.overall_air === 'number' ? data.overall_air : null); setHomeGamesPlayed(data.games_complete && typeof data.games_played === 'number' ? data.games_played : null); setHomeGoals(typeof data.career_goals === 'number' ? data.career_goals : null); setHomeAssists(typeof data.career_assists === 'number' ? data.career_assists : null); })
+            .then(data => { setHomeAir(typeof data.overall_air === 'number' ? data.overall_air : null); setHomeGamesPlayed(data.games_complete && typeof data.games_played === 'number' ? data.games_played : null); setHomeGoals(typeof data.career_goals === 'number' ? data.career_goals : null); setHomeAssists(typeof data.career_assists === 'number' ? data.career_assists : null); setHomeSaves(typeof data.career_saves === 'number' ? data.career_saves : null); setHomeIsGoalkeeper(data.player_position === 'goalkeeper'); })
             .catch(() => setHomeAir(null))
             .finally(() => setHomeAirLoading(false));
           setShowPlayerSignup(false);
@@ -641,8 +647,8 @@ if (pickupReturn) window.location.replace(pickupReturn);
   </div>
 
   <div>
-    <strong>{homeAirLoading ? '…' : homeGoals ?? '—'}</strong>
-    <span>G</span>
+    <strong>{homeAirLoading ? '…' : (homeIsGoalkeeper ? homeSaves : homeGoals) ?? '—'}</strong>
+    <span>{homeIsGoalkeeper ? 'SV' : 'G'}</span>
   </div>
 
   <div>
@@ -689,8 +695,8 @@ if (pickupReturn) window.location.replace(pickupReturn);
       </div>
 
       <div>
-        <strong>{homeAirLoading ? '…' : homeGoals ?? '—'}</strong>
-        <span>G</span>
+        <strong>{homeAirLoading ? '…' : (homeIsGoalkeeper ? homeSaves : homeGoals) ?? '—'}</strong>
+        <span>{homeIsGoalkeeper ? 'SV' : 'G'}</span>
       </div>
 
       <div>
