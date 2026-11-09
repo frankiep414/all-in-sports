@@ -73,20 +73,23 @@ export default function MyAllInPage() {
   const [airSessions,setAirSessions]=useState<Array<{session_date:string;air_rating:number;source_label:string}>>([]);
   const [overallAir,setOverallAir]=useState<number|null>(null);
   const [overallStatus,setOverallStatus]=useState('unrated');
+  const [airLoading,setAirLoading]=useState(true);
+  const [airError,setAirError]=useState(false);
   useEffect(()=>{
     let active=true;
     (async()=>{
       const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-      if(!url||!key)return;
+      if(!url||!key)throw new Error('AIR configuration unavailable');
       const client=createClient(url,key);
       const {data:{session}}=await client.auth.getSession();
-      if(!session?.access_token)return;
+      if(!session?.access_token)throw new Error('AIR sign-in unavailable');
       const response=await fetch('/api/player/air-sessions',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});
-      if(response.ok){const result=await response.json();if(active){setAirSessions(result.sessions||[]);setOverallAir(result.overall_air);setOverallStatus(result.overall_status||'unrated');}}
-    })().catch(()=>{});
+      if(!response.ok)throw new Error('AIR history unavailable');
+      const result=await response.json();if(active){setAirSessions(result.sessions||[]);setOverallAir(result.overall_air);setOverallStatus(result.overall_status||'unrated');}
+    })().catch(()=>{if(active)setAirError(true);}).finally(()=>{if(active)setAirLoading(false);});
     return()=>{active=false;};
   },[]);
-  const overallAirLabel=overallAir===null?'UNRATED':Number(overallAir).toFixed(2);
+  const overallAirLabel=airLoading?'LOADING':airError?'UNAVAILABLE':overallAir===null?'UNRATED':Number(overallAir).toFixed(2);
   const [editingName,setEditingName]=useState(false);
   const [nameDraft,setNameDraft]=useState('');
   const [savingName,setSavingName]=useState(false);
@@ -321,7 +324,7 @@ export default function MyAllInPage() {
 
         <section className="dashboardWideCard">
           <div className="wideCardHeading"><div className="dashboardCardIcon"><BarChart3 size={22}/></div><div><p className="cardEyebrow">AIR · ALL IN RATING</p><h3>My session ratings</h3><p>{overallStatus==='provisional'?'Overall AIR is provisional until more verified sessions and game counts are recorded.':overallStatus==='established'?'Overall AIR uses a games-weighted average of verified sessions.':'Your overall rating will appear after a verified session.'}</p></div></div>
-          {airSessions.length===0?<p>No verified AIR sessions linked to your profile yet.</p>:
+          {airLoading?<p>Loading your AIR history…</p>:airError?<p role="alert">Unable to load your ratings right now. Please refresh.</p>:airSessions.length===0?<p>No verified AIR sessions linked to your profile yet.</p>:
             <div style={{display:'grid',gap:12,marginTop:16}}>
               {airSessions.map(session=><div key={session.session_date+'-'+session.source_label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:16,border:'1px solid #36516a',borderRadius:12}}>
                 <strong>{new Date(session.session_date+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</strong>
