@@ -43,8 +43,8 @@ export default function AuthWelcome({
     if (error) {
       setAuthMessage(
         authMode === 'login'
-          ? 'We could not find an All In account with that email.'
-          : error.message
+          ? 'We could not send a verification code right now. Please try again shortly or contact All In Sports support.'
+          : 'We could not start email verification right now. Please try again shortly.'
       );
       setAuthLoading(false);
       return;
