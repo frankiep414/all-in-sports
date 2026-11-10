@@ -32,7 +32,14 @@ async function sendPickupPaymentConfirmation(
  if(eventError||!event)return;
  const {data:game,error:gameError}=await db.from('pickup_games')
   .select('title,venue,starts_at,price_cents,is_test').eq('id',reg.game_id).maybeSingle();
- if(gameError||!game||game.is_test||game.price_cents*(reg.spots_reserved||1)!==amountCents)return;
+ if(gameError||!game||game.is_test)return;
+ // The live payment RPC already validates the Stripe amount and marks the session
+ // completed. Use that verified charge amount for the receipt rather than
+ // assuming every checkout must equal the Zelle/base game price.
+ const {data:verifiedSession,error:sessionError}=await db.from('pickup_stripe_checkout_sessions')
+  .select('id').eq('registration_id',reg.id).eq('status','completed')
+  .eq('amount_cents',amountCents).limit(1).maybeSingle();
+ if(sessionError||!verifiedSession)return;
  const {data:{user},error:userError}=await db.auth.admin.getUserById(reg.user_id);
  if(userError||!user?.email_confirmed_at||!user.email)return;
  const email=user.email.trim().toLowerCase();
