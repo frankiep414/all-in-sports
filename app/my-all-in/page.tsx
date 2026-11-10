@@ -70,7 +70,7 @@ export default function MyAllInPage() {
     full_name: string;
   } | null>(null);
 
-  const [airSessions,setAirSessions]=useState<Array<{session_date:string;air_rating:number;source_label:string}>>([]);
+  const [airSessions,setAirSessions]=useState<Array<{session_date:string;air_rating:number;source_label:string;fixtures_played:number|null;goals:number|null;assists:number|null;saves:number|null;shots_against:number|null;passes_completed:number|null;passes_attempted:number|null;shots:number|null;shots_on_target:number|null;key_passes:number|null;tackles:number|null;interceptions:number|null;performance_summary:string|null}>>([]);
   const [overallAir,setOverallAir]=useState<number|null>(null);
   const [overallStatus,setOverallStatus]=useState('unrated');
   const [careerGames,setCareerGames]=useState<number|null>(null);
@@ -332,10 +332,32 @@ export default function MyAllInPage() {
           <div className="wideCardHeading"><div className="dashboardCardIcon"><BarChart3 size={22}/></div><div><p className="cardEyebrow">AIR · ALL IN RATING</p><h3>My session ratings</h3><p>{overallStatus==='provisional'?'Overall AIR is provisional until more verified sessions and game counts are recorded.':overallStatus==='established'?'Overall AIR uses a games-weighted average of verified sessions.':'Your overall rating will appear after a verified session.'}</p></div></div>
           {airLoading?<p>Loading your AIR history…</p>:airError?<p role="alert">Unable to load your ratings right now. Please refresh.</p>:airSessions.length===0?<p>No verified AIR sessions linked to your profile yet.</p>:
             <div style={{display:'grid',gap:12,marginTop:16}}>
-              {airSessions.map(session=><div key={session.session_date+'-'+session.source_label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:16,border:'1px solid #36516a',borderRadius:12}}>
-                <strong>{new Date(session.session_date+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</strong>
-                <strong style={{fontSize:26,color:'#65df9c'}}>{Number(session.air_rating).toFixed(2)}</strong>
-              </div>)}
+              {airSessions.map(session=>{
+                const stats=[
+                  ['Appearances',session.fixtures_played],
+                  ['Goals',session.goals],['Assists',session.assists],
+                  ['Shots',session.shots],['Shots on target',session.shots_on_target],
+                  ['Key passes',session.key_passes],['Tackles',session.tackles],
+                  ['Interceptions',session.interceptions],['Saves',session.saves],
+                  ['Shots against',session.shots_against],
+                  ['Passes completed',session.passes_completed],['Passes attempted',session.passes_attempted],
+                  ['Pass accuracy',typeof session.passes_attempted==='number'&&session.passes_attempted>0&&typeof session.passes_completed==='number'?Math.round(100*session.passes_completed/session.passes_attempted)+'%':null]
+                ].filter((entry):entry is [string,number|string]=>entry[1]!==null&&entry[1]!==undefined);
+                return <details key={session.session_date+'-'+session.source_label} style={{border:'1px solid #36516a',borderRadius:12,overflow:'hidden'}}>
+                  <summary style={{cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,padding:16}}>
+                    <span><strong style={{display:'block'}}>{new Date(session.session_date+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</strong><span style={{fontSize:12,color:'#a9b9c8'}}>VIEW SESSION STATS ▾</span></span>
+                    <strong style={{fontSize:26,color:'#65df9c'}}>{Number(session.air_rating).toFixed(2)}</strong>
+                  </summary>
+                  <div style={{borderTop:'1px solid #36516a',padding:16}}>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(125px,1fr))',gap:10}}>
+                      {stats.map(([label,value])=><div key={label} style={{background:'#152638',borderRadius:10,padding:12}}><strong style={{display:'block',fontSize:23,color:'#fff'}}>{value}</strong><span style={{fontSize:12,color:'#b4d9ed'}}>{label}</span></div>)}
+                    </div>
+                    {stats.length===0&&<p>Detailed statistics have not been verified for this session yet.</p>}
+                    {session.performance_summary&&<p style={{marginTop:16,lineHeight:1.6}}><strong>Performance summary</strong><br/>{session.performance_summary}</p>}
+                    <p style={{fontSize:12,color:'#a9b9c8',marginTop:14}}>Only recorded session statistics are displayed. Missing data is not treated as zero.</p>
+                  </div>
+                </details>;
+              })}
             </div>}
         </section>
         <section className="dashboardWideCard">
