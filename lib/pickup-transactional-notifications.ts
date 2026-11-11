@@ -7,7 +7,7 @@ export async function sendPickupTransactional(db:Db,registrationId:string,kind:K
  const {data:r,error}=await db.from('pickup_registrations').select('id,user_id,game_id,status,payment_status,registration_type,team_name,spots_reserved,payment_reference').eq('id',registrationId).maybeSingle();
  if(error||!r||(r.status==='cancelled'&&kind!=='registration_cancelled'))return {skipped:'registration'};
  if(kind==='payment_reminder'&&(r.payment_status==='paid'||r.status==='confirmed'||!['pending_payment','offered'].includes(r.status)))return {skipped:'paid_or_ineligible'};
- if(kind==='registration_received'&&!['pending_payment','offered'].includes(r.status))return {skipped:'not_payment_pending'};
+ if(kind==='registration_received'&&(r.payment_status!=='unpaid'||!['pending_payment','offered'].includes(r.status)))return {skipped:'not_payment_pending'};
  if(kind==='registration_cancelled'&&r.status!=='cancelled')return {skipped:'not_cancelled'};
  if(kind==='payment_verified'&&(r.payment_status!=='paid'||r.status!=='confirmed'))return {skipped:'not_paid'};
  const {data:g}=await db.from('pickup_games').select('id,title,venue,starts_at,price_cents,is_test').eq('id',r.game_id).maybeSingle();
@@ -25,7 +25,7 @@ export async function sendPickupTransactional(db:Db,registrationId:string,kind:K
  const eventId=event?.id||(await db.from('notification_events').select('id').eq('event_key',kind+':'+r.id).single()).data?.id;
  if(!eventId)return {error:'event_missing'};
  const when=start.toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'});
- const amount='$'+((r.spots_reserved||1)*(g.price_cents||1600)/100).toFixed(2);
+ const amount='$'+((r.spots_reserved||1)*(g.price_cents??1600)/100).toFixed(2);
  const team=r.registration_type==='team'?'Team: '+(r.team_name||'Unnamed')+' ('+(r.spots_reserved||5)+' players)':'Solo registration';
  const state=kind==='registration_cancelled'?'REGISTRATION CANCELLED':kind==='payment_verified'?'PAYMENT CONFIRMED':kind==='payment_reminder'?'PAYMENT REMINDER':'REGISTRATION RECEIVED — PAYMENT PENDING';
  const details=[state,g.title,team,when,g.venue,'Amount: '+amount,'Reference: '+(r.payment_reference||'Not assigned')].join('\n');
