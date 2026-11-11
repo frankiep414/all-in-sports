@@ -1,4 +1,4 @@
-import {sendPickupTransactional} from '../../../lib/pickup-transactional-notifications';
+import {sendPickupTransactional} from '../../../../lib/pickup-transactional-notifications';
 import {createClient} from '@supabase/supabase-js';
 export const dynamic='force-dynamic';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
