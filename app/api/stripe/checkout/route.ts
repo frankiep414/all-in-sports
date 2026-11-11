@@ -72,7 +72,11 @@ export async function POST(request:Request){
     existing.client_reference_id===reg.id&&
     existing.metadata?.registration_id===reg.id&&
     existing.metadata?.game_id===game.id&&
-    existing.currency==='usd'&&existing.amount_total===totalCents;
+    existing.currency==='usd'&&
+    // Honor previously issued open checkouts at their original quoted price
+    // during rollout; never create a duplicate session or change its amount.
+    (existing.amount_total===totalCents||
+     (dualPricingEnabled&&existing.amount_total===baseTotalCents));
    if(!belongsToRegistration)
     return Response.json({error:'Existing checkout details do not match this reg. Contact an admin.'},{status:409});
    if(existing.status==='open'&&existing.payment_status==='unpaid'&&
