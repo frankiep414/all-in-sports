@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const { data: player, error: playerError } = await db.from('players') .select('id,player_position').ilike('email', user.email).maybeSingle();
     if (playerError || !player) return Response.json({ error: 'Player not found.' }, { status: 404 });
     const { data, error } = await db.from('player_air_sessions')
-      .select('session_date,air_rating,rating_status,source_label,fixtures_played,goals,assists,saves,shots_against,passes_completed,passes_attempted')
+      .select('session_date,air_rating,rating_status,source_label,fixtures_played,goals,assists,saves,shots_against,passes_completed,passes_attempted,shots,shots_on_target,key_passes,tackles,interceptions,performance_summary')
       .eq('player_id', player.id).order('session_date', { ascending: false });
     if (error) throw error;
     const sessions = data || [];
