@@ -11,10 +11,12 @@ export async function GET(request:Request){
  if(!url||!secret)return Response.json({error:'Configuration unavailable'},{status:503});
  const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
  const day=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
- const {data:games,error}=await db.from('pickup_games').select('id').gte('starts_at',now.toISOString()).lt('starts_at',new Date(now.getTime()+86400000).toISOString()).eq('status','published').eq('is_test',false).limit(50);
+ const {data:games,error}=await db.from('pickup_games').select('id,starts_at').gte('starts_at',now.toISOString()).lt('starts_at',new Date(now.getTime()+86400000).toISOString()).eq('status','published').eq('is_test',false).limit(50);
  if(error)return Response.json({error:'Games unavailable'},{status:503});
  let checked=0;const outcomes=[];
  for(const game of games||[]){
+  const gameDay=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(game.starts_at));
+  if(gameDay!==day)continue;
   const {data:regs,error:regError}=await db.from('pickup_registrations').select('id').eq('game_id',game.id).eq('payment_status','unpaid').in('status',['pending_payment','offered']).limit(100);
   if(regError)continue;
   for(const r of regs||[]){checked++;outcomes.push(await sendPickupTransactional(db,r.id,'payment_reminder'));if(checked>=100)break;}
