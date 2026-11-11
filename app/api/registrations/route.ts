@@ -142,6 +142,8 @@ export async function DELETE(request:Request){
    .eq('status',registration.status).select('id').maybeSingle();
   if(updateError)return Response.json({error:'Unable to withdraw. Please contact All In Sports.'},{status:503});
   if(!updated)return Response.json({error:'Registration changed. Refresh and try again.'},{status:409});
+  try{await sendPickupTransactional(access.db,registration.id,'registration_cancelled');}
+  catch{console.error('Cancellation confirmation processing failed');}
   return Response.json({withdrawn:true,refund_issued:false,contact_management_for_reimbursement:registration.payment_status==='paid'},
    {headers:{'Cache-Control':'no-store'}});
  }catch{return Response.json({error:'Unable to withdraw. Please try again.'},{status:503});}
