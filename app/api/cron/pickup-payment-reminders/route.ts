@@ -5,7 +5,7 @@ export async function GET(request:Request){
  if(!process.env.CRON_SECRET||request.headers.get('authorization')!=='Bearer '+process.env.CRON_SECRET)return Response.json({error:'Unauthorized'},{status:401});
  const now=new Date();
  const hour=Number(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'2-digit',hourCycle:'h23'}).format(now));
- if(hour!==9)return Response.json({skipped:'outside 9am ET'});
+ // Vercel Hobby permits only one UTC daily invocation. 14:00 UTC is 9 AM EST and 10 AM EDT.\n if(hour!==9&&hour!==10)return Response.json({skipped:'outside scheduled morning window'});
  if(process.env.PICKUP_PAYMENT_REMINDERS_ENABLED!=='true')return Response.json({disabled:true});
  const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL,secret=process.env.SUPABASE_SECRET_KEY;
  if(!url||!secret)return Response.json({error:'Configuration unavailable'},{status:503});
