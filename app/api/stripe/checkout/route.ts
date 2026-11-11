@@ -1,3 +1,4 @@
+import {dualPriceForRegistration} from '../../../../lib/dual-payment-pricing';
 import {createClient} from '@supabase/supabase-js';
 export const dynamic='force-dynamic';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -42,7 +43,13 @@ export async function POST(request:Request){
    return Response.json({error:'Test game unavailable.'},{status:409});
   if(!Number.isSafeInteger(game.price_cents)||game.price_cents<50||game.price_cents>100000)
    return Response.json({error:'Test game price must be between $0.50 and $1,000.'},{status:409});
-  const totalCents=game.price_cents*(reg.spots_reserved||1);
+  const spotsReserved=reg.spots_reserved||1;
+  const baseTotalCents=game.price_cents*spotsReserved;
+  // OFF by default. Enable only after coordinated DB RPC + UI deployment.
+  const dualPricingEnabled=process.env.PICKUP_DUAL_PRICING_ENABLED==='true';
+  const totalCents=dualPricingEnabled
+   ?dualPriceForRegistration(game.price_cents,spotsReserved).regularCardTotalCents
+   :baseTotalCents;
   if(!Number.isSafeInteger(totalCents)||totalCents>100000)return Response.json({error:'Invalid checkout total.'},{status:409});
   const {data:prior,error:priorError}=await db.from('pickup_stripe_checkout_sessions')
    .select('stripe_checkout_session_id,status').eq('registration_id',reg.id)
@@ -85,9 +92,10 @@ export async function POST(request:Request){
    'metadata[registration_id]':reg.id,'metadata[game_id]':game.id,
    'metadata[payment_reference]':reg.payment_reference,
    'line_items[0][price_data][currency]':'usd',
-   'line_items[0][price_data][unit_amount]':String(game.price_cents),
+   'line_items[0][price_data][unit_amount]':String(dualPricingEnabled?totalCents:game.price_cents),
    'line_items[0][price_data][product_data][name]':reg.registration_type==='team'?game.title+' — '+reg.team_name:game.title,
-   'line_items[0][quantity]':String(reg.spots_reserved||1),
+   // In dual-price mode, charge one full registration total (one fixed fee).
+   'line_items[0][quantity]':String(dualPricingEnabled?1:spotsReserved),
    'payment_method_types[0]':'card',
    'expires_at':String(Math.floor(Date.now()/1000)+1800)
   });
