@@ -1,8 +1,7 @@
-import {createClient} from '@supabase/supabase-js';
 import twilio from 'twilio';
 
 type Kind='registration_received'|'payment_verified'|'payment_reminder';
-type Db=ReturnType<typeof createClient>;
+type Db=any;
 export async function sendPickupTransactional(db:Db,registrationId:string,kind:Kind){
  if(process.env.PICKUP_TRANSACTIONAL_NOTIFICATIONS_ENABLED!=='true')return {disabled:true};
  const {data:r,error}=await db.from('pickup_registrations').select('id,user_id,game_id,status,payment_status,registration_type,team_name,spots_reserved,payment_reference').eq('id',registrationId).maybeSingle();
