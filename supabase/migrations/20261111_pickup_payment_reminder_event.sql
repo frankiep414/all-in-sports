@@ -5,5 +5,5 @@ alter table public.notification_events add constraint notification_events_event_
 check (event_type = any (array[
  'game_published','registration_received','payment_reported','payment_verified',
  'waitlist_joined','waitlist_offer','game_reminder','game_cancelled',
- 'game_updated','admin_reminder','payment_reminder'
+ 'game_updated','admin_reminder','payment_reminder','registration_cancelled'
 ]));
