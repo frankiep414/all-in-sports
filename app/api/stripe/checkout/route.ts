@@ -47,6 +47,9 @@ export async function POST(request:Request){
   const baseTotalCents=game.price_cents*spotsReserved;
   // OFF by default. Enable only after coordinated DB RPC + UI deployment.
   const dualPricingEnabled=process.env.PICKUP_DUAL_PRICING_ENABLED==='true';
+  // Fail closed rather than charge a price different from the advertised price.
+  if(live&&dualPricingEnabled!==(process.env.NEXT_PUBLIC_PICKUP_DUAL_PRICING_ENABLED==='true'))
+   return Response.json({error:'Checkout pricing is temporarily unavailable. Please try Zelle or contact an admin.'},{status:503});
   const totalCents=dualPricingEnabled
    ?dualPriceForRegistration(game.price_cents,spotsReserved).regularCardTotalCents
    :baseTotalCents;
@@ -95,6 +98,7 @@ export async function POST(request:Request){
    customer_email:user.email,'client_reference_id':reg.id,
    'metadata[registration_id]':reg.id,'metadata[game_id]':game.id,
    'metadata[payment_reference]':reg.payment_reference,
+   'metadata[pricing_mode]':dualPricingEnabled?'regular_card_v1':'legacy_base',
    'line_items[0][price_data][currency]':'usd',
    'line_items[0][price_data][unit_amount]':String(dualPricingEnabled?totalCents:game.price_cents),
    'line_items[0][price_data][product_data][name]':reg.registration_type==='team'?game.title+' — '+reg.team_name:game.title,
@@ -105,7 +109,8 @@ export async function POST(request:Request){
   });
   const stripeResponse=await fetch('https://api.stripe.com/v1/checkout/sessions',{
    method:'POST',headers:{Authorization:'Bearer '+stripeKey,'Content-Type':'application/x-www-form-urlencoded',
-    'Idempotency-Key':(live?'ais-live-checkout-':'ais-preview-checkout-')+reg.id},
+    // Version the key: Stripe rejects a reused key with different line-item amounts.
+   'Idempotency-Key':(live?'ais-live-checkout-':'ais-preview-checkout-')+reg.id+(dualPricingEnabled?'-regular-v1':'')},
    body:form.toString(),signal:AbortSignal.timeout(12000)
   });
   const checkout=await stripeResponse.json().catch(()=>null);
