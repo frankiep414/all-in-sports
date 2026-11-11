@@ -9,6 +9,7 @@ import {dualPriceForRegistration} from '../../lib/dual-payment-pricing';
 type Method = 'zelle' | 'card';
 
 const dualPricingDisplayEnabled=process.env.NEXT_PUBLIC_PICKUP_DUAL_PRICING_ENABLED==='true';
+const showDualPrice=(isTest:boolean)=>dualPricingDisplayEnabled&&!isTest;
 const money=(cents:number)=>'$'+(cents/100).toFixed(2);
 
 export default function PlayPage() {
@@ -175,7 +176,7 @@ export default function PlayPage() {
           {!gamesError && games.filter(item=>!focusedGameId||item.id===focusedGameId).map(item=><article key={item.id} style={{padding:'18px 0',borderTop:'1px solid #303945'}}>
             <h3 style={{margin:'0 0 8px'}}>{item.title}</h3>
             <p style={{color:'#b8c1d0',margin:'0 0 8px'}}>{item.venue} · {new Date(item.starts_at).toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'})}</p>
-            <p style={{margin:'0 0 8px'}}>{dualPricingDisplayEnabled?`Regular card price: ${money(dualPriceForRegistration(item.price_cents,1).regularCardTotalCents)} · Zelle price: ${money(item.price_cents)}`:`Price: ${money(item.price_cents)}`} · Capacity: {item.capacity} players</p>
+            <p style={{margin:'0 0 8px'}}>{showDualPrice(Boolean(item.is_test))?`Regular card price: ${money(dualPriceForRegistration(item.price_cents,1).regularCardTotalCents)} · Zelle price: ${money(item.price_cents)}`:`Price: ${money(item.price_cents)}`} · Capacity: {item.capacity} players</p>
             <div aria-label="Game availability" style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:10,margin:'14px 0'}}>
               {([
                 ['Spots remaining',item.spots_remaining],
@@ -186,7 +187,7 @@ export default function PlayPage() {
                 <span style={{fontSize:13,color:'#b8c1d0'}}>{label}</span>
               </div>)}
             </div>
-            {!registrations[item.id] && <div style={{margin:'12px 0',display:'flex',flexWrap:'wrap',gap:12,alignItems:'center'}}><label><input type="radio" name={'registration-type-'+item.id} checked={(registrationTypes[item.id]||'solo')==='solo'} onChange={()=>setRegistrationTypes(current=>({...current,[item.id]:'solo'}))}/> Sign Up Solo — {dualPricingDisplayEnabled?`${money(dualPriceForRegistration(item.price_cents,1).regularCardTotalCents)} card / ${money(item.price_cents)} Zelle`:money(item.price_cents)}</label>{teamRegistrationEnabled&&<label><input type="radio" name={'registration-type-'+item.id} checked={registrationTypes[item.id]==='team'} onChange={()=>setRegistrationTypes(current=>({...current,[item.id]:'team'}))}/> Sign Up a Team — {dualPricingDisplayEnabled?`${money(dualPriceForRegistration(item.price_cents,5).regularCardTotalCents)} card / ${money(item.price_cents*5)} Zelle`:money(item.price_cents*5)} (5 players)</label>}{teamRegistrationEnabled&&registrationTypes[item.id]==='team'&&<input aria-label="Team name" placeholder="Team name" maxLength={80} value={teamNames[item.id]||''} onChange={event=>setTeamNames(current=>({...current,[item.id]:event.target.value}))} style={{padding:10,borderRadius:8}}/>}</div>}
+            {!registrations[item.id] && <div style={{margin:'12px 0',display:'flex',flexWrap:'wrap',gap:12,alignItems:'center'}}><label><input type="radio" name={'registration-type-'+item.id} checked={(registrationTypes[item.id]||'solo')==='solo'} onChange={()=>setRegistrationTypes(current=>({...current,[item.id]:'solo'}))}/> Sign Up Solo — {showDualPrice(Boolean(item.is_test))?`${money(dualPriceForRegistration(item.price_cents,1).regularCardTotalCents)} card / ${money(item.price_cents)} Zelle`:money(item.price_cents)}</label>{teamRegistrationEnabled&&<label><input type="radio" name={'registration-type-'+item.id} checked={registrationTypes[item.id]==='team'} onChange={()=>setRegistrationTypes(current=>({...current,[item.id]:'team'}))}/> Sign Up a Team — {showDualPrice(Boolean(item.is_test))?`${money(dualPriceForRegistration(item.price_cents,5).regularCardTotalCents)} card / ${money(item.price_cents*5)} Zelle`:money(item.price_cents*5)} (5 players)</label>}{teamRegistrationEnabled&&registrationTypes[item.id]==='team'&&<input aria-label="Team name" placeholder="Team name" maxLength={80} value={teamNames[item.id]||''} onChange={event=>setTeamNames(current=>({...current,[item.id]:event.target.value}))} style={{padding:10,borderRadius:8}}/>}</div>}
             {registrations[item.id] ? <strong style={{color:'#9ee6bb'}}>Your registration: {registrations[item.id].status==='confirmed'?'Confirmed — You’re in!':registrations[item.id].payment_status==='pending_verification'?'Payment submitted — Awaiting verification':registrations[item.id].status==='waitlisted'?'Waitlisted':registrations[item.id].status==='offered'?'Waitlist offer':registrations[item.id].status==='expired'?'Expired':'Registered — Payment due'}</strong> :
               <button type="button" disabled={registering!==null||(registrationTypes[item.id]==='team'&&(teamNames[item.id]||'').trim().length<2)} onClick={()=>void register(item.id)}
                 style={{background:'#95d9ff',color:'#08101a',border:0,borderRadius:9,padding:'11px 18px',fontWeight:800,cursor:'pointer'}}>
@@ -218,10 +219,10 @@ export default function PlayPage() {
         <p style={{color:'#b8c1d0'}}>Learn about payment methods below. Actual payment instructions are provided after your registration request.</p>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:16,marginTop:20}}>
           <button type="button" onClick={()=>setMethod('zelle')} aria-pressed={method==='zelle'} style={{textAlign:'left',cursor:'pointer',border:method==='zelle'?'2px solid #95d9ff':'1px solid #303945',background:'#111820',color:'#fff',borderRadius:16,padding:24}}>
-            <strong style={{fontSize:21}}>Zelle — Preferred</strong><p style={{color:'#9ee6bb'}}>{dualPricingDisplayEnabled?'Discounted Zelle price shown for each game · no card processing charge':'No added checkout fee · pay the game price shown above'}</p><span style={{color:'#b8c1d0'}}>Payment confirmed manually by our team.</span>
+            <strong style={{fontSize:21}}>Zelle — Preferred</strong><p style={{color:'#9ee6bb'}}>{showDualPrice(Boolean(item.is_test))?'Discounted Zelle price shown for each game · no card processing charge':'No added checkout fee · pay the game price shown above'}</p><span style={{color:'#b8c1d0'}}>Payment confirmed manually by our team.</span>
           </button>
           <button type="button" onClick={()=>setMethod('card')} aria-pressed={method==='card'} style={{textAlign:'left',cursor:'pointer',border:method==='card'?'2px solid #95d9ff':'1px solid #303945',background:'#111820',color:'#fff',borderRadius:16,padding:24}}>
-            <strong style={{fontSize:21}}>Card / Digital Wallet</strong><p style={{color:'#95d9ff'}}>{dualPricingDisplayEnabled?'Regular card price shown upfront · includes processing costs':'Stripe secure checkout · processing costs apply to All In Sports at present'}</p><span style={{color:'#b8c1d0'}}>Card, Apple Pay or Google Pay where supported.</span>
+            <strong style={{fontSize:21}}>Card / Digital Wallet</strong><p style={{color:'#95d9ff'}}>{showDualPrice(Boolean(item.is_test))?'Regular card price shown upfront · includes processing costs':'Stripe secure checkout · processing costs apply to All In Sports at present'}</p><span style={{color:'#b8c1d0'}}>Card, Apple Pay or Google Pay where supported.</span>
           </button>
         </div>
         <div style={{background:'#151d27',border:'1px solid #303945',borderRadius:16,padding:24,marginTop:16,lineHeight:1.7}}>
