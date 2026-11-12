@@ -29,7 +29,7 @@ export async function POST(request:Request){
  const {data:pref}=await db.from('notification_preferences').select('phone_e164,sms_opted_in,sms_transactional,sms_opted_out_at').eq('user_id',r.user_id).maybeSingle();
  if(body.channel==='sms'&&(!allowedPhone||pref?.phone_e164!==allowedPhone||!pref.sms_opted_in||!pref.sms_transactional||pref.sms_opted_out_at))return Response.json({error:'SMS consent or recipient mismatch'},{status:403});
  const amount=((r.spots_reserved||1)*(g.price_cents??1600)/100).toFixed(2);
- const message='TEST ONLY — All In Sports registration confirmation\n'+r.team_name+' — '+g.title+'\n5 players — $'+amount+' pending\nThis is a notification delivery test. Your registration and payment have not changed.';
+ const message=['TEST ONLY — All In Sports registration confirmation',r.team_name+' — '+g.title,'5 players — $'+amount+' pending','This is a notification delivery test. Your registration and payment have not changed.'].join(String.fromCharCode(10));
  if(body.channel==='email'){
   if(!process.env.RESEND_API_KEY)return Response.json({error:'Email provider unavailable'},{status:503});
   const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+process.env.RESEND_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({from:'All In Sports <noreply@allinsportsnj.com>',to:[email],subject:'TEST ONLY — All In Sports — '+r.team_name,text:message})});
