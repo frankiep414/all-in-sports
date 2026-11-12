@@ -26,7 +26,7 @@ test('gross covers base after Stripe 2.9% + 30 cents with minimal rounding', () 
   for (const base of [50, 100, 1600, 3200, 8000, 100000]) {
     const gross = regularCardPriceCents(base);
     assert.ok(gross - Math.round(gross * 0.029) - 30 >= base);
-    assert.ok(gross - 1 - Math.round((gross - 1) * 0.029) - 30 < base);
+    assert.ok(gross - 1 - (gross - 1) * 0.029 - 30 < base);
   }
 });
 test('invalid amounts and quantities rejected', () => {
