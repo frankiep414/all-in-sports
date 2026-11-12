@@ -46,7 +46,7 @@ export async function POST(request:Request){
   const spotsReserved=reg.spots_reserved||1;
   const baseTotalCents=game.price_cents*spotsReserved;
   // OFF by default. Enable only after coordinated DB RPC + UI deployment.
-  const dualPricingEnabled=process.env.PICKUP_DUAL_PRICING_ENABLED==='true';
+  const dualPricingEnabled=live&&process.env.PICKUP_DUAL_PRICING_ENABLED==='true';
   // Fail closed rather than charge a price different from the advertised price.
   if(live&&dualPricingEnabled!==(process.env.NEXT_PUBLIC_PICKUP_DUAL_PRICING_ENABLED==='true'))
    return Response.json({error:'Checkout pricing is temporarily unavailable. Please try Zelle or contact an admin.'},{status:503});
