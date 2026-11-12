@@ -15,7 +15,7 @@ export async function POST(request:Request){
  const body=await request.json().catch(()=>null);
  if(!body||!permitted.has(body.registration_id)||!['email','sms'].includes(body.channel))return Response.json({error:'Unsupported test'},{status:400});
  const url=process.env.PICKUP_TEST_SUPABASE_URL,key=process.env.PICKUP_TEST_SUPABASE_SECRET_KEY;
- if(!url||!key)return Response.json({error:'Dedicated read-only test database configuration required'},{status:503});
+ if(!url||!key||!url.startsWith('https://hwhmhtdpbjgovgroyndw.supabase.co'))return Response.json({error:'Approved live test database configuration required'},{status:503});
  const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
  const {data:r,error}=await db.from('pickup_registrations').select('id,user_id,game_id,team_name,spots_reserved,registration_type,status,payment_status').eq('id',body.registration_id).maybeSingle();
  if(error||!r||r.status!=='pending_payment'||r.payment_status!=='unpaid'||r.registration_type!=='team'||r.spots_reserved!==5)return Response.json({error:'Registration is not eligible'},{status:409});
