@@ -604,6 +604,7 @@ if (pickupReturn) window.location.replace(pickupReturn);
       <aside className="homeFeaturedStrip" aria-label="Featured upcoming activities">
         <div className="homeFeaturedStripInner">
           <strong className="homeFeaturedStripLabel"><Zap size={16}/> WHAT'S NEXT</strong>
+          <a href="/leaderboards"><Trophy size={16}/><span>Career Leaders · All-Time Stats</span><ArrowRight size={15}/></a>
           {featuredGames.map(game=><a href={`/play?game=${encodeURIComponent(game.id)}`} key={game.id}><Play size={16}/><span>Next Pickup: {game.title}</span><ArrowRight size={15}/></a>)}
           <a href="/compete"><Trophy size={16}/><span>Men's League · Nov 17</span><ArrowRight size={15}/></a>
           <a href="/compete"><Trophy size={16}/><span>Coed League · Nov 18</span><ArrowRight size={15}/></a>
@@ -629,6 +630,7 @@ if (pickupReturn) window.location.replace(pickupReturn);
         Play soccer. Compete. Meet people. Go All In.
       </p>
     </div>
+<a href="/leaderboards" style={{display:"inline-flex",alignItems:"center",gap:10,padding:"14px 20px",margin:"0 0 18px",background:"#fbbf24",color:"#111827",borderRadius:12,fontWeight:900,textDecoration:"none",width:"fit-content"}}><Trophy size={20}/> VIEW CAREER LEADERBOARDS <ArrowRight size={18}/></a>
 <a href="/my-all-in" className="launchpadPlayer">
   <img
     src="/all-in-player.png"
