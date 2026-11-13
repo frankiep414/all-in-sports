@@ -8,9 +8,9 @@ const source = fs.readFileSync('lib/dual-payment-pricing.ts', 'utf8');
 const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 }
 }).outputText;
-const exports = {};
-vm.runInNewContext(compiled, { exports, RangeError, Number, Math });
-const { regularCardPriceCents, dualPriceForRegistration } = exports;
+const pricingExports = {};
+vm.runInNewContext(compiled, { exports: pricingExports, RangeError, Number, Math });
+const { regularCardPriceCents, dualPriceForRegistration } = pricingExports;
 
 test('solo Zelle $16 => regular card $16.79', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(dualPriceForRegistration(1600, 1))), {
