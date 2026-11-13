@@ -18,7 +18,10 @@ export async function GET(request: Request) {
       .select('session_date,air_rating,rating_status,source_label,fixtures_played,goals,assists,saves,shots_against,passes_completed,passes_attempted')
       .eq('player_id', player.id).order('session_date', { ascending: false });
     if (error) throw error;
-    const sessions = data || [];
+    const { data: cardAssets, error: cardError } = await db.from('player_air_card_assets').select('session_date,card_url').eq('player_id',player.id);
+    if(cardError)throw cardError;
+    const cardByDate = new Map((cardAssets||[]).map(asset=>[asset.session_date,asset.card_url]));
+    const sessions = (data || []).map(row=>({...row,card_url:cardByDate.get(row.session_date)||null}));
     const verified = sessions.filter(row => row.rating_status === 'confirmed' && Number.isFinite(Number(row.air_rating)));
     const weighted = verified.length > 0 && verified.every(row => Number.isInteger(row.fixtures_played) && row.fixtures_played > 0);
     const totalWeight = verified.reduce((sum,row) => sum + (weighted ? row.fixtures_played : 1), 0);
