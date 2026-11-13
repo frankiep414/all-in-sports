@@ -9,6 +9,9 @@ import {
   BarChart3,
   CalendarDays,
   Camera,
+  Download,
+  Share2,
+  X,
   LogOut,
   Lock,
   Shield,
@@ -70,7 +73,9 @@ export default function MyAllInPage() {
     full_name: string;
   } | null>(null);
 
-  const [airSessions,setAirSessions]=useState<Array<{session_date:string;air_rating:number;source_label:string}>>([]);
+  const [airSessions,setAirSessions]=useState<Array<{session_date:string;air_rating:number;source_label:string;fixtures_played?:number|null;goals?:number|null;assists?:number|null;saves?:number|null;card_url?:string|null}>>([]);
+  const [selectedAir,setSelectedAir]=useState<(typeof airSessions)[number]|null>(null);
+  const [cardLoadFailed,setCardLoadFailed]=useState(false);
   const [overallAir,setOverallAir]=useState<number|null>(null);
   const [overallStatus,setOverallStatus]=useState('unrated');
   const [careerGames,setCareerGames]=useState<number|null>(null);
@@ -332,12 +337,20 @@ export default function MyAllInPage() {
           <div className="wideCardHeading"><div className="dashboardCardIcon"><BarChart3 size={22}/></div><div><p className="cardEyebrow">AIR · ALL IN RATING</p><h3>My session ratings</h3><p>{overallStatus==='provisional'?'Overall AIR is provisional until more verified sessions and game counts are recorded.':overallStatus==='established'?'Overall AIR uses a games-weighted average of verified sessions.':'Your overall rating will appear after a verified session.'}</p></div></div>
           {airLoading?<p>Loading your AIR history…</p>:airError?<p role="alert">Unable to load your ratings right now. Please refresh.</p>:airSessions.length===0?<p>No verified AIR sessions linked to your profile yet.</p>:
             <div style={{display:'grid',gap:12,marginTop:16}}>
-              {airSessions.map(session=><div key={session.session_date+'-'+session.source_label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:16,border:'1px solid #36516a',borderRadius:12}}>
-                <strong>{new Date(session.session_date+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</strong>
+              {airSessions.map(session=><button type="button" key={session.session_date+'-'+session.source_label} onClick={()=>{setCardLoadFailed(false);setSelectedAir(session);}} aria-label={'View AIR player card for '+session.session_date} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',padding:16,border:'1px solid #36516a',borderRadius:12,background:'#0c1119',color:'#fff',cursor:'pointer',textAlign:'left',gap:12}}>
+                <span><strong style={{display:'block'}}>{new Date(session.session_date+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</strong><small style={{color:'#9bb4c6'}}>VIEW PLAYER CARD →</small></span>
                 <strong style={{fontSize:26,color:'#65df9c'}}>{Number(session.air_rating).toFixed(2)}</strong>
-              </div>)}
+              </button>)}
             </div>}
         </section>
+        {selectedAir&&<div role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)setSelectedAir(null);}} style={{position:'fixed',inset:0,zIndex:9999,background:'rgba(0,0,0,.92)',display:'flex',alignItems:'center',justifyContent:'center',padding:12,overflowY:'auto'}}>
+          <section role="dialog" aria-modal="true" aria-label="AIR session player card" style={{width:'100%',maxWidth:540,maxHeight:'95dvh',overflowY:'auto',background:'#111a25',border:'1px solid #3b5368',borderRadius:16,padding:16,color:'#fff'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,marginBottom:12}}><div><strong>{new Date(selectedAir.session_date+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</strong><div style={{color:'#65df9c',fontSize:24,fontWeight:800}}>AIR {Number(selectedAir.air_rating).toFixed(2)}</div></div><button type="button" onClick={()=>setSelectedAir(null)} aria-label="Close card" style={{background:'#233244',border:'1px solid #53677b',borderRadius:9,padding:9,color:'#fff'}}><X size={22}/></button></div>
+            {selectedAir.card_url&&!cardLoadFailed?<img src={selectedAir.card_url} alt={player?.full_name+' AIR player card'} onError={()=>setCardLoadFailed(true)} style={{width:'100%',height:'auto',borderRadius:10,display:'block'}}/>:<div style={{padding:24,textAlign:'center',border:'1px dashed #53677b',borderRadius:12,marginBottom:12}}><p style={{fontWeight:700}}>Player card image is being prepared</p><p style={{color:'#b5c5d3',fontSize:14}}>Your verified session statistics are available below. The approved card will appear here once published.</p></div>}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8,margin:'14px 0'}}>{[{label:'GAMES',value:selectedAir.fixtures_played},{label:isGoalkeeper?'SAVES':'GOALS',value:isGoalkeeper?selectedAir.saves:selectedAir.goals},{label:'ASSISTS',value:selectedAir.assists}].map(item=><div key={item.label} style={{background:'#1b2b3b',padding:12,borderRadius:9,textAlign:'center'}}><strong style={{display:'block',fontSize:22}}>{item.value??'—'}</strong><small>{item.label}</small></div>)}</div>
+            {selectedAir.card_url&&!cardLoadFailed&&<div style={{display:'flex',gap:10}}><a href={selectedAir.card_url} download style={{flex:1,textAlign:'center',background:'#60d9eb',color:'#0b1620',padding:12,borderRadius:9,fontWeight:800,textDecoration:'none'}}><Download size={16} style={{display:'inline',verticalAlign:'middle'}}/> SAVE CARD</a><button type="button" onClick={async()=>{const url=new URL(selectedAir.card_url!,window.location.origin).href;if(navigator.share){try{await navigator.share({title:'My All In AIR card',url});}catch{}}else{await navigator.clipboard.writeText(url);window.alert('Card link copied.');}}} style={{flex:1,background:'#233244',color:'#fff',padding:12,border:'1px solid #53677b',borderRadius:9,fontWeight:800}}><Share2 size={16} style={{display:'inline',verticalAlign:'middle'}}/> SHARE</button></div>}
+          </section>
+        </div>}
         <section className="dashboardWideCard">
           <div className="wideCardHeading">
             <div className="dashboardCardIcon">
