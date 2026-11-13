@@ -1,3 +1,4 @@
+import {sendPickupTransactional} from '../../../lib/pickup-transactional-notifications';
 import {sendAdminRegistrationAlert} from '../../../lib/admin-registration-alert';
 import {createClient} from '@supabase/supabase-js';
 import {sendAutomatedTestRegistrationEmail} from '../../../lib/automated-registration-email';
@@ -101,6 +102,10 @@ export async function POST(request:Request){
     });
    }catch{console.error('Automatic test email could not complete');}
   }
+  if(row?.registration_id && !game.is_test && ['pending_payment','waitlisted','offered'].includes(row.registration_status)){
+   try{await sendPickupTransactional(access.db,row.registration_id,'registration_received');}
+   catch{console.error('Registration confirmation processing failed');}
+  }
   return Response.json({registration_id:row?.registration_id,status:row?.registration_status,payment_reference:referenceRow?.payment_reference,
    message:'Registration received. Payment has not been collected or confirmed.'});
  }catch{return Response.json({error:'Unable to register.'},{status:503});}
@@ -137,6 +142,8 @@ export async function DELETE(request:Request){
    .eq('status',registration.status).select('id').maybeSingle();
   if(updateError)return Response.json({error:'Unable to withdraw. Please contact All In Sports.'},{status:503});
   if(!updated)return Response.json({error:'Registration changed. Refresh and try again.'},{status:409});
+  try{await sendPickupTransactional(access.db,registration.id,'registration_cancelled');}
+  catch{console.error('Cancellation confirmation processing failed');}
   return Response.json({withdrawn:true,refund_issued:false,contact_management_for_reimbursement:registration.payment_status==='paid'},
    {headers:{'Cache-Control':'no-store'}});
  }catch{return Response.json({error:'Unable to withdraw. Please try again.'},{status:503});}

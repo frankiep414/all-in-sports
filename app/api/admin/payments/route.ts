@@ -1,3 +1,4 @@
+import {sendPickupTransactional} from '../../../../lib/pickup-transactional-notifications';
 import {createClient} from '@supabase/supabase-js';
 export const dynamic='force-dynamic';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -34,6 +35,10 @@ export async function POST(request:Request){
     },{onConflict:'event_key',ignoreDuplicates:true});
     if(eventError)console.error('Payment verified event failed',{code:eventError.code});
    }
+  }
+  if(data==='confirmed'){
+   try{await sendPickupTransactional(db,body.registration_id,'payment_verified');}
+   catch{console.error('Zelle payment confirmation processing failed');}
   }
   return Response.json({status:data});
  }catch{return Response.json({error:'Unable to verify payment.'},{status:503});}
