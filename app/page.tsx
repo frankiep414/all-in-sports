@@ -582,6 +582,7 @@ if (pickupReturn) window.location.replace(pickupReturn);
           <div className="navLinks">
             <a href="/play">Play</a>
             <a href="/compete">Compete</a>
+            <a href="/leaderboards">Career Leaders</a>
             <a href="/events">Events</a>
             <a href="#history">History</a>
           </div>
