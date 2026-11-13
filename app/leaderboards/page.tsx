@@ -5,7 +5,7 @@ const categories=[['goals','Goals'],['assists','Assists'],['appearances','Appear
 export default function CareerLeaders(){
  const [players,setPlayers]=useState<Player[]>([]),[metric,setMetric]=useState<keyof Player>('goals'),[error,setError]=useState(''),[loading,setLoading]=useState(true);
  useEffect(()=>{fetch('/api/leaderboards/career').then(async r=>{if(!r.ok)throw Error('Could not load standings');return r.json()}).then(d=>setPlayers(d.leaders||[])).catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
- const sorted=useMemo(()=>[...players].filter(p=>metric!=='air_rating'||p.air_rating!==null).sort((a,b)=>Number(b[metric]||0)-Number(a[metric]||0)||b.goals-a.goals||a.name.localeCompare(b.name)),[players,metric]);
+ const sorted=useMemo(()=>[...players].filter(p=>Number(p[metric]??0)>=1).sort((a,b)=>Number(b[metric]||0)-Number(a[metric]||0)||b.goals-a.goals||a.name.localeCompare(b.name)),[players,metric]);
  return <main style={{minHeight:'100vh',background:'#091323',color:'#fff',padding:'48px 20px'}}>
   <div style={{maxWidth:960,margin:'0 auto'}}>
    <a href="/" style={{color:'#93c5fd'}}>← All In Sports</a>
