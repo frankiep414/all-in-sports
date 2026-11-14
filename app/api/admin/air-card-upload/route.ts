@@ -35,3 +35,23 @@ export async function POST(request: Request) {
     return Response.json({ok:true,card_url:data.publicUrl});
   }catch(e){console.error('AIR card upload failed',e);return Response.json({error:'Card upload failed. Check storage setup.'},{status:503});}
 }
+
+
+export async function GET(request: Request) {
+  const token=request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
+  if(!token)return Response.json({error:'Sign in required.'},{status:401});
+  const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const pub=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const secret=process.env.SUPABASE_SECRET_KEY;
+  if(!url||!pub||!secret)return Response.json({error:'Unavailable.'},{status:503});
+  const auth=createClient(url,pub,{auth:{persistSession:false,autoRefreshToken:false}});
+  const {data:{user},error}=await auth.auth.getUser(token);
+  if(error||!user?.email)return Response.json({error:'Unauthorized.'},{status:401});
+  if(user.email.toLowerCase()!==(process.env.AIR_CARD_ADMIN_EMAIL||'allinsports.imom@gmail.com').toLowerCase())return Response.json({error:'Admin access required.'},{status:403});
+  const date=new URL(request.url).searchParams.get('date')||'2026-11-11';
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'Invalid date.'},{status:400});
+  const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
+  const {data,error:dbError}=await db.from('player_air_sessions').select('player_id,players(full_name)').eq('session_date',date);
+  if(dbError)return Response.json({error:'Unable to load roster.'},{status:503});
+  return Response.json({players:(data||[]).map((row:any)=>({id:row.player_id,name:Array.isArray(row.players)?row.players[0]?.full_name:row.players?.full_name})).filter((p:any)=>p.name)},{headers:{'Cache-Control':'private, no-store'}});
+}
