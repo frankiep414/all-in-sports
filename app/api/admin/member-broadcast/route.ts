@@ -1,5 +1,5 @@
 import {createClient} from '@supabase/supabase-js';
-import {unsubscribeToken} from '../../../../../lib/announcement-unsubscribe';
+import {unsubscribeToken} from '../../../../lib/announcement-unsubscribe';
 export const dynamic='force-dynamic';
 export const maxDuration=60;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
