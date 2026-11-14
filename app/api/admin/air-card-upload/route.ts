@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const file=form.get('card');
     const playerId=Number(form.get('player_id'));
     const date=String(form.get('session_date')||'');
-    if(!(file instanceof File)||file.type!=='image/png'||file.size>5_000_000||file.size<100||!Number.isSafeInteger(playerId)||playerId<1||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date))return Response.json({error:'Provide a PNG under 5 MB, valid player ID and date.'},{status:400});
+    if(!(file instanceof File)||file.type!=='image/png'||file.size>5_000_000||file.size<100||!Number.isSafeInteger(playerId)||playerId<1||!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'Provide a PNG under 5 MB, valid player ID and date.'},{status:400});
     const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
     const {data:session,error:sessionError}=await db.from('player_air_sessions').select('player_id').eq('player_id',playerId).eq('session_date',date).maybeSingle();
     if(sessionError)throw sessionError;
