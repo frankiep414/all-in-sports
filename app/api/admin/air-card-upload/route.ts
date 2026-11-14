@@ -53,5 +53,6 @@ export async function GET(request: Request) {
   const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data,error:dbError}=await db.from('player_air_sessions').select('player_id,players(full_name)').eq('session_date',date);
   if(dbError)return Response.json({error:'Unable to load roster.'},{status:503});
-  return Response.json({players:(data||[]).map((row:any)=>({id:row.player_id,name:Array.isArray(row.players)?row.players[0]?.full_name:row.players?.full_name})).filter((p:any)=>p.name)},{headers:{'Cache-Control':'private, no-store'}});
+  const {count:published}=await db.from('player_air_card_assets').select('player_id',{count:'exact',head:true}).eq('session_date',date);
+  return Response.json({published:published||0,players:(data||[]).map((row:any)=>({id:row.player_id,name:Array.isArray(row.players)?row.players[0]?.full_name:row.players?.full_name})).filter((p:any)=>p.name)},{headers:{'Cache-Control':'private, no-store'}});
 }
