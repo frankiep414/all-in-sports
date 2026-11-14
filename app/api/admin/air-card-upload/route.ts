@@ -51,8 +51,11 @@ export async function GET(request: Request) {
   const date=new URL(request.url).searchParams.get('date')||'2026-11-11';
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'Invalid date.'},{status:400});
   const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
-  const {data,error:dbError}=await db.from('player_air_sessions').select('player_id,players(full_name)').eq('session_date',date);
+  const {data,error:dbError}=await db.from('player_air_sessions').select('player_id').eq('session_date',date);
   if(dbError)return Response.json({error:'Unable to load roster.'},{status:503});
   const {count:published}=await db.from('player_air_card_assets').select('player_id',{count:'exact',head:true}).eq('session_date',date);
-  return Response.json({published:published||0,players:(data||[]).map((row:any)=>({id:row.player_id,name:Array.isArray(row.players)?row.players[0]?.full_name:row.players?.full_name})).filter((p:any)=>p.name)},{headers:{'Cache-Control':'private, no-store'}});
+  const ids=[...new Set((data||[]).map((row:any)=>row.player_id))];
+  const {data:profiles,error:profileError}=ids.length?await db.from('players').select('id,full_name').in('id',ids):{data:[],error:null};
+  if(profileError)return Response.json({error:'Unable to load player names.'},{status:503});
+  return Response.json({published:published||0,players:(profiles||[]).map((p:any)=>({id:p.id,name:p.full_name?.trim()})).filter((p:any)=>p.name)},{headers:{'Cache-Control':'private, no-store'}});
 }
