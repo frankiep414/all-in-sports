@@ -12,7 +12,8 @@ export async function POST(request: Request) {
   const {data:{user},error:authError}=await auth.auth.getUser(token);
   if(authError||!user?.email)return Response.json({error:'Unauthorized.'},{status:401});
   const adminEmail=process.env.AIR_CARD_ADMIN_EMAIL||'allinsports.imom@gmail.com';
-  if(user.email.toLowerCase()!==adminEmail.toLowerCase())return Response.json({error:'Admin access required.'},{status:403});
+  const admins=[adminEmail,'francisco.x.garcia1414@gmail.com'].map(email=>email.toLowerCase());
+  if(!admins.includes(user.email.toLowerCase()))return Response.json({error:'Admin access required.'},{status:403});
   try{
     const form=await request.formData();
     const file=form.get('card');
@@ -47,7 +48,8 @@ export async function GET(request: Request) {
   const auth=createClient(url,pub,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data:{user},error}=await auth.auth.getUser(token);
   if(error||!user?.email)return Response.json({error:'Unauthorized.'},{status:401});
-  if(user.email.toLowerCase()!==(process.env.AIR_CARD_ADMIN_EMAIL||'allinsports.imom@gmail.com').toLowerCase())return Response.json({error:'Admin access required.'},{status:403});
+  const admins=[process.env.AIR_CARD_ADMIN_EMAIL||'allinsports.imom@gmail.com','francisco.x.garcia1414@gmail.com'].map(email=>email.toLowerCase());
+  if(!admins.includes(user.email.toLowerCase()))return Response.json({error:'Admin access required.'},{status:403});
   const date=new URL(request.url).searchParams.get('date')||'2026-11-11';
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'Invalid date.'},{status:400});
   const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
