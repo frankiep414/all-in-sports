@@ -606,8 +606,8 @@ if (pickupReturn) window.location.replace(pickupReturn);
           <strong className="homeFeaturedStripLabel"><Zap size={16}/> WHAT'S NEXT</strong>
           <a href="/leaderboards"><Trophy size={16}/><span>Career Leaders · All-Time Stats</span><ArrowRight size={15}/></a>
           {featuredGames.map(game=><a href={`/play?game=${encodeURIComponent(game.id)}`} key={game.id}><Play size={16}/><span>Next Pickup: {game.title}</span><ArrowRight size={15}/></a>)}
-          <a href="/compete"><Trophy size={16}/><span>Men's League · Nov 17</span><ArrowRight size={15}/></a>
-          <a href="/compete"><Trophy size={16}/><span>Coed League · Nov 18</span><ArrowRight size={15}/></a>
+          <a href="/compete"><Trophy size={16}/><span>Men's League · Dec 8</span><ArrowRight size={15}/></a>
+          <a href="/compete"><Trophy size={16}/><span>Coed League · Dec 9</span><ArrowRight size={15}/></a>
           {charityUpcoming && <a href="/play-for-carmita"><CalendarDays size={16}/><span>Play for Carmita · Oct 31</span><ArrowRight size={15}/></a>}
         </div>
       </aside>
@@ -806,8 +806,8 @@ if (pickupReturn) window.location.replace(pickupReturn);
             </a>
           ))}
           {[
-            {title:"Men's Tuesday League",start:"Tuesday, November 17",day:"Tuesdays"},
-            {title:"Coed Wednesday League",start:"Wednesday, November 18",day:"Wednesdays"}
+            {title:"Men's Tuesday League",start:"Tuesday, December 8",day:"Tuesdays"},
+            {title:"Coed Wednesday League",start:"Wednesday, December 9",day:"Wednesdays"}
           ].map(league=>(
             <a className="featuredCard featuredLeague" href="/compete" key={league.title}>
               <div className="featuredCardVisual"><Trophy size={38}/><span>REGISTRATION OPENING SOON</span></div>
