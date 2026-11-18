@@ -49,8 +49,26 @@ export async function GET(request:Request){
   }
   const members=users.map(u=>({...u,player_id:playerMap.get(u.email.toLowerCase())?.id??null,player_name:playerMap.get(u.email.toLowerCase())?.full_name??null,email_opt_in:preferenceMap.has(u.id)?preferenceMap.get(u.id)!.email_opt_in:null,
    sms_opt_in:playerMap.get(u.email.toLowerCase())?.sms_consent??(preferenceMap.has(u.id)?preferenceMap.get(u.id)!.sms_opt_in:null)}));
+  // All roster players are included even if they have not claimed a website login.
+  const allPlayers:Array<{id:number;full_name:string;email:string;created_at:string;consent_source:string|null;sms_consent:boolean|null}>=[];
+  for(let start=0;start<10000;start+=500){
+   const {data,error}=await db.from('players').select('id,full_name,email,created_at,consent_source,sms_consent').order('id',{ascending:false}).range(start,start+499);
+   if(error)throw Error('Unable to read player roster.');
+   allPlayers.push(...(data||[]));
+   if((data||[]).length<500)break;
+   if(start===9500)throw Error('Player roster too large to display completely.');
+  }
+  const accountByEmail=new Map(users.filter(u=>u.email).map(u=>[u.email.toLowerCase(),u]));
+  const players=allPlayers.map(p=>{
+   const account=accountByEmail.get((p.email||'').toLowerCase());
+   return {id:p.id,full_name:p.full_name,email:p.email,created_at:p.created_at,
+    source:p.consent_source==='admin_game_day_quick_add'?'Game Day Quick Add':'Website / other',
+    account_status:!account?'No website account':account.email_confirmed?'Verified account':'Unverified account',
+    // Quick Add sms_consent=false is not proof of declining the one-time claim SMS.
+    ongoing_sms_consent:p.consent_source==='admin_game_day_quick_add'?null:p.sms_consent};
+  });
   members.sort((a,b)=>b.created_at.localeCompare(a.created_at));
-  return Response.json({members,summary:{
+  return Response.json({players,members,summary:{
    total:members.length,email_opted_in:members.filter(m=>m.email_opt_in).length,
    sms_opted_in:members.filter(m=>m.sms_opt_in).length,
    email_confirmed:members.filter(m=>m.email_confirmed).length
