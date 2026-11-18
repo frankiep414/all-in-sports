@@ -583,6 +583,7 @@ export default function AdminPage() {
           <h1 style={{fontSize:'clamp(38px,7vw,72px)',margin:'12px 0'}}>Command Center</h1>
           <p><Link href="/admin/air-cards" style={{display:"inline-block",padding:"14px 20px",borderRadius:10,background:"#32e0b3",color:"#061a22",fontWeight:900,textDecoration:"none"}}>⚽ PUBLISH AIR PLAYER CARDS — NOVEMBER 11 →</Link></p>
           <p><Link href="/admin/message-members" style={{display:'inline-block',padding:'12px 18px',borderRadius:10,background:'#a9dbff',color:'#07111d',fontWeight:800,textDecoration:'none'}}>✉ Message All Members — Email / SMS</Link></p>
+          <p><Link href="/game-day" style={{display:'inline-block',padding:'12px 18px',borderRadius:10,background:'#f9d979',color:'#1c1604',fontWeight:800,textDecoration:'none'}}>📱 Game Day Signup — Hand Off Phone →</Link></p>
           <p style={{color:'#b8c1d0',fontSize:18}}>Manage your games, registrations, and payments in one place.</p>
           <Link href="/admin/members" style={{display:'inline-block',marginTop:12,padding:'13px 20px',borderRadius:10,background:'#95d9ff',color:'#07111d',fontWeight:800,textDecoration:'none'}}>VIEW WEBSITE MEMBERS & OPT-INS →</Link>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',gap:16,marginTop:40}}>
