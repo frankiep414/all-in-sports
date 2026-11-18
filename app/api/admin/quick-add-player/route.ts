@@ -15,12 +15,12 @@ export async function POST(request:Request){
  if(roleError)return Response.json({error:'Admin verification unavailable.'},{status:503});
  if(!role)return Response.json({error:'Admin only.'},{status:403});
  const body=await request.json().catch(()=>null);
- const name=typeof body?.fullName==='string'?body.fullName.trim().replace(/\\s+/g,' '):'';
+ const name=typeof body?.fullName==='string'?body.fullName.trim().replace(/\s+/g,' '):'';
  const email=typeof body?.email==='string'?body.email.trim().toLowerCase():'';
  const phone=typeof body?.phone==='string'?body.phone.trim():'';
- if(name.length<3||name.length>100||!name.includes(' ')||/[<>\\r\\n]/.test(name))return Response.json({error:'Enter first and last name.'},{status:400});
- if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||email.length>254)return Response.json({error:'Enter a valid email.'},{status:400});
- if(phone.replace(/\\D/g,'').length<10||phone.length>30)return Response.json({error:'Enter a valid phone number.'},{status:400});
+ if(name.length<3||name.length>100||!name.includes(' ')||/[<>\r\n]/.test(name))return Response.json({error:'Enter first and last name.'},{status:400});
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)return Response.json({error:'Enter a valid email.'},{status:400});
+ if(phone.replace(/\D/g,'').length<10||phone.length>30)return Response.json({error:'Enter a valid phone number.'},{status:400});
  const {data:existing,error:lookupError}=await db.from('players').select('id,full_name').ilike('email',email).maybeSingle();
  if(lookupError)return Response.json({error:'Could not check existing players.'},{status:503});
  if(existing)return Response.json({error:'A player with this email already exists.',existingPlayerId:existing.id,existingName:existing.full_name},{status:409});
