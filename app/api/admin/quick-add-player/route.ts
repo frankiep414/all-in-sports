@@ -31,18 +31,23 @@ export async function POST(request:Request){
  const claimLink='https://www.allinsportsnj.com/?auth=1';
  // The player must verify their own email through the normal sign-in flow; this link does not authenticate anyone.
  let emailSent=false,smsSent=false;
+ let emailProviderId:string|null=null,smsProviderId:string|null=null;
  const resendKey=process.env.RESEND_API_KEY;
  if(resendKey){try{
   const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+resendKey,'Content-Type':'application/json','Idempotency-Key':'game-day-claim-'+player.id},body:JSON.stringify({from:'All In Sports <noreply@allinsportsnj.com>',to:[email],subject:'Claim your All In Sports Player ID #'+player.id,text:'Welcome to All In Sports, '+name+'! Your Player ID is #'+player.id+'. To claim your profile, visit '+claimLink+' and sign in using this email address. You will receive a verification code to your own inbox. No action was needed at the field. This is an account activation message, not a marketing subscription.'}),signal:AbortSignal.timeout(10000)});
-  emailSent=response.ok;if(!response.ok)console.error('Quick add claim email failed',response.status);
+  emailSent=response.ok;if(response.ok){const result=await response.json();emailProviderId=result.id||null;}if(!response.ok)console.error('Quick add claim email failed',response.status);
  }catch(e){console.error('Quick add claim email unavailable',e instanceof Error?e.name:'unknown');}}
  if(textClaimLink){
   const digits=phone.replace(/\\D/g,'');const to=digits.length===10?'+1'+digits:digits.length===11&&digits.startsWith('1')?'+'+digits:null;
   if(to&&process.env.TWILIO_ACCOUNT_SID&&process.env.TWILIO_AUTH_TOKEN&&process.env.TWILIO_PHONE_NUMBER){try{
    const twilio=(await import('twilio')).default;
    const client=twilio(process.env.TWILIO_ACCOUNT_SID,process.env.TWILIO_AUTH_TOKEN);
-   await client.messages.create({from:process.env.TWILIO_PHONE_NUMBER,to,body:'All In Sports: Your Player ID #'+player.id+' is ready. Claim your profile at '+claimLink+' using '+email+'. Reply STOP to opt out.'});smsSent=true;
+   const message=await client.messages.create({from:process.env.TWILIO_PHONE_NUMBER,to,body:'All In Sports: Your Player ID #'+player.id+' is ready. Claim your profile at '+claimLink+' using '+email+'. Reply STOP to opt out.'});smsProviderId=message.sid;smsSent=true;
   }catch(e){console.error('Quick add claim SMS unavailable',e instanceof Error?e.name:'unknown');}}
  }
+ // Store provider IDs for the admin history screen; provider acceptance is not delivery.
+ const entries=[{player_id:player.id,channel:'email',status:emailSent?'accepted':'failed',provider_id:emailProviderId},{player_id:player.id,channel:'sms',status:textClaimLink?(smsSent?'accepted':'failed'):'not_sent',provider_id:smsProviderId}];
+ const {error:historyError}=await db.from('game_day_claim_notifications').upsert(entries,{onConflict:'player_id,channel'});
+ if(historyError)console.error('Game day notification history persistence failed',historyError.code);
  return Response.json({success:true,playerId:player.id,name:player.full_name,activationPending:true,emailSent,smsSent,smsRequested:textClaimLink},{headers:{'Cache-Control':'private, no-store'}});
 }
