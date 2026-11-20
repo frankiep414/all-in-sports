@@ -3,7 +3,7 @@ import {useState} from 'react';
 import {createClient} from '@supabase/supabase-js';
 export default function AirCardUploadPage(){
  const [playerId,setPlayerId]=useState('');
- const [date,setDate]=useState('2026-11-11');
+ const [date,setDate]=useState('2026-11-17');
  const [file,setFile]=useState<File|null>(null);
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState('');
@@ -37,14 +37,14 @@ export default function AirCardUploadPage(){
  <p>Admin only. Upload an approved PNG for an existing player and session. This does not change ratings.</p>
  <form onSubmit={submit} style={{display:'grid',gap:16}}>
  <label>Player ID<input required type="number" min="1" value={playerId} onChange={e=>setPlayerId(e.target.value)} style={{display:'block',padding:12,width:'100%'}}/></label>
- <label>Session date<input required type="date" value={date} onChange={e=>setDate(e.target.value)} style={{display:'block',padding:12,width:'100%'}}/></label>
+ <label>Session date<input required type="date" value={date} onChange={e=>{setDate(e.target.value);setRoster([]);setPublished(0);setBatch([]);setResults([]);setMessage('Session changed. Load the roster for this date.');}} style={{display:'block',padding:12,width:'100%'}}/></label>
  <label>Approved card PNG<input id="air-file" required type="file" accept="image/png" onChange={e=>setFile(e.target.files?.[0]||null)} style={{display:'block',padding:12,width:'100%'}}/></label>
  <button disabled={busy||!file} style={{padding:14,background:'#111827',color:'white',borderRadius:8}}>{busy?'Publishing…':'Publish player card'}</button>
  </form>
  <section style={{marginTop:36,borderTop:'1px solid #ccc',paddingTop:24,display:'grid',gap:12}}>
  <h2>Publish multiple approved cards</h2>
  <p>Select the individual PNGs from the approved archive. Files are matched to registered players by name; unmatched and unidentified players are skipped rather than linked to the wrong profile.</p>
- <button type="button" onClick={loadRoster} disabled={busy} style={{padding:12}}>1. Load November 11 website roster</button>
+ <button type="button" onClick={loadRoster} disabled={busy} style={{padding:12}}>1. Load roster for {date}</button>
  <p><strong>{roster.length}</strong> website player profiles with session records; <strong>{published}</strong> cards currently linked. Publishing does not change AIR ratings.</p>
  <input type="file" accept="image/png" multiple onChange={e=>setBatch(Array.from(e.target.files||[]))}/>
  <div style={{maxHeight:200,overflow:'auto',fontSize:12}}>{batch.map(f=><div key={f.name}>{f.name} → {roster.filter(p=>normalize(p.name)===normalize(f.name)).map(p=>p.name+' (#'+p.id+')').join(', ')||'Unmatched — skip'}</div>)}</div>
