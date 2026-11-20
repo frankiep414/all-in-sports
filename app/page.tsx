@@ -582,6 +582,7 @@ if (pickupReturn) window.location.replace(pickupReturn);
           <div className="navLinks">
             <a href="/play">Play</a>
             <a href="/compete">Compete</a>
+            <a href="/game-recaps">Game Recaps</a>
             <a href="/leaderboards">Career Leaders</a>
             <a href="/events">Events</a>
             <a href="#history">History</a>
@@ -604,6 +605,7 @@ if (pickupReturn) window.location.replace(pickupReturn);
       <aside className="homeFeaturedStrip" aria-label="Featured upcoming activities">
         <div className="homeFeaturedStripInner">
           <strong className="homeFeaturedStripLabel"><Zap size={16}/> WHAT'S NEXT</strong>
+          <a href="/game-recaps"><Trophy size={16}/><span>Latest Game Recap · Ratings Friday</span><ArrowRight size={15}/></a>
           <a href="/leaderboards"><Trophy size={16}/><span>Career Leaders · All-Time Stats</span><ArrowRight size={15}/></a>
           {featuredGames.map(game=><a href={`/play?game=${encodeURIComponent(game.id)}`} key={game.id}><Play size={16}/><span>Next Pickup: {game.title}</span><ArrowRight size={15}/></a>)}
           <a href="/compete"><Trophy size={16}/><span>Men's League · Dec 8</span><ArrowRight size={15}/></a>
