@@ -93,10 +93,10 @@ export default function AdminPage() {
     }catch(error){setNotificationTestResult(error instanceof Error?error.message:'Test failed.');}
     finally{setNotificationTestBusy(false);}
   }
-  async function changeStatus(item:PickupGame,action:'publish'|'cancel'){
+  async function changeStatus(item:PickupGame,action:'publish'|'cancel',notifyRegistered=false){
     const question=action==='publish'
       ?`Publish "${item.title}" to the public Play page? Registration and payment will remain closed.`
-      :`Cancel "${item.title}"? It will disappear from the public Play page.`;
+      :`Cancel "${item.title}"? ${notifyRegistered?"Only registered players will be notified through enabled channels.":"No cancellation notifications will be sent."} Refunds are not automatic.`;
     if(!window.confirm(question))return;
     setDraftActionBusy(true);setEditMessage('');
     try{
@@ -107,11 +107,11 @@ export default function AdminPage() {
       if(!session?.access_token)throw new Error('Please sign in again.');
       const response=await fetch('/api/admin/games',{method:'PATCH',
        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
-       body:JSON.stringify({id:item.id,action})});
+       body:JSON.stringify({id:item.id,action,notify_registered:notifyRegistered})});
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'Unable to change game status.');
       await loadGames(session.access_token);
-      setEditMessage(action==='publish'?'Game published on the preview Play page. Registration remains closed.':'Game cancelled.');
+      setEditMessage(action==='publish'?'Game published on the preview Play page. Registration remains closed.':result.notification_requested?`Game cancelled. Notifications requested for ${result.recipient_count} registrations; check delivery history.`:'Game cancelled silently.');
     }catch(error){setEditMessage(error instanceof Error?error.message:'Unable to update game.');}
     finally{setDraftActionBusy(false);}
   }
@@ -825,7 +825,8 @@ export default function AdminPage() {
                   style={{marginTop:14,marginLeft:12,background:'#a9e6b8',color:'#08101a',border:0,borderRadius:9,padding:'10px 18px',fontWeight:800}}>PUBLISH GAME</button>}
                 {item.status==='published' && <button type="button" disabled={draftActionBusy}
                   onClick={()=>void changeStatus(item,'cancel')}
-                  style={{marginTop:14,background:'transparent',color:'#ffaaaa',border:'1px solid #7e4444',borderRadius:9,padding:'10px 18px',fontWeight:700}}>CANCEL GAME</button>}
+                  style={{marginTop:14,background:'transparent',color:'#ffaaaa',border:'1px solid #7e4444',borderRadius:9,padding:'10px 18px',fontWeight:700}}>CANCEL SILENTLY</button>}
+                {item.status==='published' && <button type="button" disabled={draftActionBusy} onClick={()=>void changeStatus(item,'cancel',true)} style={{marginTop:14,marginLeft:12,background:'transparent',color:'#ffaaaa',border:'1px solid #7e4444',borderRadius:9,padding:'10px 18px',fontWeight:700}}>CANCEL &amp; NOTIFY REGISTERED PLAYERS ONLY</button>}
                 {editingId===item.id && <form onSubmit={saveEdit} style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,marginTop:18,paddingTop:16,borderTop:'1px solid #303945'}}>
                   {([['title','Game title','text'],['venue','Field / location','text'],['date','Game date','date'],
                     ['start','Start time','time'],['end','End time','time'],['price','Price per player ($)','number'],
