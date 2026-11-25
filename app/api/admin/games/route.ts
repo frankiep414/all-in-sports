@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { after } from 'next/server';
+import { sendPickupTransactional } from '@/lib/pickup-transactional-notifications';
 
 async function getAdmin(request: Request) {
  const token=request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
@@ -192,6 +193,16 @@ export async function PATCH(request: Request) {
     return Response.json({error:'Only upcoming drafts can be published.'},{status:409});
    if(next==='cancelled'&&game.status!=='published')
     return Response.json({error:'Only published games can be cancelled.'},{status:409});
+   const notify=next==='cancelled'&&body.notify_registered===true;
+   let recipients:string[]=[];
+   if(notify){
+    for(let offset=0;;offset+=500){
+     const {data:rows,error:regError}=await access.admin.from('pickup_registrations').select('id').eq('game_id',id).in('status',['confirmed','pending_payment','offered','waitlisted']).order('id').range(offset,offset+499);
+     if(regError)return Response.json({error:'Unable to verify registered players. Game not cancelled.'},{status:503});
+     recipients.push(...(rows||[]).map(r=>r.id));
+     if((rows||[]).length<500)break;
+    }
+   }
    const {data,error}=await access.admin.from('pickup_games').update({status:next})
     .eq('id',id).eq('status',game.status).select('id').maybeSingle();
    if(error)return Response.json({error:'Unable to update game status.'},{status:500});
@@ -238,6 +249,15 @@ export async function PATCH(request: Request) {
        warning:'Game published, but notification delivery could not be confirmed.'});
      }
     }
+   }
+   if(notify){
+    after(async()=>{
+     for(let i=0;i<recipients.length;i+=8){
+      const results=await Promise.allSettled(recipients.slice(i,i+8).map(registrationId=>sendPickupTransactional(access.admin,registrationId,'game_cancelled')));
+      console.info('Game cancellation notification batch',id,results);
+     }
+    });
+    return Response.json({status:next,notification_requested:true,recipient_count:recipients.length});
    }
    return Response.json({status:next,notification_recorded:next==='published'});
   }
