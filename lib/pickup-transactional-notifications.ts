@@ -1,6 +1,6 @@
 import twilio from 'twilio';
 
-type Kind='registration_received'|'payment_verified'|'payment_reminder'|'registration_cancelled';
+type Kind='registration_received'|'payment_verified'|'payment_reminder'|'registration_cancelled'|'game_cancelled';
 type Db=any;
 export async function sendPickupTransactional(db:Db,registrationId:string,kind:Kind){
  if(process.env.PICKUP_TRANSACTIONAL_NOTIFICATIONS_ENABLED!=='true')return {disabled:true};
@@ -10,8 +10,9 @@ export async function sendPickupTransactional(db:Db,registrationId:string,kind:K
  if(kind==='registration_received'&&(r.payment_status!=='unpaid'||!['pending_payment','offered'].includes(r.status)))return {skipped:'not_payment_pending'};
  if(kind==='registration_cancelled'&&r.status!=='cancelled')return {skipped:'not_cancelled'};
  if(kind==='payment_verified'&&(r.payment_status!=='paid'||r.status!=='confirmed'))return {skipped:'not_paid'};
- const {data:g}=await db.from('pickup_games').select('id,title,venue,starts_at,price_cents,is_test').eq('id',r.game_id).maybeSingle();
+ const {data:g}=await db.from('pickup_games').select('id,title,venue,starts_at,price_cents,is_test,status').eq('id',r.game_id).maybeSingle();
  if(!g||g.is_test)return {skipped:'game'};
+ if(kind==='game_cancelled'&&(g.status!=='cancelled'||!['confirmed','pending_payment','offered','waitlisted'].includes(r.status)))return {skipped:'not_eligible'};
  const now=new Date(),start=new Date(g.starts_at);
  if(kind==='payment_reminder'&&(start<=now||new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(start)!==new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(now)))return {skipped:'not_game_day'};
  const {data:{user}}=await db.auth.admin.getUserById(r.user_id);
@@ -27,9 +28,9 @@ export async function sendPickupTransactional(db:Db,registrationId:string,kind:K
  const when=start.toLocaleString('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'});
  const amount='$'+((r.spots_reserved||1)*(g.price_cents??1600)/100).toFixed(2);
  const team=r.registration_type==='team'?'Team: '+(r.team_name||'Unnamed')+' ('+(r.spots_reserved||5)+' players)':'Solo registration';
- const state=kind==='registration_cancelled'?'REGISTRATION CANCELLED':kind==='payment_verified'?'PAYMENT CONFIRMED':kind==='payment_reminder'?'PAYMENT REMINDER':'REGISTRATION RECEIVED — PAYMENT PENDING';
+ const state=kind==='game_cancelled'?'GAME CANCELLED':kind==='registration_cancelled'?'REGISTRATION CANCELLED':kind==='payment_verified'?'PAYMENT CONFIRMED':kind==='payment_reminder'?'PAYMENT REMINDER':'REGISTRATION RECEIVED — PAYMENT PENDING';
  const details=[state,g.title,team,when,g.venue,(kind==='registration_cancelled'?'Original registration amount: ':'Amount: ')+amount,'Reference: '+(r.payment_reference||'Not assigned')].join('\n');
- const message='Hi '+(p?.full_name||'player')+',\n'+details+'\n'+(kind==='registration_cancelled'?'Your registration has been cancelled. This confirmation does not indicate a refund. Contact All In Sports if you have a payment question.':kind==='payment_verified'?'You are confirmed.':kind==='payment_reminder'?'Our records still show payment pending. If you have already paid via Zelle, contact All In Sports to verify it.':'Registration received, but your spot is not confirmed as paid.')+'\nView: https://allinsportsnj.com/my-all-in';
+ const message=kind==='game_cancelled'?`Hi ${p?.full_name||'player'},\nUnfortunately, ${g.title} scheduled for ${when} at ${g.venue} has been cancelled. Please do not travel to the venue for this game. If you have paid, contact All In Sports regarding your payment. No refund has been issued automatically.\nAll In Sports`:'Hi '+(p?.full_name||'player')+',\n'+details+'\n'+(kind==='registration_cancelled'?'Your registration has been cancelled. This confirmation does not indicate a refund. Contact All In Sports if you have a payment question.':kind==='payment_verified'?'You are confirmed.':kind==='payment_reminder'?'Our records still show payment pending. If you have already paid via Zelle, contact All In Sports to verify it.':'Registration received, but your spot is not confirmed as paid.')+'\nView: https://allinsportsnj.com/my-all-in';
  const allowedEmail=(process.env.PICKUP_TRANSACTIONAL_EMAIL_ALLOWLIST||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
  const allowedSms=(process.env.PICKUP_TRANSACTIONAL_SMS_ALLOWLIST||'').split(',').map(x=>x.trim()).filter(Boolean);
  const preview=process.env.VERCEL_ENV!=='production';
